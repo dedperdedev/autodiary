@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoDiary — мини-приложение</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Diary View -->
+  <section id="screen-diary" class="view active">
+    <div class="ios-navbar">
+      <div>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="time-filter">
+      <button class="active">Неделя</button>
+      <button>Месяц</button>
+      <button>Год</button>
+    </div>
+    <div class="filter">
+      <select id="diary-category-filter">
+        <option value="all">Все</option>
+      </select>
+      <button title="Фильтр по дате" type="button">
+        <i data-lucide="calendar"></i>
+      </button>
+      <div class="search-box">
+        <input type="text" placeholder="Поиск" id="diary-search-input">
+        <i data-lucide="search"></i>
+      </div>
+    </div>
+    
+    <!-- Statistics Summary -->
+    <div class="diary-stats" id="diary-stats">
+      <!-- Stats will be rendered dynamically -->
+    </div>
+    
+    <!-- Records rendered dynamically -->
+    
+    <!-- Floating Action Button -->
+    <button class="ios-fab" id="diary-add-btn" title="Добавить расход">
+      <i data-lucide="plus"></i>
+    </button>
+  </section>
+
+  <!-- Garage View -->
+  <section id="screen-garage" class="view">
+    <div class="ios-navbar">
+      <div>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="main-pad">
+      <!-- Cars rendered dynamically -->
+    </div>
+  </section>
+
+  <!-- Garage Empty State -->
+  <section id="screen-garage-empty" class="view">
+    <div class="ios-navbar">
+      <div>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="empty-wrap">
+      <div class="empty-text">У вас ещё нет автомобилей</div>
+      <button class="add-btn" data-goto="screen-add-car">➕ Добавить авто</button>
+    </div>
+  </section>
+
+  <!-- Car Details PAGE -->
+  <section id="screen-car-details" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title" id="car-name">Авто</h1>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" data-goto="screen-car-settings" data-backto="screen-car-details" title="Интервалы ТО">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.27 1 1.51.32.13.66.2 1.01.2H21a2 2 0 1 1 0 4h-.09c-.35 0-.69.07-1.01.2a1.65 1.65 0 0 0-1 1.09Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="car-head">
+      <div class="car-head-left">
+        <div class="car-sub" id="car-sub-line">—</div>
+      </div>
+    </div>
+    <div class="mini-dash" id="mini-dash-detail">
+      <div class="mini-metric"><strong id="md1">0</strong>L/100km</div>
+      <div class="mini-metric"><strong id="md2">0</strong>UAH/km</div>
+      <div class="mini-metric"><strong id="md3">0</strong>UAH/день</div>
+    </div>
+    <p class="note">Пробег и даты сохраняются локально в рамках прототипа.</p>
+    <div class="section">
+      <h3>ТО и замены</h3>
+      <div class="field">
+        <label>Замены масла ДВС</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены масляного фильтра</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены воздушного фильтра</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены фильтра салона</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены топливного фильтра</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены масла в КПП</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены свечей зажигания</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены ремня-цепи-роликов ГРМ</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены тормозной жидкости</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Замены антифриза</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Прочее</h3>
+      <div class="field">
+        <label>АКБ: последний пробег + дата установки</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date" title="Дата установки"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Последний пробег замены фреона</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Последний пробег замены шин</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="Пробег"></div>
+          <div class="col"><input type="date"></div>
+        </div>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button data-goto="screen-garage">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Intervals SETTINGS PAGE -->
+  <section id="screen-car-settings" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title" id="car-name-settings">Интервалы ТО</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="car-head">
+      <div class="car-head-left">
+        <div class="car-sub" id="car-sub-settings">Настройки для выбранного авто</div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>ТО и замены — интервалы</h3>
+      <div class="field">
+        <label>Масло ДВС</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км" aria-label="Интервал, км"></div>
+          <div class="col"><input type="number" placeholder="мес" aria-label="Интервал, мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Масляный фильтр</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Воздушный фильтр</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Фильтр салона</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Топливный фильтр</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Масло в КПП</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Свечи зажигания</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>ГРМ (ремень/цепь/ролики)</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Тормозная жидкость</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Антифриз</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Прочее — интервалы</h3>
+      <div class="field">
+        <label>АКБ</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="мес" aria-label="Срок службы, мес"></div>
+          <div class="col"><input type="number" placeholder="лет" aria-label="Срок, лет"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Фреон (кондиционер)</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="мес"></div>
+          <div class="col"><input type="number" placeholder="лет"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Шины (замена/ротация)</label>
+        <div class="two-col">
+          <div class="col"><input type="number" placeholder="км"></div>
+          <div class="col"><input type="number" placeholder="мес"></div>
+        </div>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button data-goto="screen-car-details">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Car View -->
+  <section id="screen-add-car" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Добавить авто</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Марка *</label>
+        <input type="text" placeholder="Введите марку">
+      </div>
+      <div class="field">
+        <label>Модель *</label>
+        <input type="text" placeholder="Введите модель">
+      </div>
+      <div class="field">
+        <label>Год выпуска *</label>
+        <input type="number" placeholder="2025">
+      </div>
+      <div class="field">
+        <label>Тип топлива *</label>
+        <select>
+          <option>Бензин</option>
+          <option>Дизель</option>
+          <option>Газ-бензин</option>
+          <option>Электричество</option>
+        </select>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Детали</h3>
+      <div class="field">
+        <label>Номерной знак</label>
+        <input type="text" placeholder="AP123">
+      </div>
+      <div class="field">
+        <label>VIN код</label>
+        <input type="text" placeholder="123456789">
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Заметки</label>
+        <input type="text" placeholder="">
+      </div>
+      <div class="field">
+        <label>Сумма покупки</label>
+        <input type="number" placeholder="₴">
+      </div>
+      <div class="field">
+        <label>Дата покупки</label>
+        <input type="date" value="2025-09-25">
+      </div>
+    </div>
+    <div class="save-btn">
+      <button data-goto="screen-garage">Сохранить авто</button>
+    </div>
+  </section>
+
+  <!-- Expense Form View -->
+  <section id="screen-expense-form" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Добавить расход</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Пробег</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="odometer" type="number" placeholder="0">
+          <span class="unit">km</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Стоимость</label>
+        <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="amount" type="number" placeholder="0.00" step="0.01">
+            <span class="unit">₴</span>
+          </div>
+          <div class="subtext" id="amount-sub">0,00 ₴</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Дата</label>
+        <div style="display:flex;gap:8px">
+          <input id="date" type="date">
+          <input id="time" type="time">
+        </div>
+      </div>
+      <div class="field nav" data-goto="screen-add-expense" data-backto="screen-expense-form">
+        <label>Категория расходов</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="expense-category-value" style="color:var(--text);opacity:.9">Выбрать</div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Фото</label>
+        <div class="chip" style="cursor:pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h4l2-3h6l2 3h4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Добавить изображение</span>
+          <span class="premium-dot" title="Премиум"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="notes" placeholder=""></textarea>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button data-goto="screen-diary">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Expense (Categories) View -->
+  <section id="screen-add-expense" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Категории</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>🔧 Сервис</h3>
+      <div class="item" data-category="Техническое обслуживание"><label>Техническое обслуживание</label><input type="checkbox"></div>
+      <div class="item" data-category="Ремонт и детали"><label>Ремонт и детали</label><input type="checkbox"></div>
+    </div>
+    <div class="section" id="section-fuel">
+      <h3>⛽ Заправка</h3>
+      <div class="item" data-category="Заправка"><label>Заправка (бензин / дизель / газ)</label><input type="checkbox"></div>
+      <div class="item" data-category="Электрозарядка"><label>Электрозарядка</label><input type="checkbox"></div>
+      <div class="item" data-category="Присадки и добавки"><label>Присадки и добавки</label><input type="checkbox"></div>
+    </div>
+    <div class="section">
+      <h3>🛞 Шиномонтаж</h3>
+      <div class="item" data-category="Покупка шин"><label>Покупка шин</label><input type="checkbox"></div>
+      <div class="item" data-category="Замена шин"><label>Замена шин</label><input type="checkbox"></div>
+      <div class="item" data-category="Балансировка"><label>Балансировка</label><input type="checkbox"></div>
+      <div class="item" data-category="Проверка давления"><label>Проверка давления</label><input type="checkbox"></div>
+    </div>
+    <div class="section">
+      <h3>🧼 Уход</h3>
+      <div class="item" data-category="Мойка"><label>Мойка</label><input type="checkbox"></div>
+      <div class="item" data-category="Полировка и химчистка"><label>Полировка и химчистка</label><input type="checkbox"></div>
+      <div class="item" data-category="Косметика"><label>Косметика</label><input type="checkbox"></div>
+      <div class="item" data-category="Защита кузова"><label>Защита кузова</label><input type="checkbox"></div>
+    </div>
+    <div class="section">
+      <h3>📋 Админ-расходы</h3>
+      <div class="item" data-category="ОСАГО / КАСКО"><label>ОСАГО / КАСКО</label><input type="checkbox"></div>
+      <div class="item" data-category="Техосмотр"><label>Техосмотр</label><input type="checkbox"></div>
+      <div class="item" data-category="Регистрация / оформление"><label>Регистрация / оформление</label><input type="checkbox"></div>
+      <div class="item" data-category="Налоги"><label>Налоги</label><input type="checkbox"></div>
+      <div class="item" data-category="Парковка"><label>Парковка</label><input type="checkbox"></div>
+      <div class="item" data-category="Платные дороги"><label>Платные дороги</label><input type="checkbox"></div>
+      <div class="item" data-category="Штрафы"><label>Штрафы</label><input type="checkbox"></div>
+      <div class="item" data-category="Эвакуация / буксировка"><label>Эвакуация / буксировка</label><input type="checkbox"></div>
+    </div>
+    <div class="save-btn">
+      <button data-goto="screen-expense-form">Готово</button>
+    </div>
+  </section>
+
+  <!-- Bottom Tabbar -->
+  <nav class="tabbar">
+    <div class="tab active" data-goto="screen-diary">
+      <i data-lucide="book-open"></i>
+      <span>Дневник</span>
+    </div>
+    <div class="tab" data-goto="screen-garage">
+      <i data-lucide="home"></i>
+      <span>Гараж</span>
+    </div>
+    <div class="tab" data-goto="screen-settings">
+      <i data-lucide="settings"></i>
+      <span>Параметры</span>
+    </div>
+  </nav>
+
+  <!-- Expense Category Bottom Sheet -->
+  <div class="ios-sheet-overlay" id="expense-category-sheet">
+    <div class="ios-sheet">
+      <div class="ios-sheet-handle"></div>
+      <div class="ios-sheet-header">
+        <div>
+          <h2 style="font-size: var(--font-size-title-3); font-weight: 600; color: var(--text); margin: 0;">Добавить расход</h2>
+          <p class="ios-sheet-subtitle" style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin: var(--space-xs) 0 0 0;">Выберите категорию</p>
+        </div>
+      </div>
+      <div class="ios-sheet-content">
+        <div class="expense-category-grid">
+          <button class="expense-category-item" data-category="Заправка" data-scroll="#section-fuel">
+            <div class="expense-category-icon" style="background: rgba(255, 149, 0, 0.15); color: #FF9500;">
+              <i data-lucide="fuel"></i>
+            </div>
+            <span>Заправка</span>
+          </button>
+          <button class="expense-category-item" data-category="Электрозарядка">
+            <div class="expense-category-icon" style="background: rgba(52, 199, 89, 0.15); color: #34C759;">
+              <i data-lucide="zap"></i>
+            </div>
+            <span>Зарядка</span>
+          </button>
+          <button class="expense-category-item" data-category="Техническое обслуживание">
+            <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.15); color: #007AFF;">
+              <i data-lucide="wrench"></i>
+            </div>
+            <span>ТО</span>
+          </button>
+          <button class="expense-category-item" data-category="Ремонт и детали">
+            <div class="expense-category-icon" style="background: rgba(255, 59, 48, 0.15); color: #FF3B30;">
+              <i data-lucide="tool"></i>
+            </div>
+            <span>Ремонт</span>
+          </button>
+          <button class="expense-category-item" data-category="Шиномонтаж">
+            <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
+              <i data-lucide="circle"></i>
+            </div>
+            <span>Шины</span>
+          </button>
+          <button class="expense-category-item" data-category="Уход">
+            <div class="expense-category-icon" style="background: rgba(88, 86, 214, 0.15); color: #5856D6;">
+              <i data-lucide="sparkles"></i>
+            </div>
+            <span>Уход</span>
+          </button>
+          <button class="expense-category-item" data-category="Админ-расходы">
+            <div class="expense-category-icon" style="background: rgba(175, 82, 222, 0.15); color: #AF52DE;">
+              <i data-lucide="file-text"></i>
+            </div>
+            <span>Админ</span>
+          </button>
+          <button class="expense-category-item" data-category="Другое">
+            <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
+              <i data-lucide="more-horizontal"></i>
+            </div>
+            <span>Другое</span>
+          </button>
+          <button class="expense-category-item" data-reminder="true" data-goto="screen-add-reminder">
+            <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.12); color: #0A84FF;">
+              <i data-lucide="bell"></i>
+            </div>
+            <span>Напоминание</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <h3 id="modal-title">Подтверждение</h3>
+      <p id="modal-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modal-confirm">Да</button>
+        <button class="btn btn-secondary" id="modal-cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Reminders View -->
+  <section id="screen-reminders" class="view">
+    <div class="ios-navbar">
+      <div>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" data-goto="screen-add-reminder" title="Добавить напоминание">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="main-pad">
+      <div id="reminders-list"></div>
+      <button class="add-btn" data-goto="screen-add-reminder">➕ Добавить напоминание</button>
+    </div>
+  </section>
+
+  <!-- Add Reminder View -->
+  <section id="screen-add-reminder" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Добавить напоминание</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Название *</label>
+        <input type="text" id="reminder-title" placeholder="Например: Замена масла">
+      </div>
+      <div class="field">
+        <label>Автомобиль *</label>
+        <select id="reminder-car">
+          <option value="">Выберите авто</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Дата напоминания</label>
+        <input type="date" id="reminder-date">
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="reminder-odometer" placeholder="50000">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="reminder-notes" placeholder=""></textarea>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-reminder-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Export View -->
+  <section id="screen-export" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Экспорт данных</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="main-pad">
+      <div class="section">
+        <button class="btn btn-primary" style="width:100%;margin-bottom:12px" id="export-csv-btn">Экспорт CSV</button>
+        <button class="btn btn-accent" style="width:100%;margin-bottom:12px" id="export-json-btn">Экспорт JSON</button>
+        <button class="btn btn-secondary" style="width:100%" id="import-json-btn">Импорт JSON</button>
+        <input type="file" id="import-file-input" accept=".json" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings PAGE -->
+  <section id="screen-settings" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Параметры</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="settings-premium card-ios">
+      <div class="row">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="star"></i>
+          </span>
+          <div>
+            <div class="title">Премиум доступ</div>
+            <div class="sub">Используйте без ограничений</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="s-list card-ios">
+      <div class="s-item" data-goto="screen-export">
+        <div class="left">
+          <span class="tile tile-green">
+            <i data-lucide="download"></i>
+          </span>
+          <div class="label">Экспорт данных</div>
+        </div>
+        <div class="right chevron">›</div>
+      </div>
+    </div>
+    <div class="s-list card-ios">
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="car"></i>
+          </span>
+          <div class="label">Мои авто</div>
+        </div>
+        <div class="right"><span class="value" id="set-cars-count">0</span></div>
+      </div>
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-indigo">
+            <i data-lucide="grid"></i>
+          </span>
+          <div class="label">Категории</div>
+        </div>
+        <div class="right"><span class="value" id="set-cats-count">—</span></div>
+      </div>
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-green">
+            <i data-lucide="dollar-sign"></i>
+          </span>
+          <div class="label">Валюта</div>
+        </div>
+        <div class="right"><span class="chip">UAH</span></div>
+      </div>
+    </div>
+    <div class="s-list card-ios">
+      <div class="s-item" id="add-demo-data-btn" style="cursor: pointer;">
+        <div class="left">
+          <span class="tile tile-purple">
+            <i data-lucide="database"></i>
+          </span>
+          <div class="label">Добавить демо данные</div>
+        </div>
+        <div class="right chevron">›</div>
+      </div>
+    </div>
+    <div class="s-list card-ios">
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="palette"></i>
+          </span>
+          <div class="label">Тема</div>
+        </div>
+        <div class="right"><button class="link" id="set-theme">Светлая</button></div>
+      </div>
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="droplet"></i>
+          </span>
+          <div class="label">Основной цвет</div>
+        </div>
+        <div class="right"><span class="dot" id="set-color-dot"></span><button class="link" id="set-color">Синий</button></div>
+      </div>
+    </div>
+    <div class="s-list card-ios">
+      <div class="s-item">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="star"></i>
+          </span>
+          <div class="label">Оцените в App Store</div>
+        </div>
+        <div class="right chevron">›</div>
+      </div>
+    </div>
+  </section>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
