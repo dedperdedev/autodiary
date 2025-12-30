@@ -55,18 +55,7 @@
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Theme */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #1C1C1E;
-    --separator: #2C2C2E;
-    --text: #FFFFFF;
-    --text-secondary: #A1A1AA;
-  }
-}
-
-/* Manual Dark Theme Toggle */
+/* Dark Theme Toggle */
 [data-theme="dark"] {
   --bg: #000000;
   --surface: #1C1C1E;
@@ -433,7 +422,15 @@ body {
 }
 
 .ios-cell-action-btn-danger {
-  color: var(--danger);
+  color: var(--danger) !important;
+}
+
+.ios-cell-action-btn-success {
+  color: var(--success) !important;
+}
+
+.ios-cell-action-btn-warning {
+  color: var(--warning) !important;
 }
 
 .record-actions button {
@@ -449,6 +446,18 @@ body {
   justify-content: center;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
+}
+
+.record-actions .ios-cell-action-btn-danger {
+  color: var(--danger) !important;
+}
+
+.record-actions .ios-cell-action-btn-success {
+  color: var(--success) !important;
+}
+
+.record-actions .ios-cell-action-btn-warning {
+  color: var(--warning) !important;
 }
 
 .record-actions button:hover {
@@ -1369,6 +1378,32 @@ body {
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  position: relative;
+}
+
+.filter.search-expanded select,
+.filter.search-expanded > button:not(.search-box) {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter select,
+.filter > button:not(.search-box) {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter select {
@@ -1384,6 +1419,11 @@ body {
   min-height: 44px;
   flex: 1;
   min-width: 120px;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter button {
@@ -1397,7 +1437,12 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s ease-out;
   flex-shrink: 0;
 }
 
@@ -1423,6 +1468,21 @@ body {
   padding: 0 var(--space-md);
   min-height: 44px;
   min-width: 0;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.search-box.expanded {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  flex: none;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+  margin: 0;
+  border-radius: var(--radius-md);
 }
 
 .search-box input {
@@ -1545,11 +1605,9 @@ i[data-lucide] {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-[data-theme="dark"] .tabbar,
-@media (prefers-color-scheme: dark) {
-  .tabbar {
-    background: rgba(28, 28, 30, 0.8);
-  }
+[data-theme="dark"] .tabbar {
+  background: rgba(28, 28, 30, 0.8);
+  border-top-color: var(--separator);
 }
 
 .tab {
@@ -1967,8 +2025,8 @@ i[data-lucide] {
   text-align: right;
   font-weight: 400;
 }
-
-/* Record actions */
+    
+    /* Record actions */
 .record-actions {
   display: flex;
   gap: var(--space-sm);
@@ -2003,8 +2061,8 @@ i[data-lucide] {
     background: rgba(255, 255, 255, 0.05);
   }
 }
-
-/* Car actions */
+    
+    /* Car actions */
 .car-actions {
   display: flex;
   gap: var(--space-sm);

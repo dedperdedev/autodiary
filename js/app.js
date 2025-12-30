@@ -1,4 +1,4 @@
-﻿    // Utility: Escape HTML to prevent XSS
+    // Utility: Escape HTML to prevent XSS
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
@@ -496,11 +496,16 @@
       }
       
       const searchInput = container.querySelector('.filter .search-box input');
-      if(searchInput) {
+      const searchBox = container.querySelector('.filter .search-box');
+      const filterContainer = container.querySelector('.filter');
+      
+      if(searchInput && searchBox && filterContainer) {
         searchInput.value = diaryFilters.search;
+        
         // Remove old listeners and add new one with debounce
         const newSearchInput = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+        
         let searchTimeout;
         newSearchInput.addEventListener('input', () => {
           clearTimeout(searchTimeout);
@@ -508,6 +513,20 @@
             diaryFilters.search = newSearchInput.value.trim();
             renderDiary();
           }, 300);
+        });
+        
+        // Expand search box on focus
+        newSearchInput.addEventListener('focus', () => {
+          searchBox.classList.add('expanded');
+          filterContainer.classList.add('search-expanded');
+        });
+        
+        // Collapse search box on blur if empty
+        newSearchInput.addEventListener('blur', () => {
+          if (!newSearchInput.value.trim()) {
+            searchBox.classList.remove('expanded');
+            filterContainer.classList.remove('search-expanded');
+          }
         });
       }
       
@@ -530,7 +549,7 @@
           return 0;
         }
       });
-
+      
       // Filter and sort reminders
       const filteredReminders = filterReminders(state.reminders);
       const sortedReminders = filteredReminders.sort((a, b) => {
@@ -623,12 +642,17 @@
 
           const trailingDiv = document.createElement('div');
           trailingDiv.className = 'ios-cell-trailing';
-          trailingDiv.innerHTML = `<span class="reminder-badge">Напоминание</span>`;
 
           const actionsDiv = document.createElement('div');
           actionsDiv.className = 'record-actions';
           actionsDiv.style.display = 'none';
           actionsDiv.innerHTML = `
+            <button data-done-reminder="${rem.id}" title="Выполнено" class="ios-cell-action-btn ios-cell-action-btn-success">
+              <i data-lucide="check"></i>
+            </button>
+            <button data-postpone-reminder="${rem.id}" title="Перенести" class="ios-cell-action-btn ios-cell-action-btn-warning">
+              <i data-lucide="clock"></i>
+            </button>
             <button data-edit-reminder="${rem.id}" title="Редактировать" class="ios-cell-action-btn">
               <i data-lucide="pencil"></i>
             </button>
@@ -641,6 +665,54 @@
           cell.appendChild(iconDiv);
           cell.appendChild(contentDiv);
           cell.appendChild(trailingDiv);
+
+          // Add swipe handler for reminders (same as expenses)
+          let startX = 0;
+          let currentX = 0;
+          let isSwiping = false;
+          
+          cell.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isSwiping = true;
+          });
+          
+          cell.addEventListener('touchmove', (e) => {
+            if (!isSwiping) return;
+            currentX = e.touches[0].clientX - startX;
+            if (currentX < -50) {
+              cell.style.transform = `translateX(${currentX}px)`;
+              actionsDiv.style.display = 'flex';
+            } else if (currentX > 0) {
+              cell.style.transform = 'translateX(0)';
+              actionsDiv.style.display = 'none';
+            }
+          });
+          
+          cell.addEventListener('touchend', () => {
+            if (currentX < -100) {
+              cell.style.transform = 'translateX(-80px)';
+              actionsDiv.style.display = 'flex';
+            } else {
+              cell.style.transform = 'translateX(0)';
+              actionsDiv.style.display = 'none';
+            }
+            isSwiping = false;
+          });
+          
+          // Click to close actions (only if actions are visible)
+          cell.addEventListener('click', (e) => {
+            const isActionBtn = e.target.closest('.ios-cell-action-btn');
+            if (isActionBtn) {
+              e.stopPropagation();
+              return;
+            }
+            if (actionsDiv.style.display === 'flex') {
+              cell.style.transform = 'translateX(0)';
+              actionsDiv.style.display = 'none';
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }, true);
 
           group.appendChild(cell);
         });
@@ -1239,13 +1311,49 @@
       const reminder = state.reminders.find(r => r.id === reminderId);
       if(!reminder) return;
       
-      showModal('РЈРґР°Р»РёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ?', `Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ РЅР°РїРѕРјРёРЅР°РЅРёРµ "${reminder.title}"?`, () => {
+      showModal('Удалить напоминание?', `Вы уверены, что хотите удалить напоминание "${reminder.title}"?`, () => {
         state.reminders = state.reminders.filter(r => r.id !== reminderId);
         if(Storage.set('autodiary:reminders', state.reminders)) {
-          showToast('РќР°РїРѕРјРёРЅР°РЅРёРµ СѓРґР°Р»РµРЅРѕ');
+          showToast('Напоминание удалено');
           renderReminders();
+          renderDiary();
         }
       });
+    }
+
+    function markReminderDone(reminderId) {
+      const reminder = state.reminders.find(r => r.id === reminderId);
+      if(!reminder) return;
+      
+      reminder.status = 'done';
+      if(Storage.set('autodiary:reminders', state.reminders)) {
+        showToast('Напоминание отмечено как выполненное');
+        renderReminders();
+        renderDiary();
+      }
+    }
+
+    function postponeReminder(reminderId) {
+      const reminder = state.reminders.find(r => r.id === reminderId);
+      if(!reminder) return;
+      
+      // Postpone by 1 week
+      if(reminder.dueDate) {
+        const currentDate = new Date(reminder.dueDate);
+        currentDate.setDate(currentDate.getDate() + 7);
+        reminder.dueDate = currentDate.toISOString().split('T')[0];
+      } else {
+        // If no date, set to 1 week from now
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        reminder.dueDate = nextWeek.toISOString().split('T')[0];
+      }
+      
+      if(Storage.set('autodiary:reminders', state.reminders)) {
+        showToast('Напоминание перенесено на неделю');
+        renderReminders();
+        renderDiary();
+      }
     }
 
     // Export functions
@@ -1531,6 +1639,22 @@
         deleteReminder(deleteReminderBtn.dataset.deleteReminder);
         return;
       }
+      
+      const doneReminderBtn = e.target.closest('[data-done-reminder]');
+      if(doneReminderBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        markReminderDone(doneReminderBtn.dataset.doneReminder);
+        return;
+      }
+      
+      const postponeReminderBtn = e.target.closest('[data-postpone-reminder]');
+      if(postponeReminderBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        postponeReminder(postponeReminderBtn.dataset.postponeReminder);
+        return;
+      }
     });
 
     // Export handlers
@@ -1555,15 +1679,14 @@
     });
 
     // Settings handlers
-    // Initialize theme from storage or system preference
+    // Initialize theme from storage or default to light
     function initTheme() {
       const savedTheme = Storage.get('autodiary:theme', null);
       if(savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
       } else {
-        // Use system preference
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        // Default to light theme
+        document.documentElement.setAttribute('data-theme', 'light');
       }
     }
     
