@@ -88,12 +88,14 @@
     let editingExpenseId = null;
     let editingCarId = null;
     let editingReminderId = null;
-    let diaryFilters = {
-      timePeriod: 'week', // week, month, year, all
+    // Initialize diary filters using Diary module
+    let diaryFilters = typeof Diary !== 'undefined' && Diary.initFilters ? 
+      Diary.initFilters() : {
+        timePeriod: 'week',
       category: 'all',
       search: '',
-      carId: 'all'
-    };
+        carId: '__all__'
+      };
 
     // Initialize state with migration support
     let state = {
@@ -115,6 +117,117 @@
       }
     };
 
+    // Show recovery screen for corrupted data
+    function showRecoveryScreen(errorData) {
+      // Show recovery screen (use setTimeout to ensure showView is defined)
+      setTimeout(() => {
+        if (typeof showView === 'function') {
+          showView('screen-recovery');
+        } else {
+          // Fallback: manually show the screen
+          const recoveryScreen = document.getElementById('screen-recovery');
+          if (recoveryScreen) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            recoveryScreen.classList.add('active');
+          }
+        }
+      }, 0);
+      
+      // Display error message if available
+      const errorMsg = document.getElementById('recovery-error-message');
+      const errorText = document.getElementById('recovery-error-text');
+      if (errorMsg && errorText && errorData && errorData.error) {
+        errorText.textContent = errorData.error;
+        errorMsg.style.display = 'block';
+      } else if (errorMsg) {
+        errorMsg.style.display = 'none';
+      }
+      
+      // Setup recovery actions
+      const downloadRaw = document.getElementById('recovery-download-raw');
+      const importBackup = document.getElementById('recovery-import-backup');
+      const resetData = document.getElementById('recovery-reset');
+      const importInput = document.getElementById('recovery-import-input');
+      
+      if (downloadRaw) {
+        downloadRaw.onclick = () => {
+          try {
+            const rawData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key.startsWith('autodiary:')) {
+                rawData[key] = localStorage.getItem(key);
+              }
+            }
+            const blob = new Blob([JSON.stringify(rawData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `autodiary_raw_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            showToast('Сырые данные скачаны');
+          } catch (e) {
+            showToast('Ошибка при скачивании данных');
+            console.error(e);
+          }
+        };
+      }
+      
+      if (importBackup && importInput) {
+        importBackup.onclick = () => {
+          importInput.click();
+        };
+        
+        importInput.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const data = JSON.parse(event.target.result);
+              if (typeof importBackup !== 'undefined' && typeof Storage !== 'undefined') {
+                // Try to import using Storage module
+                if (typeof window.importBackup === 'function') {
+                  window.importBackup(data);
+                } else {
+                  // Fallback: clear and restore
+                  localStorage.clear();
+                  if (typeof data === 'object') {
+                    Object.keys(data).forEach(key => {
+                      if (typeof data[key] === 'string') {
+                        localStorage.setItem(key, data[key]);
+                      } else {
+                        localStorage.setItem(key, JSON.stringify(data[key]));
+                      }
+                    });
+                  }
+                  location.reload();
+                }
+              }
+            } catch (e) {
+              showToast('Ошибка импорта: неверный формат файла');
+              console.error(e);
+            }
+          };
+          reader.readAsText(file);
+        };
+      }
+      
+      if (resetData) {
+        resetData.onclick = () => {
+          showModal('Сбросить все данные?', 'Это действие удалит все данные приложения и нельзя будет отменить. Продолжить?', () => {
+            try {
+              localStorage.clear();
+              location.reload();
+            } catch (e) {
+              showToast('Ошибка при сбросе данных');
+              console.error(e);
+            }
+          });
+        };
+      }
+    }
+
     // Load state on initialization - wait for modules to load
     function initializeState() {
       try {
@@ -125,14 +238,22 @@
             return;
           } else if (loadResult && loadResult.corrupted) {
             // Show recovery screen
-            showRecoveryScreen(loadResult);
+            if (typeof showRecoveryScreen === 'function') {
+              showRecoveryScreen(loadResult);
+            } else {
+              console.error('Recovery screen function not available');
+            }
             return;
           }
         }
       } catch(e) {
         console.error('Failed to load state:', e);
         // Show recovery screen on error
-        showRecoveryScreen({ error: e.message, data: null });
+        if (typeof showRecoveryScreen === 'function') {
+          showRecoveryScreen({ error: e.message, data: null });
+        } else {
+          console.error('Recovery screen function not available');
+        }
         return;
       }
       
@@ -524,97 +645,28 @@
       console.log('Garage rendered, cars:', state.cars.length, 'button added:', !!addCarBtn);
     }
 
-    // Filter expenses
+    // Filter expenses - use Diary module if available
     function filterExpenses(expenses) {
+      if (typeof Diary !== 'undefined' && Diary.filterExpenses) {
+        return Diary.filterExpenses(expenses, diaryFilters, state);
+      }
+      // Fallback to old logic
       let filtered = [...expenses];
-      
-      // Filter by car
-      if(diaryFilters.carId !== 'all') {
+      if(diaryFilters.carId !== '__all__' && diaryFilters.carId !== 'all') {
         filtered = filtered.filter(e => e.carId === diaryFilters.carId);
       }
-      
-      // Filter by category
-      if(diaryFilters.category !== 'all') {
-        filtered = filtered.filter(e => {
-          if(e.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) {
-            const name = Categories.getCategoryName(state.categories || [], e.categoryId);
-            return name === diaryFilters.category;
-          }
-          return e.category === diaryFilters.category;
-        });
-      }
-      
-      // Filter by search (use global search if available)
-      if(diaryFilters.search) {
-        if(typeof Search !== 'undefined' && Search.globalSearch) {
-          filtered = Search.globalSearch(diaryFilters.search, filtered, state);
-        } else {
-          const searchLower = diaryFilters.search.toLowerCase();
-          filtered = filtered.filter(e => 
-            (e.category && e.category.toLowerCase().includes(searchLower)) ||
-            (e.notes && e.notes.toLowerCase().includes(searchLower))
-          );
-        }
-      }
-      
-      // Filter by time period
-      if(diaryFilters.timePeriod !== 'all') {
-        const now = new Date();
-        filtered = filtered.filter(e => {
-          const expDate = new Date(e.date);
-          if(diaryFilters.timePeriod === 'week') {
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return expDate >= weekAgo;
-          } else if(diaryFilters.timePeriod === 'month') {
-            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            return expDate >= monthAgo;
-          } else if(diaryFilters.timePeriod === 'year') {
-            const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-            return expDate >= yearAgo;
-          }
-          return true;
-        });
-      }
-      
       return filtered;
     }
 
-    // Filter reminders for diary view
+    // Filter reminders for diary view - use Diary module if available
     function filterReminders(reminders) {
+      if (typeof Diary !== 'undefined' && Diary.filterReminders) {
+        return Diary.filterReminders(reminders, diaryFilters);
+      }
+      // Fallback to old logic
       let filtered = reminders.filter(r => (r.status || 'active') !== 'done');
-      
-      // Filter by car
-      if(diaryFilters.carId !== 'all') {
+      if(diaryFilters.carId !== '__all__' && diaryFilters.carId !== 'all') {
         filtered = filtered.filter(r => r.carId === diaryFilters.carId);
-      }
-      
-      // Filter by search
-      if(diaryFilters.search) {
-        const searchLower = diaryFilters.search.toLowerCase();
-        filtered = filtered.filter(r =>
-          (r.title && r.title.toLowerCase().includes(searchLower)) ||
-          (r.notes && r.notes.toLowerCase().includes(searchLower))
-        );
-      }
-      
-      // Filter by time period using dueDate
-      if(diaryFilters.timePeriod !== 'all') {
-        const now = new Date();
-        filtered = filtered.filter(r => {
-          if(!r.dueDate) return true;
-          const due = new Date(r.dueDate);
-          if(diaryFilters.timePeriod === 'week') {
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return due >= weekAgo;
-          } else if(diaryFilters.timePeriod === 'month') {
-            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            return due >= monthAgo;
-          } else if(diaryFilters.timePeriod === 'year') {
-            const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-            return due >= yearAgo;
-          }
-          return true;
-        });
       }
       return filtered;
     }
@@ -653,6 +705,11 @@
     function renderDiary(){
       const container = document.querySelector('#screen-diary');
       if(!container) return;
+      
+      // Render car filter dropdown
+      if (typeof Diary !== 'undefined' && Diary.renderCarFilter) {
+        Diary.renderCarFilter(container, diaryFilters, state);
+      }
       
       // Filter out deleted items
       const activeExpenses = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
@@ -770,22 +827,27 @@
         return db - da;
       });
       
-      // Calculate and render statistics
+      // Calculate and render statistics using filtered list
       const statsContainer = document.getElementById('diary-stats');
       if(statsContainer) {
-        const totalAmount = sorted.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-        const count = sorted.length;
-        
-        // Calculate average per day
-        let avgPerDay = 0;
-        if(sorted.length > 0) {
-          const dates = sorted.map(e => e.date).filter(Boolean);
-          if(dates.length > 0) {
-            const firstDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
-            const lastDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())));
-            const daysDiff = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1);
-            avgPerDay = totalAmount / daysDiff;
+        // Use Diary module for stats calculation if available
+        let stats;
+        if (typeof Diary !== 'undefined' && Diary.calculateStats) {
+          stats = Diary.calculateStats(sorted);
+        } else {
+          // Fallback calculation
+          const totalAmount = sorted.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+          let avgPerDay = 0;
+          if(sorted.length > 0) {
+            const dates = sorted.map(e => e.date).filter(Boolean);
+            if(dates.length > 0) {
+              const firstDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
+              const lastDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+              const daysDiff = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1);
+              avgPerDay = totalAmount / daysDiff;
+            }
           }
+          stats = { totalAmount, avgPerDay };
         }
         
         // Show stats container
@@ -793,16 +855,12 @@
         
         statsContainer.innerHTML = `
           <div class="diary-stat-item">
-            <div class="diary-stat-value">${totalAmount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₴</div>
+            <div class="diary-stat-value">${stats.totalAmount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₴</div>
             <div class="diary-stat-label">Всего</div>
           </div>
           <div class="diary-stat-item">
-            <div class="diary-stat-value">${Math.round(avgPerDay).toLocaleString('ru-RU')} ₴</div>
+            <div class="diary-stat-value">${Math.round(stats.avgPerDay).toLocaleString('ru-RU')} ₴</div>
             <div class="diary-stat-label">В день</div>
-          </div>
-          <div class="diary-stat-item">
-            <div class="diary-stat-value">${count}</div>
-            <div class="diary-stat-label">${count === 1 ? 'запись' : count < 5 ? 'записи' : 'записей'}</div>
           </div>
         `;
       }
@@ -992,10 +1050,10 @@
               <strong style="font-size:var(--font-size-body);font-weight:600;color:var(--text)">${amountStr} ₴</strong>
             `;
           
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'record-actions';
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'record-actions';
             actionsDiv.style.display = 'none';
-            actionsDiv.innerHTML = `
+          actionsDiv.innerHTML = `
               <button data-save-template-expense="${exp.id}" title="Сохранить как шаблон" class="ios-cell-action-btn">
                 <i data-lucide="file-text"></i>
               </button>
@@ -1365,19 +1423,29 @@
       
       const expensesCount = state.expenses.filter(e => e.carId === carId).length;
       
-      showModal('РЈРґР°Р»РёС‚СЊ Р°РІС‚РѕРјРѕР±РёР»СЊ?', `Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ "${car.brand} ${car.model}"? Р’СЃРµ СЃРІСЏР·Р°РЅРЅС‹Рµ СЂР°СЃС…РѕРґС‹ (${expensesCount}) С‚Р°РєР¶Рµ Р±СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹.`, () => {
+      showModal('Удалить автомобиль?', `Вы уверены, что хотите удалить "${car.brand} ${car.model}"? Все связанные расходы (${expensesCount}) также будут удалены.`, () => {
         state.cars = state.cars.filter(c => c.id !== carId);
         state.expenses = state.expenses.filter(e => e.carId !== carId);
         delete state.maintenance[carId];
         delete state.intervals[carId];
         
+        // Reset diary filter if deleted car was selected
+        if (diaryFilters.carId === carId) {
+          diaryFilters.carId = '__all__';
+          if (typeof Diary !== 'undefined' && Diary.saveCarFilter) {
+            Diary.saveCarFilter('__all__');
+          }
+        }
+        
         if(saveAppState()) {
-          showToast('РђРІС‚РѕРјРѕР±РёР»СЊ СѓРґР°Р»РµРЅ');
+          showToast('Автомобиль удален');
           renderGarage();
           if(currentCarId === carId) {
             currentCarId = null;
             showView('screen-garage');
           }
+          // Re-render diary to update filter
+          renderDiary();
         }
       });
     }
@@ -2679,7 +2747,7 @@
         }
       }
     });
-    
+
     document.addEventListener('click', (e)=>{
       if(e.target && e.target.id === 'set-theme'){
         const newTheme = toggleTheme();
@@ -2738,6 +2806,11 @@
     function initApp() {
       console.log('initApp called');
       
+      // Reinitialize diary filters from localStorage
+      if (typeof Diary !== 'undefined' && Diary.initFilters) {
+        diaryFilters = Diary.initFilters();
+      }
+      
       // Initialize views and tabs
       views = [...document.querySelectorAll('.view')];
       tabs = [...document.querySelectorAll('.tab')];
@@ -2746,6 +2819,11 @@
       renderDiary();
       renderGarage();
       renderReminders();
+      
+      // Listen for diary filter changes
+      document.addEventListener('diaryFilterChanged', () => {
+        renderDiary();
+      });
       
       // Initialize receipts handlers
       if(typeof initializeReceiptsHandlers === 'function') {

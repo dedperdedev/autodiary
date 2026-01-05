@@ -106,6 +106,76 @@ const migrations = {
     migrated.schemaVersion = 2;
     
     return migrated;
+  },
+  
+  // Migration from v2 to v3: Add categories/subcategories structure
+  2: (data) => {
+    const migrated = { ...data };
+    
+    // Initialize categories and subcategories if missing
+    if (!migrated.categories) {
+      migrated.categories = [];
+    }
+    if (!migrated.subcategories) {
+      migrated.subcategories = [];
+    }
+    
+    // Migrate legacy category strings to categoryId/subcategoryId
+    if (migrated.expenses) {
+      migrated.expenses = migrated.expenses.map(exp => {
+        if (exp.category && !exp.categoryId) {
+          // Try to parse category string (e.g., "A/B", "A: B", "A - B")
+          const parts = exp.category.split(/[\/:\-]/).map(p => p.trim()).filter(Boolean);
+          if (parts.length > 0) {
+            // Find or create category
+            let category = migrated.categories.find(c => 
+              c.name.toLowerCase() === parts[0].toLowerCase() && !c.isArchived
+            );
+            if (!category) {
+              category = {
+                id: 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                name: parts[0],
+                icon: 'folder',
+                sortOrder: migrated.categories.length + 1,
+                isArchived: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              migrated.categories.push(category);
+            }
+            exp.categoryId = category.id;
+            
+            // If there's a second part, create subcategory
+            if (parts.length > 1) {
+              let subcategory = migrated.subcategories.find(s => 
+                s.categoryId === category.id && 
+                s.name.toLowerCase() === parts[1].toLowerCase() && 
+                !s.isArchived
+              );
+              if (!subcategory) {
+                subcategory = {
+                  id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  categoryId: category.id,
+                  name: parts[1],
+                  sortOrder: migrated.subcategories.filter(s => s.categoryId === category.id).length + 1,
+                  isArchived: false,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                };
+                migrated.subcategories.push(subcategory);
+              }
+              exp.subcategoryId = subcategory.id;
+            }
+          }
+        }
+        return exp;
+      });
+    }
+    
+    // Update schema version
+    migrated.schemaVersion = 3;
+    
+    return migrated;
   }
 };
 
@@ -127,7 +197,7 @@ function loadState() {
     }
     
     // Load all data
-    const data = {
+    let data = {
       schemaVersion: Storage.get('schemaVersion', 1),
       cars: Storage.get('cars', []),
       expenses: Storage.get('expenses', []),

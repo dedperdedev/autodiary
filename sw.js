@@ -18,6 +18,7 @@ const PRECACHE_ASSETS = [
   '/js/reports.js',
   '/js/templates.js',
   '/js/search.js',
+  '/js/diary.js',
   '/js/app.js',
   '/manifest.json'
 ];

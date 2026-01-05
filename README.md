@@ -24,7 +24,7 @@ iOS-inspired vehicle expense and maintenance tracker - мини-приложен
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/yourusername/autodiary.git
+git clone https://github.com/dedperdedev/autodiary.git
 cd autodiary
 ```
 
@@ -41,6 +41,17 @@ npx http-server
 
 Затем откройте http://localhost:8000 в браузере.
 
+## Demo
+
+Приложение доступно на GitHub Pages: https://dedperdedev.github.io/autodiary/
+
+**Настройка GitHub Pages (если еще не настроено):**
+1. Перейдите в Settings → Pages
+2. Выберите Source: Deploy from a branch
+3. Branch: `main`, Folder: `/ (root)`
+4. Сохраните изменения
+5. Приложение будет доступно по адресу: `https://[ваш-username].github.io/autodiary/`
+
 ## Использование
 
 1. **Добавьте автомобиль** - перейдите в "Гараж" и добавьте свой автомобиль
@@ -56,7 +67,12 @@ autodiary/
 ├── css/
 │   └── style.css   # Стили приложения
 ├── js/
-│   └── app.js      # Логика приложения
+│   ├── app.js      # Основная логика приложения
+│   ├── diary.js    # Модуль дневника (фильтрация, статистика)
+│   ├── storage.js  # Модуль хранения данных
+│   ├── fuel.js     # Модуль учета заправок
+│   ├── service.js  # Модуль учета сервиса
+│   └── ...         # Другие модули
 └── README.md       # Документация
 ```
 
