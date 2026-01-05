@@ -2691,6 +2691,248 @@
       if(colorDot) colorDot.style.background = color === 'blue' ? '#0A84FF' : color;
     }
 
+    // Handle trash actions (restore, hard delete)
+    function handleTrashActions(e) {
+      const target = e.target.closest('[data-restore], [data-hard-delete]');
+      if (!target) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (target.dataset.restore) {
+        const itemId = target.dataset.restore;
+        const itemType = target.dataset.itemType || 'expense';
+        
+        // Find item in appropriate array
+        let item = null;
+        let array = null;
+        
+        if (itemType === 'car') {
+          array = state.cars;
+          item = array.find(c => c.id === itemId);
+        } else if (itemType === 'expense') {
+          array = state.expenses;
+          item = array.find(e => e.id === itemId);
+        } else if (itemType === 'reminder') {
+          array = state.reminders;
+          item = array.find(r => r.id === itemId);
+        } else if (itemType === 'fuel') {
+          array = state.fuel || [];
+          item = array.find(f => f.id === itemId);
+        } else if (itemType === 'service') {
+          array = state.service || [];
+          item = array.find(s => s.id === itemId);
+        }
+        
+        if (item && typeof SoftDelete !== 'undefined' && SoftDelete.restore) {
+          SoftDelete.restore(item);
+          if (saveAppState()) {
+            showToast('Восстановлено');
+            renderTrash();
+            // Refresh relevant views
+            renderDiary();
+            renderGarage();
+            renderReminders();
+          }
+        }
+        return;
+      }
+      
+      if (target.dataset.hardDelete) {
+        const itemId = target.dataset.hardDelete;
+        const itemType = target.dataset.itemType || 'expense';
+        
+        showModal('Удалить навсегда?', 'Это действие нельзя отменить. Элемент будет удален безвозвратно.', () => {
+          if (typeof SoftDelete !== 'undefined' && SoftDelete.hardDelete) {
+            let item = null;
+            if (itemType === 'car') {
+              item = state.cars.find(c => c.id === itemId);
+              if (item) SoftDelete.hardDelete(item, 'car', state);
+            } else if (itemType === 'expense') {
+              item = state.expenses.find(e => e.id === itemId);
+              if (item) SoftDelete.hardDelete(item, 'expense', state);
+            } else if (itemType === 'reminder') {
+              item = state.reminders.find(r => r.id === itemId);
+              if (item) SoftDelete.hardDelete(item, 'reminder', state);
+            } else if (itemType === 'fuel') {
+              item = (state.fuel || []).find(f => f.id === itemId);
+              if (item) SoftDelete.hardDelete(item, 'fuel', state);
+            } else if (itemType === 'service') {
+              item = (state.service || []).find(s => s.id === itemId);
+              if (item) SoftDelete.hardDelete(item, 'service', state);
+            }
+            
+            if (saveAppState()) {
+              showToast('Удалено навсегда');
+              renderTrash();
+            }
+          }
+        });
+        return;
+      }
+    }
+    
+    // Handle empty trash button
+    function handleEmptyTrash() {
+      const emptyBtn = document.getElementById('trash-empty-btn');
+      if (emptyBtn) {
+        emptyBtn.addEventListener('click', () => {
+          showModal('Очистить корзину?', 'Все удаленные элементы будут удалены навсегда. Это действие нельзя отменить.', () => {
+            if (typeof SoftDelete !== 'undefined' && SoftDelete.emptyTrash) {
+              SoftDelete.emptyTrash(state);
+              if (saveAppState()) {
+                showToast('Корзина очищена');
+                renderTrash();
+                refreshSettingsScreen();
+              }
+            }
+          });
+        });
+      }
+    }
+    
+    // Render trash screen
+    function renderTrash() {
+      const container = document.getElementById('trash-list');
+      const emptyMsg = document.getElementById('trash-empty-message');
+      if (!container) return;
+      
+      // Get all deleted items
+      const deletedItems = [];
+      
+      // Get deleted cars
+      (state.cars || []).filter(c => c.deletedAt).forEach(car => {
+        deletedItems.push({ ...car, type: 'car', typeLabel: 'Автомобиль' });
+      });
+      
+      // Get deleted expenses
+      (state.expenses || []).filter(e => e.deletedAt).forEach(exp => {
+        const car = state.cars.find(c => c.id === exp.carId);
+        deletedItems.push({ 
+          ...exp, 
+          type: 'expense', 
+          typeLabel: 'Расход',
+          carName: car ? `${car.brand} ${car.model}` : ''
+        });
+      });
+      
+      // Get deleted reminders
+      (state.reminders || []).filter(r => r.deletedAt).forEach(rem => {
+        const car = state.cars.find(c => c.id === rem.carId);
+        deletedItems.push({ 
+          ...rem, 
+          type: 'reminder', 
+          typeLabel: 'Напоминание',
+          carName: car ? `${car.brand} ${car.model}` : ''
+        });
+      });
+      
+      // Get deleted fuel entries
+      ((state.fuel || []).filter(f => f.deletedAt)).forEach(fuel => {
+        const car = state.cars.find(c => c.id === fuel.carId);
+        deletedItems.push({ 
+          ...fuel, 
+          type: 'fuel', 
+          typeLabel: 'Заправка',
+          carName: car ? `${car.brand} ${car.model}` : ''
+        });
+      });
+      
+      // Get deleted service entries
+      ((state.service || []).filter(s => s.deletedAt)).forEach(service => {
+        const car = state.cars.find(c => c.id === service.carId);
+        deletedItems.push({ 
+          ...service, 
+          type: 'service', 
+          typeLabel: 'Сервис',
+          carName: car ? `${car.brand} ${car.model}` : ''
+        });
+      });
+      
+      // Sort by deletion date (newest first)
+      deletedItems.sort((a, b) => {
+        const dateA = new Date(a.deletedAt);
+        const dateB = new Date(b.deletedAt);
+        return dateB - dateA;
+      });
+      
+      if (deletedItems.length === 0) {
+        container.innerHTML = '';
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+      }
+      
+      if (emptyMsg) emptyMsg.style.display = 'none';
+      container.innerHTML = '';
+      
+      // Group by type
+      const byType = {};
+      deletedItems.forEach(item => {
+        if (!byType[item.type]) {
+          byType[item.type] = [];
+        }
+        byType[item.type].push(item);
+      });
+      
+      Object.keys(byType).forEach(type => {
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        
+        const header = document.createElement('div');
+        header.className = 'ios-group-header';
+        header.textContent = byType[type][0].typeLabel;
+        group.appendChild(header);
+        
+        byType[type].forEach(item => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          
+          let title = '';
+          let subtitle = '';
+          
+          if (type === 'car') {
+            title = `${item.brand} ${item.model}`;
+            subtitle = item.year ? `${item.year} год` : '';
+          } else if (type === 'expense') {
+            title = `${(item.amount || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴`;
+            subtitle = `${item.carName || ''} • ${item.date ? new Date(item.date).toLocaleDateString('ru-RU') : ''}`;
+          } else if (type === 'reminder') {
+            title = item.title || 'Напоминание';
+            subtitle = `${item.carName || ''} • ${item.dueDate ? new Date(item.dueDate).toLocaleDateString('ru-RU') : ''}`;
+          } else if (type === 'fuel') {
+            title = `${item.liters ? item.liters.toFixed(2) : 0} л`;
+            subtitle = `${item.carName || ''} • ${item.date ? new Date(item.date).toLocaleDateString('ru-RU') : ''}`;
+          } else if (type === 'service') {
+            title = item.typeLabel || item.type || 'Сервис';
+            subtitle = `${item.carName || ''} • ${item.date ? new Date(item.date).toLocaleDateString('ru-RU') : ''}`;
+          }
+          
+          cell.innerHTML = `
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">${escapeHtml(title)}</div>
+              <div class="ios-cell-subtitle">${escapeHtml(subtitle)}</div>
+              <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary); font-size: var(--font-size-caption);">
+                Удалено: ${new Date(item.deletedAt).toLocaleDateString('ru-RU')} ${new Date(item.deletedAt).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+              </div>
+            </div>
+            <div class="ios-cell-trailing">
+              <button class="ios-cell-action-btn" data-restore="${item.id}" data-item-type="${type}" title="Восстановить" style="color: var(--success);">
+                <i data-lucide="rotate-ccw"></i>
+              </button>
+              <button class="ios-cell-action-btn" data-hard-delete="${item.id}" data-item-type="${type}" title="Удалить навсегда" style="color: var(--destructive);">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          `;
+          group.appendChild(cell);
+        });
+        
+        container.appendChild(group);
+      });
+      
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
     // Attach trash action handlers
     document.body.addEventListener('click', handleTrashActions);
     handleEmptyTrash();
