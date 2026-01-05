@@ -8,7 +8,6 @@ const Diary = {
     const filters = {
       timePeriod: 'week', // week, month, year, all
       category: 'all',
-      search: '',
       carId: saved || '__all__'
     };
     
@@ -53,18 +52,6 @@ const Diary = {
       });
     }
     
-    // Filter by search (use global search if available)
-    if (filters.search) {
-      if (typeof Search !== 'undefined' && Search.globalSearch) {
-        filtered = Search.globalSearch(filters.search, filtered, state);
-      } else {
-        const searchLower = filters.search.toLowerCase();
-        filtered = filtered.filter(e => 
-          (e.category && e.category.toLowerCase().includes(searchLower)) ||
-          (e.notes && e.notes.toLowerCase().includes(searchLower))
-        );
-      }
-    }
     
     // Filter by time period
     if (filters.timePeriod !== 'all') {
@@ -95,15 +82,6 @@ const Diary = {
     // Filter by car
     if (filters.carId !== '__all__') {
       filtered = filtered.filter(r => r.carId === filters.carId);
-    }
-    
-    // Filter by search
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(r =>
-        (r.title && r.title.toLowerCase().includes(searchLower)) ||
-        (r.notes && r.notes.toLowerCase().includes(searchLower))
-      );
     }
     
     // Filter by time period using dueDate
@@ -170,7 +148,6 @@ const Diary = {
     const carSelect = document.createElement('select');
     carSelect.id = 'diary-car-filter';
     carSelect.className = 'diary-car-filter';
-    carSelect.style.cssText = 'appearance: none; background: var(--surface); border: 1px solid var(--separator); border-radius: var(--radius-sm); padding: var(--space-xs) var(--space-sm); font-size: var(--font-size-body); color: var(--text); min-width: 120px; cursor: pointer;';
     
     // Add "All cars" option
     const allOption = document.createElement('option');

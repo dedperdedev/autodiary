@@ -1374,76 +1374,60 @@ body {
 /* Filter & Search */
 .filter {
   margin: var(--space-md) var(--space-lg);
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 44px;
   align-items: center;
   gap: var(--space-sm);
-  flex-wrap: wrap;
   position: relative;
-}
-
-.filter.search-expanded select,
-.filter.search-expanded > button:not(.search-box) {
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-  min-width: 0;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.filter select,
-.filter > button:not(.search-box) {
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter select {
   background: var(--surface);
   border: 0.5px solid var(--separator);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-md);
   font-size: var(--font-size-body);
   font-family: var(--font-system);
   color: var(--text);
   appearance: none;
   cursor: pointer;
-  min-height: 44px;
-  flex: 1;
-  min-width: 120px;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 44px;
+  min-width: 0;
+  transition: transform 0.15s ease-out, background 0.15s ease-out;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter select:active {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(0.98);
+}
+
+.filter select:first-of-type {
+  /* Vehicle selector - wider */
+  grid-column: 1;
+}
+
+.filter select#diary-category-filter {
+  /* Category filter */
+  grid-column: 2;
 }
 
 .filter button {
   background: var(--surface);
   border: 0.5px solid var(--separator);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  min-height: 44px;
-  min-width: 44px;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  height: 44px;
+  width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              margin 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.15s ease-out;
+  transition: transform 0.15s ease-out, background 0.15s ease-out;
   flex-shrink: 0;
+  grid-column: 3;
 }
 
 .filter button:active {
@@ -1458,49 +1442,28 @@ body {
   stroke-width: 2;
 }
 
-.search-box {
-  flex: 1;
-  display: flex;
-  align-items: center;
+.diary-car-filter {
   background: var(--surface);
   border: 0.5px solid var(--separator);
-  border-radius: var(--radius-md);
-  padding: 0 var(--space-md);
-  min-height: 44px;
-  min-width: 0;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-}
-
-.search-box.expanded {
-  position: absolute;
-  left: 0;
-  right: 0;
-  width: 100%;
-  flex: none;
-  z-index: 100;
-  box-shadow: var(--shadow-md);
-  margin: 0;
-  border-radius: var(--radius-md);
-}
-
-.search-box input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: var(--space-md) var(--space-sm);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
   font-size: var(--font-size-body);
   font-family: var(--font-system);
   color: var(--text);
-  outline: none;
+  appearance: none;
+  cursor: pointer;
+  height: 44px;
+  min-width: 0;
+  transition: transform 0.15s ease-out, background 0.15s ease-out;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  grid-column: 1;
 }
 
-.search-box svg {
-  width: 20px;
-  height: 20px;
-  stroke: var(--text-secondary);
-  stroke-width: 2;
+.diary-car-filter:active {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(0.98);
 }
 
 /* Diary Statistics Summary */

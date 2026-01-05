@@ -24,16 +24,13 @@
       <button>Год</button>
     </div>
     <div class="filter">
+      <!-- Car filter will be inserted here by Diary.renderCarFilter() -->
       <select id="diary-category-filter">
         <option value="all">Все</option>
       </select>
-      <button title="Фильтр по дате" type="button">
+      <button title="Фильтр по дате" type="button" id="diary-date-filter-btn">
         <i data-lucide="calendar"></i>
       </button>
-      <div class="search-box">
-        <input type="text" placeholder="Поиск" id="diary-search-input">
-        <i data-lucide="search"></i>
-      </div>
     </div>
     
     <!-- Statistics Summary -->

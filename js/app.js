@@ -92,8 +92,7 @@
     let diaryFilters = typeof Diary !== 'undefined' && Diary.initFilters ? 
       Diary.initFilters() : {
         timePeriod: 'week',
-      category: 'all',
-      search: '',
+        category: 'all',
         carId: '__all__'
       };
 
@@ -749,41 +748,6 @@
           });
         }
         categorySelect.value = diaryFilters.category === 'all' ? 'all' : diaryFilters.category;
-      }
-      
-      const searchInput = container.querySelector('.filter .search-box input');
-      const searchBox = container.querySelector('.filter .search-box');
-      const filterContainer = container.querySelector('.filter');
-      
-      if(searchInput && searchBox && filterContainer) {
-        searchInput.value = diaryFilters.search;
-        
-        // Remove old listeners and add new one with debounce
-        const newSearchInput = searchInput.cloneNode(true);
-        searchInput.parentNode.replaceChild(newSearchInput, searchInput);
-        
-        let searchTimeout;
-        newSearchInput.addEventListener('input', () => {
-          clearTimeout(searchTimeout);
-          searchTimeout = setTimeout(() => {
-            diaryFilters.search = newSearchInput.value.trim();
-            renderDiary();
-          }, 300);
-        });
-        
-        // Expand search box on focus
-        newSearchInput.addEventListener('focus', () => {
-          searchBox.classList.add('expanded');
-          filterContainer.classList.add('search-expanded');
-        });
-        
-        // Collapse search box on blur if empty
-        newSearchInput.addEventListener('blur', () => {
-          if (!newSearchInput.value.trim()) {
-            searchBox.classList.remove('expanded');
-            filterContainer.classList.remove('search-expanded');
-          }
-        });
       }
       
       // Remove existing records, empty messages, and grouped lists
