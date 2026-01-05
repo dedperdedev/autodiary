@@ -1372,98 +1372,108 @@ body {
 }
 
 /* Filter & Search */
-.filter {
+/* Diary Toolbar - Pill Container */
+.diary-toolbar {
   margin: var(--space-md) var(--space-lg);
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  padding: 8px;
   display: grid;
   grid-template-columns: 1fr 1fr 44px;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 10px;
   position: relative;
 }
 
-.filter select {
-  background: var(--surface);
-  border: 0.5px solid var(--separator);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  font-size: var(--font-size-body);
-  font-family: var(--font-system);
-  color: var(--text);
-  appearance: none;
-  cursor: pointer;
+/* Toolbar Chips (Vehicle & Category) */
+.diary-toolbar-chip {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 0 14px;
   height: 44px;
-  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
   transition: transform 0.15s ease-out, background 0.15s ease-out;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.filter select:active {
-  background: rgba(0, 0, 0, 0.05);
+.diary-toolbar-chip:active {
+  background: rgba(15, 23, 42, 0.05);
   transform: scale(0.98);
 }
 
-.filter select:first-of-type {
-  /* Vehicle selector - wider */
-  grid-column: 1;
+.diary-toolbar-chip .chip-text {
+  flex: 1;
+  font-size: 15px;
+  color: rgba(15, 23, 42, 0.80);
+  font-family: var(--font-system);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.filter select#diary-category-filter {
-  /* Category filter */
-  grid-column: 2;
+.diary-toolbar-chip i {
+  width: 20px;
+  height: 20px;
+  stroke: rgba(15, 23, 42, 0.55);
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 
-.filter button {
-  background: var(--surface);
-  border: 0.5px solid var(--separator);
-  border-radius: var(--radius-lg);
-  padding: 0;
-  height: 44px;
+.diary-toolbar-chip i:last-child {
+  margin-left: auto;
+}
+
+/* Date Button */
+.diary-toolbar-date-btn {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
   width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease-out, background 0.15s ease-out;
   flex-shrink: 0;
-  grid-column: 3;
+  padding: 0;
 }
 
-.filter button:active {
-  background: rgba(0, 0, 0, 0.05);
+.diary-toolbar-date-btn:active {
+  background: rgba(15, 23, 42, 0.05);
   transform: scale(0.95);
 }
 
-.filter button svg {
+.diary-toolbar-date-btn i {
   width: 20px;
   height: 20px;
-  stroke: var(--text-secondary);
+  stroke: rgba(15, 23, 42, 0.55);
   stroke-width: 2;
 }
 
-.diary-car-filter {
+/* Dark theme support */
+[data-theme="dark"] .diary-toolbar,
+[data-theme="dark"] .diary-toolbar-chip,
+[data-theme="dark"] .diary-toolbar-date-btn {
   background: var(--surface);
-  border: 0.5px solid var(--separator);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  font-size: var(--font-size-body);
-  font-family: var(--font-system);
-  color: var(--text);
-  appearance: none;
-  cursor: pointer;
-  height: 44px;
-  min-width: 0;
-  transition: transform 0.15s ease-out, background 0.15s ease-out;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  grid-column: 1;
+  border-color: var(--separator);
 }
 
-.diary-car-filter:active {
-  background: rgba(0, 0, 0, 0.05);
-  transform: scale(0.98);
+[data-theme="dark"] .diary-toolbar-chip .chip-text {
+  color: var(--text);
+}
+
+[data-theme="dark"] .diary-toolbar-chip i,
+[data-theme="dark"] .diary-toolbar-date-btn i {
+  stroke: var(--text-secondary);
 }
 
 /* Diary Statistics Summary */

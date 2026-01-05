@@ -45,6 +45,78 @@
         if(e.target === overlay) cleanup();
       };
     }
+    
+    // Show date range picker bottom sheet
+    function showDateRangePicker(filters) {
+      const sheet = document.createElement('div');
+      sheet.className = 'ios-sheet-overlay';
+      sheet.id = 'date-range-picker-sheet';
+      
+      const today = new Date();
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+      
+      sheet.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-header">
+            <h2>Период</h2>
+            <button class="ios-sheet-close" data-close-sheet>
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="ios-sheet-content">
+            <div class="ios-grouped-list">
+              <div class="ios-group">
+                <div class="ios-cell" data-select-period="week">
+                  <div class="ios-cell-content">
+                    <div class="ios-cell-title">Неделя</div>
+                  </div>
+                </div>
+                <div class="ios-cell" data-select-period="month">
+                  <div class="ios-cell-content">
+                    <div class="ios-cell-title">Месяц</div>
+                  </div>
+                </div>
+                <div class="ios-cell" data-select-period="year">
+                  <div class="ios-cell-content">
+                    <div class="ios-cell-title">Год</div>
+                  </div>
+                </div>
+                <div class="ios-cell" data-select-period="all">
+                  <div class="ios-cell-content">
+                    <div class="ios-cell-title">Все время</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(sheet);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      
+      // Close handlers
+      sheet.querySelector('[data-close-sheet]').addEventListener('click', () => {
+        sheet.remove();
+      });
+      sheet.addEventListener('click', (e) => {
+        if (e.target === sheet) {
+          sheet.remove();
+        }
+      });
+      
+      // Selection handlers
+      sheet.querySelectorAll('[data-select-period]').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const period = cell.dataset.selectPeriod;
+          filters.timePeriod = period;
+          sheet.remove();
+          renderDiary();
+        });
+      });
+    }
 
     // Compatibility wrapper for old Storage API (autodiary:key format)
     const StorageCompat = {
@@ -705,9 +777,9 @@
       const container = document.querySelector('#screen-diary');
       if(!container) return;
       
-      // Render car filter dropdown
-      if (typeof Diary !== 'undefined' && Diary.renderCarFilter) {
-        Diary.renderCarFilter(container, diaryFilters, state);
+      // Initialize toolbar chips using Diary module
+      if (typeof Diary !== 'undefined' && Diary.initToolbar) {
+        Diary.initToolbar(container, diaryFilters, state);
       }
       
       // Filter out deleted items
@@ -724,31 +796,6 @@
            diaryFilters.timePeriod === 'month' ? 'Месяц' : 
            diaryFilters.timePeriod === 'year' ? 'Год' : 'Все'));
       });
-      
-      // Populate category filter
-      const categorySelect = document.getElementById('diary-category-filter');
-      if(categorySelect) {
-        // Get unique category names (from categoryId or legacy category field)
-        const categoryNames = new Set();
-        activeExpenses.forEach(exp => {
-          if(exp.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) {
-            const name = Categories.getCategoryName(state.categories || [], exp.categoryId);
-            if(name) categoryNames.add(name);
-          } else if(exp.category) {
-            categoryNames.add(exp.category);
-          }
-        });
-        const categories = ['Все', ...Array.from(categoryNames).sort()];
-        if(categorySelect.options.length === 1) {
-          categories.slice(1).forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            categorySelect.appendChild(option);
-          });
-        }
-        categorySelect.value = diaryFilters.category === 'all' ? 'all' : diaryFilters.category;
-      }
       
       // Remove existing records, empty messages, and grouped lists
       const existingRecords = container.querySelectorAll('.record');
@@ -2317,12 +2364,12 @@
         return;
       }
       
-      // Category filter
-      const categorySelect = e.target.closest('#diary-category-filter');
-      if(categorySelect) {
+      // Date filter button
+      const dateFilterBtn = e.target.closest('#diary-date-filter-btn');
+      if(dateFilterBtn) {
         e.stopPropagation();
-        diaryFilters.category = categorySelect.value === 'all' ? 'all' : categorySelect.value;
-        renderDiary();
+        // Open date range picker
+        showDateRangePicker(diaryFilters);
         return;
       }
     });

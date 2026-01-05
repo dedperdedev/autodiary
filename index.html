@@ -23,12 +23,17 @@
       <button>Месяц</button>
       <button>Год</button>
     </div>
-    <div class="filter">
-      <!-- Car filter will be inserted here by Diary.renderCarFilter() -->
-      <select id="diary-category-filter">
-        <option value="all">Все</option>
-      </select>
-      <button title="Фильтр по дате" type="button" id="diary-date-filter-btn">
+    <div class="diary-toolbar">
+      <div class="diary-toolbar-chip" id="diary-vehicle-chip">
+        <i data-lucide="car"></i>
+        <span class="chip-text">Все авто</span>
+        <i data-lucide="chevron-down"></i>
+      </div>
+      <div class="diary-toolbar-chip" id="diary-category-chip">
+        <i data-lucide="filter"></i>
+        <span class="chip-text">Категория: Все</span>
+      </div>
+      <button class="diary-toolbar-date-btn" id="diary-date-filter-btn" title="Фильтр по дате">
         <i data-lucide="calendar"></i>
       </button>
     </div>
