@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0A84FF">
+  <meta name="description" content="Дневник расходов на автомобиль">
   <title>AutoDiary — мини-приложение</title>
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -37,9 +40,9 @@
     <div class="diary-stats" id="diary-stats">
       <!-- Stats will be rendered dynamically -->
     </div>
-    
+
     <!-- Records rendered dynamically -->
-    
+
     <!-- Floating Action Button -->
     <button class="ios-fab" id="diary-add-btn" title="Добавить расход">
       <i data-lucide="plus"></i>
@@ -79,11 +82,11 @@
         <div class="ios-navbar-actions">
           <button class="ios-navbar-button" data-goto="screen-car-settings" data-backto="screen-car-details" title="Интервалы ТО">
             <svg viewBox="0 0 24 24">
-              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.27 1 1.51.32.13.66.2 1.01.2H21a2 2 0 1 1 0 4h-.09c-.35 0-.69.07-1.01.2a1.65 1.65 0 0 0-1 1.09Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.27 1 1.51.32.13.66.2 1.01.2H21a2 2 0 1 1 0 4h-.09c-.35 0-.69.07-1.01.2a1.65 1.65 0 0 0-1 1.09Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
       </div>
     </div>
     <div class="car-head">
@@ -97,6 +100,22 @@
       <div class="mini-metric"><strong id="md3">0</strong>UAH/день</div>
     </div>
     <p class="note">Пробег и даты сохраняются локально в рамках прототипа.</p>
+
+    <!-- Tab Navigation -->
+    <div class="car-tabs" style="display: flex; border-bottom: 0.5px solid var(--separator); margin: 0 var(--space-lg);">
+      <button class="car-tab active" data-tab="expenses" style="flex: 1; padding: var(--space-md); background: none; border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-weight: 600;">
+        Расходы
+      </button>
+      <button class="car-tab" data-tab="fuel" style="flex: 1; padding: var(--space-md); background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary);">
+        Заправки
+      </button>
+      <button class="car-tab" data-tab="service" style="flex: 1; padding: var(--space-md); background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary);">
+        Сервис
+      </button>
+    </div>
+    
+    <!-- Expenses Tab -->
+    <div class="car-tab-content active" id="tab-expenses">
     <div class="section">
       <h3>ТО и замены</h3>
       <div class="field">
@@ -193,9 +212,72 @@
           <div class="col"><input type="date"></div>
         </div>
       </div>
+        </div>
+      </div>
     </div>
-    <div class="save-btn">
-      <button data-goto="screen-garage">Сохранить</button>
+
+    <!-- Fuel Tab -->
+    <div class="car-tab-content" id="tab-fuel" style="display: none;">
+      <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+          <h3>Заправки</h3>
+          <button class="ios-button ios-button-primary" id="add-fuel-entry-btn" style="padding: var(--space-sm) var(--space-md);">
+            <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-xs);"></i>
+            Добавить
+          </button>
+        </div>
+        <div id="fuel-stats" style="margin-bottom: var(--space-lg);">
+          <!-- Fuel statistics will be rendered here -->
+        </div>
+        <div class="ios-grouped-list" id="fuel-entries-list">
+          <!-- Fuel entries will be rendered here -->
+        </div>
+        <div id="fuel-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 48px; margin-bottom: var(--space-md);">⛽</div>
+          <p>Нет записей о заправках</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Service Tab -->
+    <div class="car-tab-content" id="tab-service" style="display: none;">
+      <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+          <h3>Сервис</h3>
+          <button class="ios-button ios-button-primary" id="add-service-entry-btn" style="padding: var(--space-sm) var(--space-md);">
+            <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-xs);"></i>
+            Добавить
+          </button>
+        </div>
+        <div id="service-stats" style="margin-bottom: var(--space-lg);">
+          <!-- Service statistics will be rendered here -->
+        </div>
+        <div class="ios-grouped-list" id="service-entries-list">
+          <!-- Service records will be rendered here -->
+        </div>
+        <div id="service-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 48px; margin-bottom: var(--space-md);">🔧</div>
+          <p>Нет записей о сервисе</p>
+        </div>
+      </div><div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+          <h3>Сервис</h3>
+          <button class="ios-button ios-button-primary" id="add-service-entry-btn" style="padding: var(--space-sm) var(--space-md);">
+            <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-xs);"></i>
+            Добавить
+          </button>
+        </div>
+        <div id="service-schedule" style="margin-bottom: var(--space-lg);">
+          <!-- Service schedule with due logic will be rendered here -->
+        </div>
+        <div class="ios-grouped-list" id="service-entries-list">
+          <!-- Service entries will be rendered here -->
+        </div>
+        <div id="service-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 48px; margin-bottom: var(--space-md);">🔧</div>
+          <p>Нет записей о сервисе</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -408,30 +490,56 @@
           <input id="time" type="time">
         </div>
       </div>
-      <div class="field nav" data-goto="screen-add-expense" data-backto="screen-expense-form">
-        <label>Категория расходов</label>
+      <div class="field nav" id="expense-category-picker" data-backto="screen-expense-form">
+        <label>Категория расходов *</label>
         <div style="display:flex;align-items:center;gap:6px">
           <div id="expense-category-value" style="color:var(--text);opacity:.9">Выбрать</div>
           <span class="arrow">›</span>
         </div>
+        <input type="hidden" id="expense-category-id">
+        <input type="hidden" id="expense-subcategory-id">
       </div>
       <div class="field">
-        <label>Фото</label>
-        <div class="chip" style="cursor:pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h4l2-3h6l2 3h4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span>Добавить изображение</span>
-          <span class="premium-dot" title="Премиум"></span>
+        <label>Чеки/Фото</label>
+        <div id="expense-receipts-preview" style="display: none; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+          <!-- Receipt thumbnails will be rendered here -->
         </div>
+        <div class="chip" id="expense-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="expense-receipt-input" accept="image/*" multiple style="display: none;">
       </div>
       <div class="field">
         <label>Заметки</label>
         <textarea id="notes" placeholder=""></textarea>
+      </div>
+      <div class="field">
+        <label>Чеки/Фото</label>
+        <div id="expense-receipts-preview" style="display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+          <!-- Receipt thumbnails will be rendered here -->
+    </div>
+        <div class="chip" id="expense-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="expense-receipt-input" accept="image/*" multiple style="display: none;">
       </div>
     </div>
     <div class="save-btn">
       <button data-goto="screen-diary">Сохранить</button>
     </div>
   </section>
+  
+  <!-- Receipt Viewer Modal -->
+  <div class="ios-modal-overlay" id="receipt-viewer-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10000; overflow: auto;">
+    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: var(--space-lg);">
+      <button class="ios-navbar-button" id="receipt-viewer-close" style="position: absolute; top: var(--space-md); right: var(--space-md); z-index: 10001; color: white; background: rgba(0,0,0,0.5); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
+        <i data-lucide="x"></i>
+      </button>
+      <img id="receipt-viewer-image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+    </div>
+  </div>
 
   <!-- Add Expense (Categories) View -->
   <section id="screen-add-expense" class="view">
@@ -482,6 +590,29 @@
     </div>
   </section>
 
+  <!-- Trash Screen -->
+  <section id="screen-trash" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Корзина</h1>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" id="trash-empty-btn" style="color: var(--destructive);">
+            Очистить
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="ios-grouped-list" id="trash-list">
+        <!-- Trash items will be rendered here -->
+      </div>
+      <div id="trash-empty-message" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+        <div style="font-size: 48px; margin-bottom: var(--space-md);">🗑️</div>
+        <p>Корзина пуста</p>
+      </div>
+    </div>
+  </section>
+
   <!-- Bottom Tabbar -->
   <nav class="tabbar">
     <div class="tab active" data-goto="screen-diary">
@@ -492,11 +623,11 @@
       <i data-lucide="home"></i>
       <span>Гараж</span>
     </div>
-    <div class="tab" data-goto="screen-settings">
+  <div class="tab" data-goto="screen-settings">
       <i data-lucide="settings"></i>
-      <span>Параметры</span>
-    </div>
-  </nav>
+    <span>Параметры</span>
+  </div>
+</nav>
 
   <!-- Expense Category Bottom Sheet -->
   <div class="ios-sheet-overlay" id="expense-category-sheet">
@@ -510,11 +641,17 @@
       </div>
       <div class="ios-sheet-content">
         <div class="expense-category-grid">
-          <button class="expense-category-item" data-category="Заправка" data-scroll="#section-fuel">
+          <button class="expense-category-item" data-goto="screen-add-fuel" data-type="fuel">
             <div class="expense-category-icon" style="background: rgba(255, 149, 0, 0.15); color: #FF9500;">
               <i data-lucide="fuel"></i>
             </div>
             <span>Заправка</span>
+          </button>
+          <button class="expense-category-item" data-goto="screen-add-service" data-type="service">
+            <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.15); color: #007AFF;">
+              <i data-lucide="wrench"></i>
+            </div>
+            <span>Сервис</span>
           </button>
           <button class="expense-category-item" data-category="Электрозарядка">
             <div class="expense-category-icon" style="background: rgba(52, 199, 89, 0.15); color: #34C759;">
@@ -524,7 +661,7 @@
           </button>
           <button class="expense-category-item" data-category="Техническое обслуживание">
             <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.15); color: #007AFF;">
-              <i data-lucide="wrench"></i>
+              <i data-lucide="tool"></i>
             </div>
             <span>ТО</span>
           </button>
@@ -650,71 +787,202 @@
       <div class="section">
         <button class="btn btn-primary" style="width:100%;margin-bottom:12px" id="export-csv-btn">Экспорт CSV</button>
         <button class="btn btn-accent" style="width:100%;margin-bottom:12px" id="export-json-btn">Экспорт JSON</button>
-        <button class="btn btn-secondary" style="width:100%" id="import-json-btn">Импорт JSON</button>
+        <button class="btn btn-secondary" style="width:100%;margin-bottom:12px" id="import-json-btn">Импорт JSON</button>
+        <button class="btn btn-primary" style="width:100%" id="reports-btn" data-goto="screen-reports">Отчеты</button>
         <input type="file" id="import-file-input" accept=".json" style="display:none">
       </div>
     </div>
   </section>
+  
+  <!-- Reports View -->
+  <section id="screen-reports" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Отчеты</h1>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" id="reports-print-btn" title="Печать">
+            <i data-lucide="printer"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Автомобиль</label>
+        <select id="reports-car-select">
+          <option value="">Все автомобили</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Период с</label>
+        <input type="date" id="reports-date-from">
+      </div>
+      <div class="field">
+        <label>Период по</label>
+        <input type="date" id="reports-date-to">
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:var(--space-md)" id="reports-generate-btn">Сформировать отчет</button>
+    </div>
+    <div class="section" id="reports-content" style="display:none;">
+      <!-- Report content will be rendered here -->
+    </div>
+    <div class="section" id="reports-print-content" style="display:none;">
+      <!-- Print-optimized content -->
+    </div>
+  </section>
 
-  <!-- Settings PAGE -->
-  <section id="screen-settings" class="view">
+  <!-- Recovery Screen (shown when data is corrupted) -->
+  <section id="screen-recovery" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Восстановление данных</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section" style="padding: var(--space-xl); text-align: center;">
+      <div style="font-size: 48px; margin-bottom: var(--space-lg);">⚠️</div>
+      <h2 style="margin-bottom: var(--space-md);">Обнаружена проблема с данными</h2>
+      <p style="color: var(--text-secondary); margin-bottom: var(--space-xl);">
+        Данные приложения повреждены или имеют несовместимый формат. Вы можете попробовать восстановить их из резервной копии или сбросить приложение.
+      </p>
+      
+      <div class="ios-group" style="margin-bottom: var(--space-lg);">
+        <div class="ios-group-header">Действия</div>
+        <div class="ios-cell" id="recovery-download-raw" style="cursor: pointer;">
+          <div class="ios-cell-icon">
+            <i data-lucide="download"></i>
+            </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Скачать сырые данные</div>
+            <div class="ios-cell-subtitle">Скачать JSON файл с текущими данными для анализа</div>
+              </div>
+              </div>
+        <div class="ios-cell" id="recovery-import-backup" style="cursor: pointer;">
+          <div class="ios-cell-icon">
+            <i data-lucide="upload"></i>
+            </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Восстановить из резервной копии</div>
+            <div class="ios-cell-subtitle">Импортировать ранее сохраненный файл</div>
+          </div>
+        </div>
+        <div class="ios-cell" id="recovery-reset" style="cursor: pointer; color: var(--destructive);">
+          <div class="ios-cell-icon">
+            <i data-lucide="trash-2"></i>
+          </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Сбросить данные</div>
+            <div class="ios-cell-subtitle">Удалить все данные и начать заново</div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="recovery-error-message" style="display: none; padding: var(--space-md); background: var(--destructive-bg); color: var(--destructive); border-radius: var(--radius-md); margin-top: var(--space-lg);">
+        <strong>Ошибка:</strong> <span id="recovery-error-text"></span>
+          </div>
+    </div>
+    <input type="file" id="recovery-import-input" accept=".json" style="display: none;">
+  </section>
+
+<!-- Settings PAGE -->
+<section id="screen-settings" class="view">
     <div class="ios-navbar">
       <div>
         <h1 class="ios-navbar-large-title">Параметры</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
-    <div class="settings-premium card-ios">
-      <div class="row">
-        <div class="left">
-          <span class="tile tile-blue">
+  <div class="settings-premium card-ios">
+    <div class="row">
+      <div class="left">
+        <span class="tile tile-blue">
             <i data-lucide="star"></i>
-          </span>
-          <div>
-            <div class="title">Премиум доступ</div>
-            <div class="sub">Используйте без ограничений</div>
-          </div>
+        </span>
+        <div>
+          <div class="title">Премиум доступ</div>
+          <div class="sub">Используйте без ограничений</div>
         </div>
       </div>
     </div>
-    <div class="s-list card-ios">
+  </div>
+  <div class="s-list card-ios">
       <div class="s-item" data-goto="screen-export">
-        <div class="left">
-          <span class="tile tile-green">
+      <div class="left">
+        <span class="tile tile-green">
             <i data-lucide="download"></i>
+        </span>
+        <div class="label">Экспорт данных</div>
+      </div>
+      <div class="right chevron">›</div>
+    </div>
+      <div class="s-item" data-goto="screen-trash">
+        <div class="left">
+          <span class="tile tile-orange">
+            <i data-lucide="trash-2"></i>
           </span>
-          <div class="label">Экспорт данных</div>
+          <div class="label">Корзина</div>
+  </div>
+        <div class="right">
+          <span class="value" id="trash-count">0</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+    </div>
+  <div class="s-list card-ios">
+    <div class="s-item">
+      <div class="left">
+        <span class="tile tile-blue">
+            <i data-lucide="car"></i>
+        </span>
+        <div class="label">Мои авто</div>
+      </div>
+      <div class="right"><span class="value" id="set-cars-count">0</span></div>
+    </div>
+      <div class="s-item" data-goto="screen-categories-management">
+      <div class="left">
+        <span class="tile tile-indigo">
+            <i data-lucide="grid"></i>
+        </span>
+        <div class="label">Категории</div>
+      </div>
+        <div class="right">
+          <span class="value" id="set-cats-count">—</span>
+          <span class="chevron">›</span>
+    </div>
+      </div>
+      <div class="s-item" id="currency-item" style="cursor: pointer;">
+      <div class="left">
+        <span class="tile tile-green">
+            <i data-lucide="dollar-sign"></i>
+        </span>
+        <div class="label">Валюта</div>
+      </div>
+        <div class="right"><span class="value" id="set-currency">₴</span></div>
+    </div>
+  </div>
+    <div class="s-list card-ios">
+      <div class="s-item" data-goto="screen-units-settings">
+        <div class="left">
+          <span class="tile tile-blue">
+            <i data-lucide="ruler"></i>
+          </span>
+          <div class="label">Единицы измерения</div>
         </div>
         <div class="right chevron">›</div>
       </div>
-    </div>
-    <div class="s-list card-ios">
       <div class="s-item">
         <div class="left">
-          <span class="tile tile-blue">
-            <i data-lucide="car"></i>
+          <span class="tile tile-orange">
+            <i data-lucide="gauge"></i>
           </span>
-          <div class="label">Мои авто</div>
+          <div class="label">Требовать пробег</div>
         </div>
-        <div class="right"><span class="value" id="set-cars-count">0</span></div>
-      </div>
-      <div class="s-item">
-        <div class="left">
-          <span class="tile tile-indigo">
-            <i data-lucide="grid"></i>
-          </span>
-          <div class="label">Категории</div>
+        <div class="right">
+          <label class="ios-switch">
+            <input type="checkbox" id="set-require-odometer">
+            <span></span>
+          </label>
         </div>
-        <div class="right"><span class="value" id="set-cats-count">—</span></div>
-      </div>
-      <div class="s-item">
-        <div class="left">
-          <span class="tile tile-green">
-            <i data-lucide="dollar-sign"></i>
-          </span>
-          <div class="label">Валюта</div>
-        </div>
-        <div class="right"><span class="chip">UAH</span></div>
       </div>
     </div>
     <div class="s-list card-ios">
@@ -728,39 +996,396 @@
         <div class="right chevron">›</div>
       </div>
     </div>
-    <div class="s-list card-ios">
-      <div class="s-item">
-        <div class="left">
-          <span class="tile tile-blue">
+  <div class="s-list card-ios">
+    <div class="s-item">
+      <div class="left">
+        <span class="tile tile-blue">
             <i data-lucide="palette"></i>
-          </span>
-          <div class="label">Тема</div>
-        </div>
-        <div class="right"><button class="link" id="set-theme">Светлая</button></div>
+        </span>
+        <div class="label">Тема</div>
       </div>
-      <div class="s-item">
-        <div class="left">
-          <span class="tile tile-blue">
+      <div class="right"><button class="link" id="set-theme">Светлая</button></div>
+    </div>
+    <div class="s-item">
+      <div class="left">
+        <span class="tile tile-blue">
             <i data-lucide="droplet"></i>
-          </span>
-          <div class="label">Основной цвет</div>
-        </div>
-        <div class="right"><span class="dot" id="set-color-dot"></span><button class="link" id="set-color">Синий</button></div>
+        </span>
+        <div class="label">Основной цвет</div>
+      </div>
+      <div class="right"><span class="dot" id="set-color-dot"></span><button class="link" id="set-color">Синий</button></div>
+    </div>
+  </div>
+  <div class="s-list card-ios">
+    <div class="s-item">
+      <div class="left">
+        <span class="tile tile-blue">
+            <i data-lucide="star"></i>
+        </span>
+        <div class="label">Оцените в App Store</div>
+      </div>
+      <div class="right chevron">›</div>
+    </div>
+  </div>
+</section>
+
+  <!-- Add Fuel Entry View -->
+  <section id="screen-add-fuel" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Заправка</h1>
+        <div class="ios-navbar-actions"></div>
       </div>
     </div>
-    <div class="s-list card-ios">
-      <div class="s-item">
-        <div class="left">
-          <span class="tile tile-blue">
-            <i data-lucide="star"></i>
-          </span>
-          <div class="label">Оцените в App Store</div>
-        </div>
-        <div class="right chevron">›</div>
+    <div class="section">
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="fuel-date" required>
       </div>
+      <div class="field">
+        <label>Пробег (км) *</label>
+        <input type="number" id="fuel-odometer" placeholder="0" min="0" required>
+      </div>
+      <div class="field">
+        <label>Литры *</label>
+        <input type="number" id="fuel-liters" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+      <div class="field">
+        <label>Стоимость (₴) *</label>
+        <input type="number" id="fuel-cost" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+      <div class="field">
+        <label>
+          <input type="checkbox" id="fuel-full-tank">
+          Полный бак
+        </label>
+      </div>
+      <div class="field">
+        <label>АЗС</label>
+        <input type="text" id="fuel-station" placeholder="Название АЗС">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="fuel-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-fuel-btn">Сохранить</button>
     </div>
   </section>
 
+  <!-- Add Service Entry View -->
+  <section id="screen-add-service" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Сервис</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Тип работ *</label>
+        <select id="service-type" required>
+          <option value="">Выбрать</option>
+          <option value="oil">Замена масла</option>
+          <option value="oilFilter">Замена масляного фильтра</option>
+          <option value="airFilter">Замена воздушного фильтра</option>
+          <option value="cabinFilter">Замена фильтра салона</option>
+          <option value="fuelFilter">Замена топливного фильтра</option>
+          <option value="transmissionOil">Замена масла КПП</option>
+          <option value="brakes">Тормозные колодки/диски</option>
+          <option value="tires">Шины</option>
+          <option value="battery">Аккумулятор</option>
+          <option value="coolant">Охлаждающая жидкость</option>
+          <option value="sparkPlugs">Свечи зажигания</option>
+          <option value="timingBelt">Ремень ГРМ</option>
+          <option value="other">Другое</option>
+        </select>
+      </div>
+      <div class="field" id="service-other-field" style="display:none">
+        <label>Название</label>
+        <input type="text" id="service-type-label" placeholder="Введите название">
+      </div>
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="service-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="service-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Стоимость (₴)</label>
+        <input type="number" id="service-cost" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Сервис</label>
+        <input type="text" id="service-shop" placeholder="Название сервиса">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="service-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field">
+        <label>Чеки/Фото</label>
+        <div id="service-receipts-preview" style="display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+          <!-- Receipt thumbnails will be rendered here -->
+        </div>
+        <div class="chip" id="service-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="service-receipt-input" accept="image/*" multiple style="display: none;">
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-service-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <script src="js/storage.js"></script>
+  <script src="js/soft-delete.js"></script>
+  <script src="js/fuel.js"></script>
+  <script src="js/service.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/receipts.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/templates.js"></script>
+  <script src="js/search.js"></script>
   <script src="js/app.js"></script>
+  
+  <!-- Units Settings Screen -->
+  <section id="screen-units-settings" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Единицы измерения</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="ios-group">
+        <div class="ios-group-header">Расстояние</div>
+        <div class="ios-cell">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Километры (км)</div>
+          </div>
+          <div class="ios-cell-trailing">
+            <input type="radio" name="distance-unit" value="km" id="unit-distance-km" checked>
+          </div>
+        </div>
+        <div class="ios-cell">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Мили (ми)</div>
+          </div>
+          <div class="ios-cell-trailing">
+            <input type="radio" name="distance-unit" value="mi" id="unit-distance-mi">
+          </div>
+        </div>
+      </div>
+      <div class="ios-group" style="margin-top: var(--space-lg);">
+        <div class="ios-group-header">Расход топлива</div>
+        <div class="ios-cell">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Литры на 100 км (L/100km)</div>
+          </div>
+          <div class="ios-cell-trailing">
+            <input type="radio" name="fuel-unit" value="L/100km" id="unit-fuel-l100km" checked>
+          </div>
+        </div>
+        <div class="ios-cell">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Километры на литр (km/L)</div>
+          </div>
+          <div class="ios-cell-trailing">
+            <input type="radio" name="fuel-unit" value="km/L" id="unit-fuel-kml">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Templates Screen -->
+  <section id="screen-templates" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Шаблоны</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="ios-grouped-list" id="templates-list">
+        <!-- Templates will be rendered here -->
+      </div>
+      <div id="templates-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+        <div style="font-size: 48px; margin-bottom: var(--space-md);">📝</div>
+        <p>Нет сохраненных шаблонов</p>
+        <p style="font-size: var(--font-size-caption); margin-top: var(--space-sm);">Создайте шаблон из существующей записи</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Recurring Screen -->
+  <section id="screen-recurring" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Повторяющиеся</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="ios-group" id="recurring-upcoming-group" style="display: none;">
+        <div class="ios-group-header">Предстоящие</div>
+        <div id="recurring-upcoming-list">
+          <!-- Upcoming items will be rendered here -->
+        </div>
+      </div>
+      <div class="ios-group" style="margin-top: var(--space-lg);">
+        <div class="ios-group-header">Активные правила</div>
+        <div id="recurring-rules-list">
+          <!-- Recurring rules will be rendered here -->
+        </div>
+      </div>
+      <div id="recurring-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+        <div style="font-size: 48px; margin-bottom: var(--space-md);">🔄</div>
+        <p>Нет повторяющихся расходов</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Categories Management Screen -->
+  <section id="screen-categories-management" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title">Управление категориями</h1>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-btn" id="add-category-btn" title="Добавить категорию">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="ios-grouped-list" id="categories-management-list">
+        <!-- Categories will be rendered here -->
+      </div>
+      <div id="categories-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+        <div style="font-size: 48px; margin-bottom: var(--space-md);">📁</div>
+        <p>Нет категорий</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Advanced Filters Modal -->
+  <div class="ios-sheet" id="advanced-filters-sheet" style="display: none;">
+    <div class="ios-sheet-header">
+      <h2>Расширенные фильтры</h2>
+      <button class="ios-sheet-close" id="close-filters-btn">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="ios-sheet-content">
+      <div class="section">
+        <div class="field">
+          <label>Автомобиль</label>
+          <select id="filter-car">
+            <option value="all">Все автомобили</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Тип записи</label>
+          <select id="filter-type">
+            <option value="all">Все</option>
+            <option value="expense">Расходы</option>
+            <option value="fuel">Заправки</option>
+            <option value="service">Сервис</option>
+            <option value="reminder">Напоминания</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Период с</label>
+          <input type="date" id="filter-date-from">
+        </div>
+        <div class="field">
+          <label>Период по</label>
+          <input type="date" id="filter-date-to">
+        </div>
+        <div class="field">
+          <label>Сумма от (₴)</label>
+          <input type="number" id="filter-amount-from" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Сумма до (₴)</label>
+          <input type="number" id="filter-amount-to" placeholder="Без ограничений" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" id="filter-has-receipt" style="margin-right: var(--space-xs);">
+            Только с чеками/фото
+          </label>
+        </div>
+        <div class="field">
+          <label>Теги (через запятую)</label>
+          <input type="text" id="filter-tags" placeholder="например: ремонт, срочно">
+        </div>
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+          <button class="btn btn-secondary" style="flex: 1;" id="reset-filters-btn">Сбросить</button>
+          <button class="btn btn-primary" style="flex: 1;" id="apply-filters-btn">Применить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Category Edit Modal -->
+  <div class="ios-sheet-overlay" id="category-edit-sheet" style="display: none;">
+    <div class="ios-sheet">
+      <div class="ios-sheet-handle"></div>
+      <div class="ios-sheet-header">
+        <h2 id="category-edit-title">Редактировать категорию</h2>
+        <button class="ios-sheet-close" id="category-edit-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="ios-sheet-content">
+        <div class="field">
+          <label>Название</label>
+          <input type="text" id="category-edit-name" placeholder="Название категории">
+        </div>
+        <div class="field">
+          <label>Иконка</label>
+          <input type="text" id="category-edit-icon" placeholder="fuel, wrench, tool, etc.">
+          <div style="font-size: var(--font-size-caption); color: var(--text-secondary); margin-top: var(--space-xs);">
+            Имя иконки из Lucide (например: fuel, wrench, tool)
+          </div>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+          <button class="btn btn-secondary" style="flex: 1;" id="category-edit-cancel">Отмена</button>
+          <button class="btn btn-primary" style="flex: 1;" id="category-edit-save">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Subcategory Edit Modal -->
+  <div class="ios-sheet-overlay" id="subcategory-edit-sheet" style="display: none;">
+    <div class="ios-sheet">
+      <div class="ios-sheet-handle"></div>
+      <div class="ios-sheet-header">
+        <h2 id="subcategory-edit-title">Редактировать подкатегорию</h2>
+        <button class="ios-sheet-close" id="subcategory-edit-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="ios-sheet-content">
+        <div class="field">
+          <label>Название</label>
+          <input type="text" id="subcategory-edit-name" placeholder="Название подкатегории">
+        </div>
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+          <button class="btn btn-secondary" style="flex: 1;" id="subcategory-edit-cancel">Отмена</button>
+          <button class="btn btn-primary" style="flex: 1;" id="subcategory-edit-save">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

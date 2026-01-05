@@ -1,3 +1,6 @@
+    // Modules are loaded via script tags in HTML
+    // Storage, SoftDelete, Fuel, Service are now global
+
     // Utility: Escape HTML to prevent XSS
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -43,28 +46,38 @@
       };
     }
 
-    // Data storage with error handling
-    const Storage = {
+    // Compatibility wrapper for old Storage API (autodiary:key format)
+    const StorageCompat = {
       get(key, def = []) {
+        // Remove 'autodiary:' prefix if present for new Storage API
+        const cleanKey = key.replace('autodiary:', '');
+        if (typeof Storage !== 'undefined' && Storage.get) {
+          return Storage.get(cleanKey, def);
+        }
+        // Fallback to direct localStorage
         try {
           const item = localStorage.getItem(key);
           return item ? JSON.parse(item) : def;
         } catch (e) {
-          console.error('Storage get error:', e);
           return def;
         }
       },
       set(key, value) {
+        const cleanKey = key.replace('autodiary:', '');
+        if (typeof Storage !== 'undefined' && Storage.set) {
+          const result = Storage.set(cleanKey, value);
+          if (result && result.error) {
+            showToast(result.message || 'Ошибка сохранения', 3000);
+            return false;
+          }
+          return true;
+        }
+        // Fallback to direct localStorage
         try {
           localStorage.setItem(key, JSON.stringify(value));
           return true;
         } catch (e) {
-          if(e.name === 'QuotaExceededError') {
-            showToast('РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РјРµСЃС‚Р° РІ С…СЂР°РЅРёР»РёС‰Рµ', 5000);
-          } else {
-            console.error('Storage set error:', e);
-            showToast('РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РґР°РЅРЅС‹С…', 3000);
-          }
+          showToast('Ошибка сохранения', 3000);
           return false;
         }
       }
@@ -82,13 +95,135 @@
       carId: 'all'
     };
 
-    const state = {
-      cars: Storage.get('autodiary:cars', []),
-      expenses: Storage.get('autodiary:expenses', []),
-      maintenance: Storage.get('autodiary:maintenance', {}),
-      intervals: Storage.get('autodiary:intervals', {}),
-      reminders: Storage.get('autodiary:reminders', [])
+    // Initialize state with migration support
+    let state = {
+      cars: [],
+      expenses: [],
+      maintenance: {},
+      intervals: {},
+      reminders: [],
+      fuel: [],
+      service: [],
+      categories: [],
+      subcategories: [],
+      templates: [],
+      recurringRules: [],
+      settings: {
+        units: { distance: 'km', fuel: 'L/100km', currency: '₴' },
+        darkMode: false,
+        autoBackup: false
+      }
     };
+
+    // Load state on initialization - wait for modules to load
+    function initializeState() {
+      try {
+        if (typeof loadState === 'function') {
+          const loadResult = loadState();
+          if (loadResult && loadResult.success) {
+            state = loadResult.data;
+            return;
+          } else if (loadResult && loadResult.corrupted) {
+            // Show recovery screen
+            showRecoveryScreen(loadResult);
+            return;
+          }
+        }
+      } catch(e) {
+        console.error('Failed to load state:', e);
+        // Show recovery screen on error
+        showRecoveryScreen({ error: e.message, data: null });
+        return;
+      }
+      
+      // Fallback to old format
+      if (typeof Storage !== 'undefined' && Storage.get) {
+        state = {
+          cars: StorageCompat.get('autodiary:cars', []),
+          expenses: StorageCompat.get('autodiary:expenses', []),
+          maintenance: StorageCompat.get('autodiary:maintenance', {}),
+          intervals: StorageCompat.get('autodiary:intervals', {}),
+          reminders: StorageCompat.get('autodiary:reminders', []),
+          fuel: [],
+          service: [],
+          categories: StorageCompat.get('autodiary:categories', []),
+          subcategories: StorageCompat.get('autodiary:subcategories', []),
+          settings: {
+            units: { distance: 'km', fuel: 'L/100km', currency: '₴' },
+            darkMode: false,
+            autoBackup: false
+          }
+        };
+        // Save in new format if saveState is available
+        if (typeof saveState === 'function') {
+          try {
+            saveState(state);
+          } catch(e) {
+            console.error('Failed to save state:', e);
+          }
+        }
+      } else {
+        // Ultimate fallback - use localStorage directly
+        try {
+          state = {
+            cars: JSON.parse(localStorage.getItem('autodiary:cars') || '[]'),
+            expenses: JSON.parse(localStorage.getItem('autodiary:expenses') || '[]'),
+            maintenance: JSON.parse(localStorage.getItem('autodiary:maintenance') || '{}'),
+            intervals: JSON.parse(localStorage.getItem('autodiary:intervals') || '{}'),
+            reminders: JSON.parse(localStorage.getItem('autodiary:reminders') || '[]'),
+            fuel: [],
+            service: [],
+            categories: JSON.parse(localStorage.getItem('autodiary:categories') || '[]'),
+            subcategories: JSON.parse(localStorage.getItem('autodiary:subcategories') || '[]'),
+            settings: {
+              units: { distance: 'km', fuel: 'L/100km', currency: '₴' },
+              darkMode: false,
+              autoBackup: false
+            }
+          };
+        } catch(e) {
+          console.error('Failed to parse state:', e);
+          state = {
+            cars: [],
+            expenses: [],
+            maintenance: {},
+            intervals: {},
+            reminders: [],
+            fuel: [],
+            service: [],
+            categories: [],
+            subcategories: [],
+            settings: {
+              units: { distance: 'km', fuel: 'L/100km', currency: '₴' },
+              darkMode: false,
+              autoBackup: false
+            }
+          };
+        }
+      }
+    }
+    
+    // Initialize state immediately
+    initializeState();
+    
+    // Initialize advanced filters after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initializeAdvancedFilters, 100);
+      });
+    } else {
+      setTimeout(initializeAdvancedFilters, 100);
+    }
+
+    // Helper function to save state
+    function saveAppState() {
+      const result = saveState(state);
+      if (!result.success) {
+        showToast(result.error || 'Ошибка сохранения данных', 3000);
+        return false;
+      }
+      return true;
+    }
 
     // View switching
     let views = [];
@@ -108,7 +243,7 @@
       
       if(id==='screen-garage'){
         // Reload state from storage before checking
-        state.cars = Storage.get('autodiary:cars', []);
+        state.cars = StorageCompat.get('autodiary:cars', []);
         if(state.cars.length === 0){
           showView('screen-garage-empty');
           return;
@@ -124,20 +259,46 @@
         populateReminderCarSelect();
       } else if(id==='screen-export'){
         // Export screen ready
+      } else if(id==='screen-trash'){
+        renderTrash();
+      } else if(id==='screen-reports'){
+        initializeReportsScreen();
+      } else if(id==='screen-templates'){
+        renderTemplates();
+      } else if(id==='screen-recurring'){
+        renderRecurring();
+      } else if(id==='screen-categories-management'){
+        renderCategoriesManagement();
+      } else if(id==='screen-units-settings'){
+        initializeUnitsSettings();
       }
     }
 
     // Calculate metrics for car
     function calculateCarMetrics(carId) {
       const expenses = state.expenses.filter(e => e.carId === carId && e.odometer > 0);
-      const fuelExpenses = expenses.filter(e => e.category === 'Заправка' || e.category === 'Электрозарядка');
+      // Filter fuel expenses by categoryId or legacy category name
+      const fuelExpenses = expenses.filter(e => {
+        if(e.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) {
+          const name = Categories.getCategoryName(state.categories || [], e.categoryId);
+          return name === 'Заправка' || name === 'Электрозарядка';
+        }
+        return e.category === 'Заправка' || e.category === 'Электрозарядка';
+      });
       
       let fuelConsumption = 0;
       let costPerKm = 0;
       let avgDay = 0;
       
-      // Calculate fuel consumption (L/100km)
-      if(fuelExpenses.length >= 2) {
+      // Calculate fuel consumption (L/100km) - prefer fuel module if available
+      if(fuelEntries.length >= 2) {
+        const sorted = [...fuelEntries].sort((a,b) => parseFloat(a.odometer) - parseFloat(b.odometer));
+        const avgConsumption = Fuel.getAverageConsumption(sorted);
+        if(avgConsumption) {
+          fuelConsumption = avgConsumption;
+        }
+      } else if(fuelExpenses.length >= 2) {
+        // Fallback to old expense-based calculation
         const sorted = [...fuelExpenses].sort((a,b) => a.odometer - b.odometer);
         const first = sorted[0];
         const last = sorted[sorted.length - 1];
@@ -162,7 +323,8 @@
       }
       
       // Calculate average per day
-      const allExpenses = state.expenses.filter(e => e.carId === carId);
+      const allExpenses = ((typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.expenses) : state.expenses.filter(e => !e.deletedAt)).filter(e => e.carId === carId);
       if(allExpenses.length > 0) {
         const total = allExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
         const firstDate = new Date(Math.min(...allExpenses.map(e => new Date(e.date).getTime())));
@@ -176,8 +338,8 @@
     // Render garage
     function renderGarage(){
       // Reload state from storage to ensure we have latest data
-      state.cars = Storage.get('autodiary:cars', []);
-      state.expenses = Storage.get('autodiary:expenses', []);
+      state.cars = StorageCompat.get('autodiary:cars', []);
+      state.expenses = StorageCompat.get('autodiary:expenses', []);
       
       const container = document.querySelector('#screen-garage .main-pad');
       if(!container) {
@@ -199,8 +361,11 @@
       const groupedList = document.createElement('div');
       groupedList.className = 'ios-grouped-list';
       
-      state.cars.forEach((car, index) => {
-        const expenses = state.expenses.filter(e => e.carId === car.id);
+      const activeCars = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.cars) : state.cars.filter(c => !c.deletedAt);
+      activeCars.forEach((car, index) => {
+        const expenses = ((typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+          SoftDelete.getActive(state.expenses) : state.expenses.filter(e => !e.deletedAt)).filter(e => e.carId === car.id);
         const metrics = calculateCarMetrics(car.id);
         
         // Format metrics
@@ -370,16 +535,26 @@
       
       // Filter by category
       if(diaryFilters.category !== 'all') {
-        filtered = filtered.filter(e => e.category === diaryFilters.category);
+        filtered = filtered.filter(e => {
+          if(e.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) {
+            const name = Categories.getCategoryName(state.categories || [], e.categoryId);
+            return name === diaryFilters.category;
+          }
+          return e.category === diaryFilters.category;
+        });
       }
       
-      // Filter by search
+      // Filter by search (use global search if available)
       if(diaryFilters.search) {
-        const searchLower = diaryFilters.search.toLowerCase();
-        filtered = filtered.filter(e => 
-          (e.category && e.category.toLowerCase().includes(searchLower)) ||
-          (e.notes && e.notes.toLowerCase().includes(searchLower))
-        );
+        if(typeof Search !== 'undefined' && Search.globalSearch) {
+          filtered = Search.globalSearch(diaryFilters.search, filtered, state);
+        } else {
+          const searchLower = diaryFilters.search.toLowerCase();
+          filtered = filtered.filter(e => 
+            (e.category && e.category.toLowerCase().includes(searchLower)) ||
+            (e.notes && e.notes.toLowerCase().includes(searchLower))
+          );
+        }
       }
       
       // Filter by time period
@@ -445,9 +620,17 @@
     }
 
     // Get category icon name for Lucide
-    function getCategoryIcon(category) {
-      if (!category) return 'more-horizontal';
+    function getCategoryIcon(categoryOrId) {
+      if (!categoryOrId) return 'more-horizontal';
       
+      // Try to find by categoryId first
+      if(typeof Categories !== 'undefined' && state.categories) {
+        const cat = state.categories.find(c => c.id === categoryOrId);
+        if(cat && cat.icon) return cat.icon;
+      }
+      
+      // Fallback to legacy category name matching
+      const category = typeof categoryOrId === 'string' ? categoryOrId : '';
       const icons = {
         'Заправка': 'fuel',
         'Электрозарядка': 'zap',
@@ -471,6 +654,12 @@
       const container = document.querySelector('#screen-diary');
       if(!container) return;
       
+      // Filter out deleted items
+      const activeExpenses = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.expenses) : state.expenses.filter(e => !e.deletedAt);
+      const activeReminders = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.reminders) : state.reminders.filter(r => !r.deletedAt);
+      
       // Update filter UI
       const timeFilterBtns = container.querySelectorAll('.time-filter button');
       timeFilterBtns.forEach(btn => {
@@ -483,7 +672,17 @@
       // Populate category filter
       const categorySelect = document.getElementById('diary-category-filter');
       if(categorySelect) {
-        const categories = ['Все', ...new Set(state.expenses.map(e => e.category).filter(Boolean))];
+        // Get unique category names (from categoryId or legacy category field)
+        const categoryNames = new Set();
+        activeExpenses.forEach(exp => {
+          if(exp.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) {
+            const name = Categories.getCategoryName(state.categories || [], exp.categoryId);
+            if(name) categoryNames.add(name);
+          } else if(exp.category) {
+            categoryNames.add(exp.category);
+          }
+        });
+        const categories = ['Все', ...Array.from(categoryNames).sort()];
         if(categorySelect.options.length === 1) {
           categories.slice(1).forEach(cat => {
             const option = document.createElement('option');
@@ -538,8 +737,21 @@
       const existingGroupedList = container.querySelector('.ios-grouped-list');
       if(existingGroupedList) existingGroupedList.remove();
       
+      // Apply advanced filters if Search module is available
+      let preFiltered = activeExpenses;
+      if (typeof Search !== 'undefined' && Search.advancedFilters) {
+        const hasActiveFilters = Object.values(Search.advancedFilters).some(v => {
+          if (Array.isArray(v)) return v.length > 0;
+          if (typeof v === 'boolean') return v === true;
+          return v !== null && v !== '' && v !== 'all';
+        });
+        if (hasActiveFilters) {
+          preFiltered = Search.filterExpenses(activeExpenses, Search.advancedFilters, state);
+        }
+      }
+      
       // Filter and sort expenses
-      const filtered = filterExpenses(state.expenses);
+      const filtered = filterExpenses(preFiltered);
       const sorted = filtered.sort((a, b) => {
         try {
           const dateA = new Date(a.date + ' ' + (a.time || '00:00'));
@@ -551,7 +763,7 @@
       });
       
       // Filter and sort reminders
-      const filteredReminders = filterReminders(state.reminders);
+      const filteredReminders = filterReminders(activeReminders);
       const sortedReminders = filteredReminders.sort((a, b) => {
         const da = a.dueDate ? new Date(a.dueDate) : new Date(a.createdAt || 0);
         const db = b.dueDate ? new Date(b.dueDate) : new Date(b.createdAt || 0);
@@ -759,14 +971,18 @@
           
             const iconDiv = document.createElement('div');
             iconDiv.className = 'ios-cell-icon';
-            const iconPath = getCategoryIcon(exp.category);
+            const iconPath = getCategoryIcon(exp.categoryId || exp.category);
             iconDiv.innerHTML = `<i data-lucide="${iconPath}"></i>`;
+            
+            const categoryDisplay = (exp.categoryId && typeof Categories !== 'undefined' && Categories.getDisplayText) ? 
+              Categories.getDisplayText(state.categories || [], state.subcategories || [], exp.categoryId, exp.subcategoryId) :
+              (exp.category || 'Расход');
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'ios-cell-content';
             const timeStr = exp.time ? ', ' + exp.time.substring(0, 5) : '';
             contentDiv.innerHTML = `
-              <div class="ios-cell-title">${escapeHtml(exp.category || 'Расход')}</div>
+              <div class="ios-cell-title">${escapeHtml(categoryDisplay)}</div>
               <div class="ios-cell-subtitle">${carName ? escapeHtml(carName) + ' • ' : ''}${exp.odometer ? exp.odometer + ' км' : ''}${timeStr}</div>
             `;
             
@@ -776,10 +992,13 @@
               <strong style="font-size:var(--font-size-body);font-weight:600;color:var(--text)">${amountStr} ₴</strong>
             `;
           
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'record-actions';
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'record-actions';
             actionsDiv.style.display = 'none';
-          actionsDiv.innerHTML = `
+            actionsDiv.innerHTML = `
+              <button data-save-template-expense="${exp.id}" title="Сохранить как шаблон" class="ios-cell-action-btn">
+                <i data-lucide="file-text"></i>
+              </button>
               <button data-edit-expense="${exp.id}" title="Редактировать" class="ios-cell-action-btn">
                 <i data-lucide="pencil"></i>
               </button>
@@ -900,7 +1119,7 @@
         showToast('Автомобиль добавлен');
       }
       
-      if(!Storage.set('autodiary:cars', state.cars)) {
+      if(!saveAppState()) {
         return false;
       }
       
@@ -919,18 +1138,29 @@
       return true;
     }
 
-    // Validate odometer
+    // Validate odometer (updated to include fuel and service entries)
     function validateOdometer(carId, newOdometer) {
       if(!newOdometer || newOdometer === 0) return { valid: true };
       
-      const carExpenses = state.expenses.filter(e => e.carId === carId && e.odometer > 0);
-      if(carExpenses.length === 0) return { valid: true };
+      // Get all entries for this car (expenses, fuel, service)
+      const activeExpenses = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.expenses) : state.expenses.filter(e => !e.deletedAt);
+      const allEntries = [
+        ...activeExpenses.filter(e => e.carId === carId && e.odometer),
+        ...(state.fuel || []).filter(f => f.carId === carId && f.odometer && !f.deletedAt),
+        ...(state.service || []).filter(s => s.carId === carId && s.odometer && !s.deletedAt)
+      ];
       
-      const maxOdometer = Math.max(...carExpenses.map(e => e.odometer));
+      if(allEntries.length === 0) return { valid: true };
+      
+      // Find max odometer
+      const maxOdometer = Math.max(...allEntries.map(e => parseFloat(e.odometer) || 0));
+      
       if(newOdometer < maxOdometer) {
+        const diff = maxOdometer - newOdometer;
         return {
           valid: false,
-          message: `РџСЂРѕР±РµРі (${newOdometer} РєРј) РјРµРЅСЊС€Рµ РїСЂРµРґС‹РґСѓС‰РµРіРѕ РјР°РєСЃРёРјР°Р»СЊРЅРѕРіРѕ (${maxOdometer} РєРј). РџСЂРѕРґРѕР»Р¶РёС‚СЊ?`
+          message: `Пробег (${newOdometer} км) меньше последнего зарегистрированного (${maxOdometer} км). Разница: ${diff} км. Продолжить?`
         };
       }
       
@@ -943,54 +1173,77 @@
       const amount = parseFloat(form.querySelector('#amount')?.value || 0);
       const date = form.querySelector('#date')?.value;
       const time = form.querySelector('#time')?.value || '';
-      const category = document.getElementById('expense-category-value')?.textContent?.trim();
+      const categoryId = document.getElementById('expense-category-id')?.value;
+      const subcategoryId = document.getElementById('expense-subcategory-id')?.value || null;
       const notes = form.querySelector('#notes')?.value?.trim() || '';
       const carId = currentCarId || state.cars[0]?.id || '';
       
-      if(!amount || !date || category === 'Р’С‹Р±СЂР°С‚СЊ' || !carId){
-        showToast('Р—Р°РїРѕР»РЅРёС‚Рµ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ: СЃС‚РѕРёРјРѕСЃС‚СЊ, РґР°С‚Р°, РєР°С‚РµРіРѕСЂРёСЏ');
+      if(!amount || !date || !categoryId || !carId){
+        showToast('Заполните все обязательные поля: стоимость, дата, категория');
         return false;
+      }
+      
+      // Validate subcategory belongs to category
+      if(subcategoryId) {
+        const sub = (state.subcategories || []).find(s => s.id === subcategoryId);
+        if(!sub || sub.categoryId !== categoryId) {
+          showToast('Подкатегория не соответствует категории');
+          return false;
+        }
       }
       
       // Validate odometer
       if(odometer > 0) {
         const validation = validateOdometer(carId, odometer);
         if(!validation.valid) {
-          showModal('РџСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ', validation.message, () => {
-            proceedSaveExpense(odometer, amount, date, time, category, notes, carId, form);
+          showModal('Предупреждение', validation.message, () => {
+            proceedSaveExpense(odometer, amount, date, time, categoryId, subcategoryId, notes, carId, form);
           });
           return false;
         }
       }
       
-      return proceedSaveExpense(odometer, amount, date, time, category, notes, carId, form);
+      return proceedSaveExpense(odometer, amount, date, time, categoryId, subcategoryId, notes, carId, form);
     }
 
-    function proceedSaveExpense(odometer, amount, date, time, category, notes, carId, form) {
+    function proceedSaveExpense(odometer, amount, date, time, categoryId, subcategoryId, notes, carId, form) {
+      // Get category/subcategory names for display (backward compatibility)
+      const categoryName = (typeof Categories !== 'undefined' && Categories.getCategoryName) ? 
+        Categories.getCategoryName(state.categories || [], categoryId) : '';
+      const subcategoryName = subcategoryId && (typeof Categories !== 'undefined' && Categories.getSubcategoryName) ? 
+        Categories.getSubcategoryName(state.subcategories || [], subcategoryId) : null;
+      
+      // Get receipts from preview (stored temporarily)
+      const receipts = window.tempExpenseReceipts || [];
+      
       const expense = {
         id: editingExpenseId || Date.now().toString(),
         carId,
-        category,
+        categoryId: categoryId,
+        subcategoryId: subcategoryId,
+        category: categoryName, // Keep for backward compatibility
         amount,
         odometer: odometer || 0,
         date,
         time,
-        notes
+        notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
+        deletedAt: null
       };
       
       if(editingExpenseId) {
         const index = state.expenses.findIndex(e => e.id === editingExpenseId);
         if(index !== -1) {
           state.expenses[index] = expense;
-          showToast('Р Р°СЃС…РѕРґ РѕР±РЅРѕРІР»РµРЅ');
+          showToast('Расход обновлен');
         }
         editingExpenseId = null;
       } else {
         state.expenses.push(expense);
-        showToast('Р Р°СЃС…РѕРґ РґРѕР±Р°РІР»РµРЅ');
+        showToast('Расход добавлен');
       }
       
-      if(!Storage.set('autodiary:expenses', state.expenses)) {
+      if(!saveAppState()) {
         return false;
       }
       
@@ -1002,8 +1255,14 @@
       form.querySelector('#notes').value = '';
       const categoryValue = document.getElementById('expense-category-value');
       if(categoryValue) categoryValue.textContent = 'Выбрать';
+      document.getElementById('expense-category-id').value = '';
+      document.getElementById('expense-subcategory-id').value = '';
       const amountSub = document.getElementById('amount-sub');
       if(amountSub) amountSub.textContent = '0,00 ₴';
+      
+      // Clear receipts
+      window.tempExpenseReceipts = [];
+      renderReceiptsPreview('expense-receipts-preview', []);
       
       renderDiary();
       return true;
@@ -1024,7 +1283,20 @@
         form.querySelector('#date').value = expense.date || '';
         form.querySelector('#time').value = expense.time || '';
         form.querySelector('#notes').value = expense.notes || '';
-        document.getElementById('expense-category-value').textContent = expense.category || 'Р’С‹Р±СЂР°С‚СЊ';
+        
+        // Load category/subcategory
+        const categoryId = expense.categoryId || null;
+        const subcategoryId = expense.subcategoryId || null;
+        if(categoryId) {
+          document.getElementById('expense-category-id').value = categoryId;
+          document.getElementById('expense-subcategory-id').value = subcategoryId || '';
+          const displayText = (typeof Categories !== 'undefined' && Categories.getDisplayText) ? 
+            Categories.getDisplayText(state.categories || [], state.subcategories || [], categoryId, subcategoryId) :
+            (expense.category || 'Выбрать');
+          document.getElementById('expense-category-value').textContent = displayText;
+        } else {
+          document.getElementById('expense-category-value').textContent = expense.category || 'Выбрать';
+        }
         const amountSubEl = document.getElementById('amount-sub');
         if(amountSubEl) amountSubEl.textContent = (expense.amount || 0).toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₴';
         
@@ -1037,9 +1309,20 @@
       const expense = state.expenses.find(e => e.id === expenseId);
       if(!expense) return;
       
-      showModal('Удалить расход?', `Вы уверены, что хотите удалить расход "${expense.category}" на ${expense.amount} ₴?`, () => {
-        state.expenses = state.expenses.filter(e => e.id !== expenseId);
-        if(Storage.set('autodiary:expenses', state.expenses)) {
+      const categoryDisplay = (typeof Categories !== 'undefined' && Categories.getDisplayText && expense.categoryId) ? 
+        Categories.getDisplayText(state.categories || [], state.subcategories || [], expense.categoryId, expense.subcategoryId) :
+        (expense.category || 'Не указано');
+      showModal('Удалить расход?', `Вы уверены, что хотите удалить расход "${categoryDisplay}" на ${expense.amount} ₴?`, () => {
+        if (typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+          if (typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+          SoftDelete.delete(expense, 'expense', state);
+        } else {
+          expense.deletedAt = new Date().toISOString();
+        }
+        } else {
+          expense.deletedAt = new Date().toISOString();
+        }
+        if(saveAppState()) {
           showToast('Расход удален');
           renderDiary();
         }
@@ -1088,10 +1371,7 @@
         delete state.maintenance[carId];
         delete state.intervals[carId];
         
-        if(Storage.set('autodiary:cars', state.cars) && 
-           Storage.set('autodiary:expenses', state.expenses) &&
-           Storage.set('autodiary:maintenance', state.maintenance) &&
-           Storage.set('autodiary:intervals', state.intervals)) {
+        if(saveAppState()) {
           showToast('РђРІС‚РѕРјРѕР±РёР»СЊ СѓРґР°Р»РµРЅ');
           renderGarage();
           if(currentCarId === carId) {
@@ -1124,7 +1404,7 @@
       });
       
       state.maintenance[carId] = maintenance;
-      Storage.set('autodiary:maintenance', state.maintenance);
+      saveAppState();
       return true;
     }
 
@@ -1150,7 +1430,7 @@
       });
       
       state.intervals[carId] = intervals;
-      Storage.set('autodiary:intervals', state.intervals);
+      saveAppState();
       return true;
     }
 
@@ -1201,6 +1481,433 @@
       document.getElementById('md1').textContent = metrics.fuelConsumption || '0';
       document.getElementById('md2').textContent = metrics.costPerKm || '0';
       document.getElementById('md3').textContent = metrics.avgDay || '0';
+      
+      // Render fuel and service tabs
+      renderFuelTab(carId);
+      renderServiceTab(carId);
+      
+      // Initialize tabs
+      initializeCarTabs();
+    }
+    
+    // Initialize car detail tabs
+    function initializeCarTabs() {
+      const tabs = document.querySelectorAll('.car-tab');
+      const tabContents = document.querySelectorAll('.car-tab-content');
+      
+      tabs.forEach(tab => {
+        tab.onclick = null; // Remove old listeners
+        tab.addEventListener('click', () => {
+          const targetTab = tab.dataset.tab;
+          
+          // Update tab styles
+          tabs.forEach(t => {
+            t.classList.remove('active');
+            t.style.borderBottomColor = 'transparent';
+            t.style.color = 'var(--text-secondary)';
+            t.style.fontWeight = '400';
+          });
+          tab.classList.add('active');
+          tab.style.borderBottomColor = 'var(--primary)';
+          tab.style.color = 'var(--primary)';
+          tab.style.fontWeight = '600';
+          
+          // Show/hide tab contents
+          tabContents.forEach(content => {
+            content.style.display = 'none';
+            content.classList.remove('active');
+          });
+          const targetContent = document.getElementById(`tab-${targetTab}`);
+          if (targetContent) {
+            targetContent.style.display = 'block';
+            targetContent.classList.add('active');
+          }
+        });
+      });
+      
+      // Add fuel button handler
+      const addFuelBtn = document.getElementById('add-fuel-entry-btn');
+      if (addFuelBtn) {
+        addFuelBtn.onclick = null;
+        addFuelBtn.addEventListener('click', () => {
+          showView('screen-add-fuel');
+        });
+      }
+      
+      // Add service button handler
+      const addServiceBtn = document.getElementById('add-service-entry-btn');
+      if (addServiceBtn) {
+        addServiceBtn.onclick = null;
+        addServiceBtn.addEventListener('click', () => {
+          showView('screen-add-service');
+        });
+      }
+    }
+    
+    // Render fuel tab
+    function renderFuelTab(carId) {
+      const fuelList = document.getElementById('fuel-entries-list');
+      const fuelEmpty = document.getElementById('fuel-empty');
+      const fuelStats = document.getElementById('fuel-stats');
+      if(!fuelList) return;
+      
+      // Get fuel entries for this car
+      const fuelEntries = (state.fuel || []).filter(f => f.carId === carId && !f.deletedAt)
+        .sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateB - dateA;
+        });
+      
+      if(fuelEntries.length === 0) {
+        fuelList.innerHTML = '';
+        if(fuelEmpty) fuelEmpty.style.display = 'block';
+        if(fuelStats) fuelStats.innerHTML = '';
+        return;
+      }
+      
+      if(fuelEmpty) fuelEmpty.style.display = 'none';
+      
+      // Calculate and render stats
+      if(fuelStats && typeof Fuel !== 'undefined' && Fuel.getStats) {
+        const stats = Fuel.getStats(carId, fuelEntries);
+        fuelStats.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-bottom: var(--space-md);">
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Последний расход</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.lastConsumption ? stats.lastConsumption.toFixed(2) : '—'} L/100km
+              </div>
+            </div>
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Средний (30 дней)</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.avg30Days ? stats.avg30Days.toFixed(2) : '—'} L/100km
+              </div>
+            </div>
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Средний (90 дней)</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.avg90Days ? stats.avg90Days.toFixed(2) : '—'} L/100km
+              </div>
+            </div>
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Всего потрачено</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.totalSpent.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Render fuel entries
+      fuelList.innerHTML = '';
+      const group = document.createElement('div');
+      group.className = 'ios-group';
+      
+      fuelEntries.forEach(fuel => {
+        const cell = document.createElement('div');
+        cell.className = 'ios-cell';
+        const date = new Date(fuel.date);
+        const pricePerLiter = fuel.liters > 0 ? (fuel.totalCost / fuel.liters).toFixed(2) : '0.00';
+        cell.innerHTML = `
+          <div class="ios-cell-icon">
+            <i data-lucide="fuel"></i>
+          </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">${fuel.liters.toFixed(2)} л ${fuel.fullTank ? '• Полный бак' : ''}</div>
+            <div class="ios-cell-subtitle">
+              ${fuel.odometer ? fuel.odometer + ' км • ' : ''}
+              ${pricePerLiter} ₴/л • 
+              ${fuel.totalCost.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              ${fuel.station ? ' • ' + escapeHtml(fuel.station) : ''}
+            </div>
+            <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary);">
+              ${date.toLocaleDateString('ru-RU')}
+            </div>
+          </div>
+          <div class="ios-cell-trailing">
+            <button class="ios-cell-action-btn" data-edit-fuel="${fuel.id}" title="Редактировать">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-delete-fuel="${fuel.id}" title="Удалить">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        `;
+        group.appendChild(cell);
+      });
+      
+      fuelList.appendChild(group);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    // Render service tab
+    function renderServiceTab(carId) {
+      const serviceList = document.getElementById('service-entries-list');
+      const serviceEmpty = document.getElementById('service-empty');
+      const serviceStats = document.getElementById('service-stats');
+      if(!serviceList) return;
+      
+      // Get service records for this car
+      const serviceRecords = (state.service || []).filter(s => s.carId === carId && !s.deletedAt)
+        .sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateB - dateA;
+        });
+      
+      if(serviceRecords.length === 0) {
+        serviceList.innerHTML = '';
+        if(serviceEmpty) serviceEmpty.style.display = 'block';
+        if(serviceStats) serviceStats.innerHTML = '';
+        return;
+      }
+      
+      if(serviceEmpty) serviceEmpty.style.display = 'none';
+      
+      // Calculate and render stats
+      if(serviceStats && typeof Service !== 'undefined' && Service.getStats) {
+        const stats = Service.getStats(serviceRecords);
+        serviceStats.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-bottom: var(--space-md);">
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Всего записей</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.totalRecords}
+              </div>
+            </div>
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Всего потрачено</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.totalSpent.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Render service records
+      serviceList.innerHTML = '';
+      const group = document.createElement('div');
+      group.className = 'ios-group';
+      
+      serviceRecords.forEach(service => {
+        const cell = document.createElement('div');
+        cell.className = 'ios-cell';
+        const date = new Date(service.date);
+        cell.innerHTML = `
+          <div class="ios-cell-icon">
+            <i data-lucide="wrench"></i>
+          </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">${escapeHtml(service.typeLabel || service.type || 'Сервис')}</div>
+            <div class="ios-cell-subtitle">
+              ${service.odometer ? service.odometer + ' км • ' : ''}
+              ${service.cost.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              ${service.shop ? ' • ' + escapeHtml(service.shop) : ''}
+            </div>
+            <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary);">
+              ${date.toLocaleDateString('ru-RU')}
+            </div>
+          </div>
+          <div class="ios-cell-trailing">
+            <button class="ios-cell-action-btn" data-edit-service="${service.id}" title="Редактировать">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-delete-service="${service.id}" title="Удалить">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        `;
+        group.appendChild(cell);
+      });
+      
+      serviceList.appendChild(group);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    // Render service tab with schedule and due logic
+    function renderServiceTab(carId) {
+      const serviceList = document.getElementById('service-entries-list');
+      const serviceEmpty = document.getElementById('service-empty');
+      const serviceSchedule = document.getElementById('service-schedule');
+      const serviceStats = document.getElementById('service-stats');
+      
+      if (!serviceList || !serviceEmpty) return;
+      
+      const serviceRecords = (state.service || []).filter(s => s.carId === carId && !s.deletedAt)
+        .sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateB - dateA;
+        });
+      
+      // Render service schedule with due logic
+      if (serviceSchedule && typeof Service !== 'undefined' && Service.getDefaultIntervals && Service.checkDue) {
+        const defaultIntervals = Service.getDefaultIntervals();
+        const carIntervals = state.intervals[carId] || {};
+        const intervals = { ...defaultIntervals, ...carIntervals };
+        
+        // Get current odometer (max from all entries)
+        const allEntries = [
+          ...(state.expenses || []).filter(e => e.carId === carId && e.odometer),
+          ...(state.fuel || []).filter(f => f.carId === carId && f.odometer && !f.deletedAt),
+          ...serviceRecords.filter(s => s.odometer)
+        ];
+        const currentOdometer = allEntries.length > 0 ? 
+          Math.max(...allEntries.map(e => parseFloat(e.odometer) || 0)) : 0;
+        const currentDate = new Date();
+        
+        // Build schedule items
+        const scheduleItems = [];
+        Object.keys(intervals).forEach(serviceType => {
+          const interval = intervals[serviceType];
+          if (!interval || (!interval.intervalKm && !interval.intervalMonths)) return;
+          
+          // Find last record of this type
+          const lastRecord = serviceRecords
+            .filter(s => s.type === serviceType)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          
+          const dueCheck = Service.checkDue(serviceType, lastRecord, { [serviceType]: interval }, currentOdometer, currentDate);
+          
+          scheduleItems.push({
+            type: serviceType,
+            typeLabel: Service.TYPES[serviceType] || serviceType,
+            interval,
+            lastRecord,
+            due: dueCheck
+          });
+        });
+        
+        // Sort: due first, then soon, then ok
+        scheduleItems.sort((a, b) => {
+          const order = { 'due': 0, 'soon': 1, 'ok': 2 };
+          return (order[a.due.status] || 2) - (order[b.due.status] || 2);
+        });
+        
+        if (scheduleItems.length > 0) {
+          serviceSchedule.innerHTML = '';
+          const group = document.createElement('div');
+          group.className = 'ios-group';
+          const header = document.createElement('div');
+          header.className = 'ios-group-header';
+          header.textContent = 'Расписание обслуживания';
+          group.appendChild(header);
+          
+          scheduleItems.forEach(item => {
+            const cell = document.createElement('div');
+            cell.className = 'ios-cell';
+            let statusColor = 'var(--text-secondary)';
+            let statusIcon = 'check-circle';
+            if (item.due.status === 'due') {
+              statusColor = 'var(--destructive)';
+              statusIcon = 'alert-circle';
+            } else if (item.due.status === 'soon') {
+              statusColor = 'var(--warning)';
+              statusIcon = 'clock';
+            }
+            
+            const lastDoneText = item.lastRecord ? 
+              `Последний раз: ${new Date(item.lastRecord.date).toLocaleDateString('ru-RU')} (${item.lastRecord.odometer} км)` :
+              'Никогда не выполнялось';
+            
+            cell.innerHTML = `
+              <div class="ios-cell-icon" style="color: ${statusColor};">
+                <i data-lucide="${statusIcon}"></i>
+              </div>
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(item.typeLabel)}</div>
+                <div class="ios-cell-subtitle">${escapeHtml(item.due.message)}</div>
+                <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary); font-size: var(--font-size-caption);">
+                  ${lastDoneText}
+                </div>
+              </div>
+              <div class="ios-cell-trailing">
+                ${item.due.status === 'due' || item.due.status === 'soon' ? 
+                  `<button class="ios-cell-action-btn" data-snooze-service="${item.type}" title="Отложить" style="color: var(--warning);">
+                    <i data-lucide="clock"></i>
+                  </button>` : ''}
+              </div>
+            `;
+            group.appendChild(cell);
+          });
+          
+          serviceSchedule.appendChild(group);
+        } else {
+          serviceSchedule.innerHTML = '';
+        }
+      }
+      
+      // Calculate and render stats
+      if(serviceStats && typeof Service !== 'undefined' && Service.getStats) {
+        const stats = Service.getStats(carId, serviceRecords);
+        serviceStats.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-bottom: var(--space-md);">
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Всего записей</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${stats.recordsCount || serviceRecords.length}
+              </div>
+            </div>
+            <div style="padding: var(--space-md); background: var(--surface); border-radius: var(--radius-md);">
+              <div style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin-bottom: var(--space-xs);">Всего потрачено</div>
+              <div style="font-size: var(--font-size-title-2); font-weight: 600; color: var(--text);">
+                ${(stats.totalSpent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      if (serviceRecords.length === 0) {
+        serviceList.innerHTML = '';
+        serviceEmpty.style.display = 'block';
+        return;
+      }
+      
+      serviceEmpty.style.display = 'none';
+      
+      // Render service records
+      serviceList.innerHTML = '';
+      const group = document.createElement('div');
+      group.className = 'ios-group';
+      
+      serviceRecords.forEach(service => {
+        const cell = document.createElement('div');
+        cell.className = 'ios-cell';
+        const date = new Date(service.date);
+        cell.innerHTML = `
+          <div class="ios-cell-icon">
+            <i data-lucide="wrench"></i>
+          </div>
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">${escapeHtml(service.typeLabel || service.type || 'Сервис')}</div>
+            <div class="ios-cell-subtitle">
+              ${service.odometer ? service.odometer + ' км • ' : ''}
+              ${service.cost.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              ${service.shop ? ' • ' + escapeHtml(service.shop) : ''}
+            </div>
+            <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary);">
+              ${date.toLocaleDateString('ru-RU')}
+            </div>
+          </div>
+          <div class="ios-cell-trailing">
+            <button class="ios-cell-action-btn" data-edit-service="${service.id}" title="Редактировать">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-delete-service="${service.id}" title="Удалить">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        `;
+        group.appendChild(cell);
+      });
+      
+      serviceList.appendChild(group);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Reminders functions
@@ -1301,7 +2008,7 @@
         showToast('РќР°РїРѕРјРёРЅР°РЅРёРµ РґРѕР±Р°РІР»РµРЅРѕ');
       }
       
-      if(Storage.set('autodiary:reminders', state.reminders)) {
+      if(StorageCompat.set('autodiary:reminders', state.reminders)) {
         showView('screen-reminders');
         renderReminders();
       }
@@ -1313,7 +2020,7 @@
       
       showModal('Удалить напоминание?', `Вы уверены, что хотите удалить напоминание "${reminder.title}"?`, () => {
         state.reminders = state.reminders.filter(r => r.id !== reminderId);
-        if(Storage.set('autodiary:reminders', state.reminders)) {
+        if(StorageCompat.set('autodiary:reminders', state.reminders)) {
           showToast('Напоминание удалено');
           renderReminders();
           renderDiary();
@@ -1326,7 +2033,7 @@
       if(!reminder) return;
       
       reminder.status = 'done';
-      if(Storage.set('autodiary:reminders', state.reminders)) {
+      if(StorageCompat.set('autodiary:reminders', state.reminders)) {
         showToast('Напоминание отмечено как выполненное');
         renderReminders();
         renderDiary();
@@ -1349,7 +2056,7 @@
         reminder.dueDate = nextWeek.toISOString().split('T')[0];
       }
       
-      if(Storage.set('autodiary:reminders', state.reminders)) {
+      if(StorageCompat.set('autodiary:reminders', state.reminders)) {
         showToast('Напоминание перенесено на неделю');
         renderReminders();
         renderDiary();
@@ -1358,15 +2065,22 @@
 
     // Export functions
     function exportCSV() {
-      const headers = ['Р”Р°С‚Р°', 'Р’СЂРµРјСЏ', 'РђРІС‚РѕРјРѕР±РёР»СЊ', 'РљР°С‚РµРіРѕСЂРёСЏ', 'РЎСѓРјРјР°', 'РџСЂРѕР±РµРі', 'Р—Р°РјРµС‚РєРё'];
-      const rows = state.expenses.map(exp => {
+      const headers = ['Дата', 'Время', 'Автомобиль', 'Категория ID', 'Категория', 'Подкатегория ID', 'Подкатегория', 'Сумма', 'Пробег', 'Заметки'];
+      const rows = state.expenses.filter(e => !e.deletedAt).map(exp => {
         const car = state.cars.find(c => c.id === exp.carId);
         const carName = car ? `${car.brand} ${car.model}` : '';
+        const categoryName = (exp.categoryId && typeof Categories !== 'undefined' && Categories.getCategoryName) ? 
+          Categories.getCategoryName(state.categories || [], exp.categoryId) : (exp.category || '');
+        const subcategoryName = (exp.subcategoryId && typeof Categories !== 'undefined' && Categories.getSubcategoryName) ? 
+          Categories.getSubcategoryName(state.subcategories || [], exp.subcategoryId) : '';
         return [
           exp.date || '',
           exp.time || '',
           carName,
-          exp.category || '',
+          exp.categoryId || '',
+          categoryName,
+          exp.subcategoryId || '',
+          subcategoryName,
           exp.amount || 0,
           exp.odometer || 0,
           (exp.notes || '').replace(/"/g, '""')
@@ -1425,11 +2139,11 @@
               if(data.intervals) state.intervals = data.intervals;
               if(data.reminders) state.reminders = data.reminders;
               
-              Storage.set('autodiary:cars', state.cars);
-              Storage.set('autodiary:expenses', state.expenses);
-              Storage.set('autodiary:maintenance', state.maintenance);
-              Storage.set('autodiary:intervals', state.intervals);
-              Storage.set('autodiary:reminders', state.reminders);
+              StorageCompat.set('autodiary:cars', state.cars);
+              StorageCompat.set('autodiary:expenses', state.expenses);
+              saveAppState();
+              saveAppState();
+              StorageCompat.set('autodiary:reminders', state.reminders);
               
               showToast('Р”Р°РЅРЅС‹Рµ РёРјРїРѕСЂС‚РёСЂРѕРІР°РЅС‹');
               renderGarage();
@@ -1591,6 +2305,29 @@
         return;
       }
       
+      const saveTemplateExpenseBtn = e.target.closest('[data-save-template-expense]');
+      if(saveTemplateExpenseBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const expense = state.expenses.find(e => e.id === saveTemplateExpenseBtn.dataset.saveTemplateExpense);
+        if(expense && typeof Templates !== 'undefined') {
+          const name = prompt('Название шаблона:', expense.categoryId && typeof Categories !== 'undefined' ? 
+            Categories.getCategoryName(expense.categoryId, state) : 'Шаблон расхода');
+          if(name) {
+            if(!state.templates) state.templates = [];
+            const template = Templates.createTemplate(expense, 'expense', state);
+            template.name = name;
+            if(saveAppState()) {
+              showToast('Шаблон сохранен');
+              if(document.getElementById('screen-templates')?.classList.contains('active')) {
+                renderTemplates();
+              }
+            }
+          }
+        }
+        return;
+      }
+      
       const deleteBtn = e.target.closest('[data-delete-expense]');
       if(deleteBtn) {
         e.preventDefault();
@@ -1681,7 +2418,7 @@
     // Settings handlers
     // Initialize theme from storage or default to light
     function initTheme() {
-      const savedTheme = Storage.get('autodiary:theme', null);
+      const savedTheme = StorageCompat.get('autodiary:theme', null);
       if(savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
       } else {
@@ -1695,7 +2432,7 @@
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', newTheme);
-      Storage.set('autodiary:theme', newTheme);
+      StorageCompat.set('autodiary:theme', newTheme);
       return newTheme;
     }
     
@@ -1808,9 +2545,9 @@
       state.reminders = [...state.reminders, ...demoReminders];
       
       // Save to storage
-      const carsSaved = Storage.set('autodiary:cars', state.cars);
-      const expensesSaved = Storage.set('autodiary:expenses', state.expenses);
-      const remindersSaved = Storage.set('autodiary:reminders', state.reminders);
+      const carsSaved = StorageCompat.set('autodiary:cars', state.cars);
+      const expensesSaved = StorageCompat.set('autodiary:expenses', state.expenses);
+      const remindersSaved = StorageCompat.set('autodiary:reminders', state.reminders);
       
       if(!carsSaved || !expensesSaved || !remindersSaved) {
         showToast('Ошибка сохранения данных', 3000);
@@ -1818,9 +2555,9 @@
       }
       
       // Reload state from storage to ensure consistency
-      state.cars = Storage.get('autodiary:cars', []);
-      state.expenses = Storage.get('autodiary:expenses', []);
-      state.reminders = Storage.get('autodiary:reminders', []);
+      state.cars = StorageCompat.get('autodiary:cars', []);
+      state.expenses = StorageCompat.get('autodiary:expenses', []);
+      state.reminders = StorageCompat.get('autodiary:reminders', []);
       
       showToast(`Демо данные добавлены: ${newDemoCars.length} авто, ${demoExpenses.length} расходов, ${demoReminders.length} напоминаний`, 3000);
       
@@ -1837,16 +2574,46 @@
     }
     
     function refreshSettingsScreen(){
-      const carsCount = state.cars.length;
-      const categories = new Set(state.expenses.map(e => e.category)).size;
+      const carsCount = (state.cars || []).filter(c => !c.deletedAt).length;
+      const categoriesCount = typeof Categories !== 'undefined' ? 
+        Categories.getActive(state.categories || []).length : 
+        new Set((state.expenses || []).filter(e => !e.deletedAt).map(e => e.category)).size;
       const elCars = document.getElementById('set-cars-count');
       const elCats = document.getElementById('set-cats-count');
       if(elCars) elCars.textContent = String(carsCount);
-      if(elCats) elCats.textContent = categories > 0 ? String(categories) : '—';
-
+      if(elCats) elCats.textContent = categoriesCount > 0 ? String(categoriesCount) : '—';
+      
+      // Update trash count
+      const trashCount = document.getElementById('trash-count');
+      if (trashCount) {
+        const deletedCars = (state.cars || []).filter(c => c.deletedAt);
+        const deletedExpenses = (state.expenses || []).filter(e => e.deletedAt);
+        const deletedFuel = (state.fuel || []).filter(f => f.deletedAt);
+        const deletedService = (state.service || []).filter(s => s.deletedAt);
+        const deletedReminders = (state.reminders || []).filter(r => r.deletedAt);
+        const totalDeleted = deletedCars.length + deletedExpenses.length + deletedFuel.length + deletedService.length + deletedReminders.length;
+        trashCount.textContent = totalDeleted > 0 ? totalDeleted.toString() : '0';
+      }
+      
+      // Update recurring upcoming count
+      const recurringCountEl = document.getElementById('recurring-upcoming-count');
+      if(recurringCountEl && typeof Recurring !== 'undefined') {
+        const upcoming = Recurring.getUpcoming(state);
+        recurringCountEl.textContent = upcoming.length > 0 ? upcoming.length.toString() : '0';
+      }
+      
+      // Update settings values
+      const settings = state.settings || {};
+      const units = settings.units || { distance: 'km', fuel: 'L/100km', currency: '₴' };
+      
+      const currencyEl = document.getElementById('set-currency');
+      if(currencyEl) currencyEl.textContent = units.currency || '₴';
+      
+      const requireOdometerEl = document.getElementById('set-require-odometer');
+      if(requireOdometerEl) requireOdometerEl.checked = settings.requireOdometer || false;
+      
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const color = Storage.get('autodiary:color', 'blue');
-
+      const color = StorageCompat.get('autodiary:color', 'blue');
       const themeBtn = document.getElementById('set-theme');
       const colorBtn = document.getElementById('set-color');
       const colorDot = document.getElementById('set-color-dot');
@@ -1856,6 +2623,63 @@
       if(colorDot) colorDot.style.background = color === 'blue' ? '#0A84FF' : color;
     }
 
+    // Attach trash action handlers
+    document.body.addEventListener('click', handleTrashActions);
+    handleEmptyTrash();
+    
+    // Handle fuel/service actions
+    document.body.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-edit-fuel], [data-delete-fuel], [data-edit-service], [data-delete-service]');
+      if(!target) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if(target.dataset.editFuel) {
+        // TODO: Implement edit fuel
+        showToast('Редактирование заправки будет добавлено');
+      }
+      
+      if(target.dataset.deleteFuel) {
+        const fuel = state.fuel.find(f => f.id === target.dataset.deleteFuel);
+        if(fuel) {
+          showModal('Удалить заправку?', `Удалить заправку на ${fuel.liters} л?`, () => {
+            if(typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+              SoftDelete.delete(fuel, 'fuel', state);
+            } else {
+              fuel.deletedAt = new Date().toISOString();
+            }
+            if(saveAppState()) {
+              showToast('Заправка удалена');
+              if(currentCarId) renderFuelTab(currentCarId);
+            }
+          });
+        }
+      }
+      
+      if(target.dataset.editService) {
+        // TODO: Implement edit service
+        showToast('Редактирование сервиса будет добавлено');
+      }
+      
+      if(target.dataset.deleteService) {
+        const service = state.service.find(s => s.id === target.dataset.deleteService);
+        if(service) {
+          showModal('Удалить запись сервиса?', `Удалить "${service.typeLabel}"?`, () => {
+            if(typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+              SoftDelete.delete(service, 'service', state);
+            } else {
+              service.deletedAt = new Date().toISOString();
+            }
+            if(saveAppState()) {
+              showToast('Запись сервиса удалена');
+              if(currentCarId) renderServiceTab(currentCarId);
+            }
+          });
+        }
+      }
+    });
+    
     document.addEventListener('click', (e)=>{
       if(e.target && e.target.id === 'set-theme'){
         const newTheme = toggleTheme();
@@ -1863,10 +2687,10 @@
         showToast(newTheme === 'light' ? 'Светлая тема' : 'Тёмная тема');
       }
       if(e.target && e.target.id === 'set-color'){
-        const cur = Storage.get('autodiary:color', 'blue');
+        const cur = StorageCompat.get('autodiary:color', 'blue');
         const pool = ['blue','#00ff9c','#f59e0b','#ef4444'];
         const next = pool[(pool.indexOf(cur)+1)%pool.length];
-        Storage.set('autodiary:color', next);
+        StorageCompat.set('autodiary:color', next);
         refreshSettingsScreen();
       }
       const demoBtn = e.target.closest('#add-demo-data-btn');
@@ -1912,9 +2736,31 @@
     
     // Initialize app when DOM is ready
     function initApp() {
+      console.log('initApp called');
+      
       // Initialize views and tabs
       views = [...document.querySelectorAll('.view')];
       tabs = [...document.querySelectorAll('.tab')];
+      
+      // Render initial views
+      renderDiary();
+      renderGarage();
+      renderReminders();
+      
+      // Initialize receipts handlers
+      if(typeof initializeReceiptsHandlers === 'function') {
+        initializeReceiptsHandlers();
+      }
+      
+      // Initialize settings handlers
+      if(typeof initializeSettingsHandlers === 'function') {
+        initializeSettingsHandlers();
+      }
+      
+      // Initialize advanced filters
+      if(typeof initializeAdvancedFilters === 'function') {
+        setTimeout(initializeAdvancedFilters, 100);
+      }
       
     // Set default date
     const dateInput = document.querySelector('#screen-expense-form #date');
@@ -1966,6 +2812,20 @@
             return;
           }
           
+          // Quick path for fuel
+          if(categoryItem.dataset.type === 'fuel' || categoryItem.dataset.goto === 'screen-add-fuel') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-fuel');
+            return;
+          }
+          
+          // Quick path for service
+          if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-service');
+            return;
+          }
+          
           const category = categoryItem.dataset.category;
           const scrollTo = categoryItem.dataset.scroll;
           
@@ -1999,12 +2859,1953 @@
     renderReminders();
     showView('screen-diary');
     
+      // Initialize fuel form handlers
+      const saveFuelBtn = document.getElementById('save-fuel-btn');
+      if(saveFuelBtn) {
+        saveFuelBtn.addEventListener('click', () => {
+          saveFuelEntry();
+        });
+      }
+      
+      // Initialize service form handlers
+      const saveServiceBtn = document.getElementById('save-service-btn');
+      if(saveServiceBtn) {
+        saveServiceBtn.addEventListener('click', () => {
+          saveServiceEntry();
+        });
+      }
+      
+      // Service type change handler
+      const serviceTypeSelect = document.getElementById('service-type');
+      if(serviceTypeSelect) {
+        serviceTypeSelect.addEventListener('change', (e) => {
+          const otherField = document.getElementById('service-other-field');
+          if(e.target.value === 'other' && otherField) {
+            otherField.style.display = 'block';
+          } else if(otherField) {
+            otherField.style.display = 'none';
+          }
+        });
+      }
+      
+      // Set default dates for fuel and service forms
+      const fuelDateInput = document.getElementById('fuel-date');
+      if(fuelDateInput && !fuelDateInput.value) {
+        fuelDateInput.value = new Date().toISOString().split('T')[0];
+      }
+      
+      const serviceDateInput = document.getElementById('service-date');
+      if(serviceDateInput && !serviceDateInput.value) {
+        serviceDateInput.value = new Date().toISOString().split('T')[0];
+      }
+      
       // Initialize Lucide icons once (render functions also call createIcons as needed)
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
       }
     }
     
+    // Save fuel entry
+    function saveFuelEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) {
+        showToast('Выберите автомобиль');
+        return;
+      }
+      
+      const date = document.getElementById('fuel-date')?.value;
+      const odometer = parseFloat(document.getElementById('fuel-odometer')?.value || 0);
+      const liters = parseFloat(document.getElementById('fuel-liters')?.value || 0);
+      const totalCost = parseFloat(document.getElementById('fuel-cost')?.value || 0);
+      const fullTank = document.getElementById('fuel-full-tank')?.checked || false;
+      const station = document.getElementById('fuel-station')?.value?.trim() || '';
+      const notes = document.getElementById('fuel-notes')?.value?.trim() || '';
+      
+      if(!date || !odometer || !liters || !totalCost) {
+        showToast('Заполните все обязательные поля');
+        return;
+      }
+      
+      // Validate odometer
+      const validation = validateOdometer(carId, odometer);
+      if(!validation.valid) {
+        showModal('Предупреждение', validation.message, () => {
+          proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes);
+        });
+        return;
+      }
+      
+      proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes);
+    }
+    
+    function proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes) {
+      if(!state.fuel) state.fuel = [];
+      
+      const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ? 
+        Fuel.addEntry(carId, {
+          date,
+          odometer,
+          liters,
+          totalCost,
+          fullTank,
+          station,
+          notes
+        }) : {
+          id: Date.now().toString(),
+          carId,
+          date,
+          odometer,
+          liters,
+          totalCost,
+          pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
+          fullTank,
+          station,
+          notes,
+          createdAt: new Date().toISOString(),
+          deletedAt: null
+        };
+      
+      state.fuel.push(fuelEntry);
+      
+      if(saveAppState()) {
+        showToast('Заправка добавлена');
+        // Reset form
+        document.getElementById('fuel-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('fuel-odometer').value = '';
+        document.getElementById('fuel-liters').value = '';
+        document.getElementById('fuel-cost').value = '';
+        document.getElementById('fuel-full-tank').checked = false;
+        document.getElementById('fuel-station').value = '';
+        document.getElementById('fuel-notes').value = '';
+        
+        // Return to car details or diary
+        if(currentCarId) {
+          loadCarDetails(currentCarId);
+          showView('screen-car-details');
+        } else {
+          showView('screen-diary');
+        }
+      }
+    }
+    
+    // Save service entry
+    function saveServiceEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) {
+        showToast('Выберите автомобиль');
+        return;
+      }
+      
+      const type = document.getElementById('service-type')?.value;
+      const typeLabel = type === 'other' ? 
+        (document.getElementById('service-type-label')?.value?.trim() || 'Другое') :
+        ((typeof Service !== 'undefined' && Service.TYPES && Service.TYPES[type]) ? Service.TYPES[type] : 'Другое');
+      const date = document.getElementById('service-date')?.value;
+      const odometer = parseFloat(document.getElementById('service-odometer')?.value || 0);
+      const cost = parseFloat(document.getElementById('service-cost')?.value || 0);
+      const shop = document.getElementById('service-shop')?.value?.trim() || '';
+      const notes = document.getElementById('service-notes')?.value?.trim() || '';
+      
+      if(!date || !type) {
+        showToast('Заполните все обязательные поля');
+        return;
+      }
+      
+      // Validate odometer if provided
+      if(odometer > 0) {
+        const validation = validateOdometer(carId, odometer);
+        if(!validation.valid) {
+          showModal('Предупреждение', validation.message, () => {
+            proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes);
+          });
+          return;
+        }
+      }
+      
+      proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes);
+    }
+    
+    function proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes) {
+      if(!state.service) state.service = [];
+      
+      // Get receipts from preview
+      const receipts = window.tempServiceReceipts || [];
+      
+      const serviceRecord = (typeof Service !== 'undefined' && Service.addRecord) ? 
+        Service.addRecord(carId, {
+          type,
+          typeLabel,
+          date,
+          odometer,
+          cost,
+          shop,
+          notes
+        }) : {
+          id: Date.now().toString(),
+          carId,
+          date,
+          odometer,
+          type,
+          typeLabel,
+          cost,
+          shop,
+          notes,
+          createdAt: new Date().toISOString(),
+          deletedAt: null
+        };
+      
+      // Add receipts to record
+      if(receipts.length > 0) {
+        serviceRecord.receipts = receipts;
+      }
+      
+      state.service.push(serviceRecord);
+      
+      if(saveAppState()) {
+        showToast('Запись сервиса добавлена');
+        // Reset form
+        document.getElementById('service-type').value = '';
+        document.getElementById('service-type-label').value = '';
+        document.getElementById('service-other-field').style.display = 'none';
+        document.getElementById('service-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('service-odometer').value = '';
+        document.getElementById('service-cost').value = '';
+        document.getElementById('service-shop').value = '';
+        document.getElementById('service-notes').value = '';
+        
+        // Clear receipts
+        window.tempServiceReceipts = [];
+        renderReceiptsPreview('service-receipts-preview', []);
+        
+        // Return to car details or diary
+        if(currentCarId) {
+          loadCarDetails(currentCarId);
+          showView('screen-car-details');
+        } else {
+          showView('screen-diary');
+        }
+      }
+    }
+    
+    // Receipts handling functions
+    let tempExpenseReceipts = [];
+    let tempServiceReceipts = [];
+    window.tempExpenseReceipts = tempExpenseReceipts;
+    window.tempServiceReceipts = tempServiceReceipts;
+    
+    function initializeReceiptsHandlers() {
+      // Expense receipts
+      const expenseAddBtn = document.getElementById('expense-add-receipt-btn');
+      const expenseInput = document.getElementById('expense-receipt-input');
+      const expensePreview = document.getElementById('expense-receipts-preview');
+      
+      if(expenseAddBtn && expenseInput) {
+        expenseAddBtn.addEventListener('click', () => {
+          expenseInput.click();
+        });
+        
+        expenseInput.addEventListener('change', async (e) => {
+          const files = Array.from(e.target.files || []);
+          if(files.length === 0) return;
+          
+          if(typeof Receipts === 'undefined') {
+            showToast('Модуль работы с изображениями не загружен');
+            return;
+          }
+          
+          try {
+            for(const file of files) {
+              if(window.tempExpenseReceipts.length >= Receipts.MAX_IMAGES) {
+                showToast(`Максимум ${Receipts.MAX_IMAGES} изображений`);
+                break;
+              }
+              
+              const compressed = await Receipts.compressImage(file);
+              window.tempExpenseReceipts.push(compressed);
+            }
+            
+            renderReceiptsPreview('expense-receipts-preview', window.tempExpenseReceipts);
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+          } catch(err) {
+            showToast('Ошибка обработки изображения: ' + err.message);
+            console.error(err);
+          }
+          
+          // Reset input
+          expenseInput.value = '';
+        });
+      }
+      
+      // Service receipts
+      const serviceAddBtn = document.getElementById('service-add-receipt-btn');
+      const serviceInput = document.getElementById('service-receipt-input');
+      
+      if(serviceAddBtn && serviceInput) {
+        serviceAddBtn.addEventListener('click', () => {
+          serviceInput.click();
+        });
+        
+        serviceInput.addEventListener('change', async (e) => {
+          const files = Array.from(e.target.files || []);
+          if(files.length === 0) return;
+          
+          if(typeof Receipts === 'undefined') {
+            showToast('Модуль работы с изображениями не загружен');
+            return;
+          }
+          
+          try {
+            for(const file of files) {
+              if(window.tempServiceReceipts.length >= Receipts.MAX_IMAGES) {
+                showToast(`Максимум ${Receipts.MAX_IMAGES} изображений`);
+                break;
+              }
+              
+              const compressed = await Receipts.compressImage(file);
+              window.tempServiceReceipts.push(compressed);
+            }
+            
+            renderReceiptsPreview('service-receipts-preview', window.tempServiceReceipts);
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+          } catch(err) {
+            showToast('Ошибка обработки изображения: ' + err.message);
+            console.error(err);
+          }
+          
+          // Reset input
+          serviceInput.value = '';
+        });
+      }
+      
+      // Receipt viewer
+      const viewerOverlay = document.getElementById('receipt-viewer-overlay');
+      const viewerImage = document.getElementById('receipt-viewer-image');
+      const viewerClose = document.getElementById('receipt-viewer-close');
+      
+      if(viewerClose) {
+        viewerClose.addEventListener('click', () => {
+          if(viewerOverlay) viewerOverlay.style.display = 'none';
+        });
+      }
+      
+      if(viewerOverlay) {
+        viewerOverlay.addEventListener('click', (e) => {
+          if(e.target === viewerOverlay) {
+            viewerOverlay.style.display = 'none';
+          }
+        });
+      }
+    }
+    
+    function renderReceiptsPreview(containerId, receipts) {
+      const container = document.getElementById(containerId);
+      if(!container) return;
+      
+      if(receipts.length === 0) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+      }
+      
+      container.style.display = 'flex';
+      container.innerHTML = '';
+      
+      receipts.forEach((receipt, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: var(--radius-md); overflow: hidden; background: var(--surface); border: 1px solid var(--separator);';
+        
+        const img = document.createElement('img');
+        img.src = receipt.dataUrl;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+        img.addEventListener('click', () => {
+          const viewerImage = document.getElementById('receipt-viewer-image');
+          const viewerOverlay = document.getElementById('receipt-viewer-overlay');
+          if(viewerImage && viewerOverlay) {
+            viewerImage.src = receipt.dataUrl;
+            viewerOverlay.style.display = 'flex';
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+        });
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.style.cssText = 'position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;';
+        removeBtn.innerHTML = '<i data-lucide="x" style="width: 14px; height: 14px;"></i>';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if(containerId === 'expense-receipts-preview') {
+            window.tempExpenseReceipts.splice(index, 1);
+            renderReceiptsPreview(containerId, window.tempExpenseReceipts);
+          } else if(containerId === 'service-receipts-preview') {
+            window.tempServiceReceipts.splice(index, 1);
+            renderReceiptsPreview(containerId, window.tempServiceReceipts);
+          }
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+        });
+        
+        thumbnail.appendChild(img);
+        thumbnail.appendChild(removeBtn);
+        container.appendChild(thumbnail);
+      });
+    }
+    
+    // Reports functions
+    function initializeReportsScreen() {
+      // Populate car select
+      const carSelect = document.getElementById('reports-car-select');
+      if(carSelect) {
+        carSelect.innerHTML = '<option value="">Все автомобили</option>';
+        (state.cars || []).filter(c => !c.deletedAt).forEach(car => {
+          const option = document.createElement('option');
+          option.value = car.id;
+          option.textContent = `${car.brand} ${car.model}`;
+          carSelect.appendChild(option);
+        });
+      }
+      
+      // Set default dates (last 30 days)
+      const dateTo = document.getElementById('reports-date-to');
+      const dateFrom = document.getElementById('reports-date-from');
+      if(dateTo && !dateTo.value) {
+        dateTo.value = new Date().toISOString().split('T')[0];
+      }
+      if(dateFrom && !dateFrom.value) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        dateFrom.value = thirtyDaysAgo.toISOString().split('T')[0];
+      }
+      
+      // Generate button
+      const generateBtn = document.getElementById('reports-generate-btn');
+      if(generateBtn) {
+        generateBtn.onclick = null;
+        generateBtn.addEventListener('click', () => {
+          generateReport();
+        });
+      }
+      
+      // Print button
+      const printBtn = document.getElementById('reports-print-btn');
+      if(printBtn) {
+        printBtn.onclick = null;
+        printBtn.addEventListener('click', () => {
+          printReport();
+        });
+      }
+    }
+    
+    function generateReport() {
+      const carId = document.getElementById('reports-car-select')?.value || null;
+      const dateFrom = document.getElementById('reports-date-from')?.value || null;
+      const dateTo = document.getElementById('reports-date-to')?.value || null;
+      
+      if(typeof Reports === 'undefined') {
+        showToast('Модуль отчетов не загружен');
+        return;
+      }
+      
+      const reportData = Reports.generateReport(carId, dateFrom, dateTo, state);
+      renderReport(reportData);
+    }
+    
+    function renderReport(reportData) {
+      const content = document.getElementById('reports-content');
+      const printContent = document.getElementById('reports-print-content');
+      if(!content) return;
+      
+      content.style.display = 'block';
+      
+      const car = reportData.carId ? state.cars.find(c => c.id === reportData.carId) : null;
+      const carName = car ? `${car.brand} ${car.model}` : 'Все автомобили';
+      const periodText = reportData.dateFrom && reportData.dateTo ?
+        `${new Date(reportData.dateFrom).toLocaleDateString('ru-RU')} - ${new Date(reportData.dateTo).toLocaleDateString('ru-RU')}` :
+        'За весь период';
+      
+      let html = `
+        <div class="ios-group">
+          <div class="ios-group-header">Сводка</div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Автомобиль</div>
+              <div class="ios-cell-subtitle">${escapeHtml(carName)}</div>
+            </div>
+          </div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Период</div>
+              <div class="ios-cell-subtitle">${escapeHtml(periodText)}</div>
+            </div>
+          </div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Всего потрачено</div>
+              <div class="ios-cell-subtitle" style="font-size: var(--font-size-title-3); font-weight: 600; color: var(--primary);">
+                ${reportData.totals.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ios-group" style="margin-top: var(--space-lg);">
+          <div class="ios-group-header">Расходы по категориям</div>
+          ${Object.values(reportData.expensesByCategory).map(cat => `
+            <div class="ios-cell">
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(cat.name)}</div>
+                <div class="ios-cell-subtitle">
+                  ${cat.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴ • ${cat.count} записей
+                </div>
+                ${Object.keys(cat.bySubcategory).length > 0 ? `
+                  <div style="margin-top: var(--space-xs); padding-left: var(--space-md);">
+                    ${Object.values(cat.bySubcategory).map(sub => `
+                      <div style="font-size: var(--font-size-caption); color: var(--text-secondary); margin-top: var(--space-xs);">
+                        ${escapeHtml(sub.name)}: ${sub.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="ios-group" style="margin-top: var(--space-lg);">
+          <div class="ios-group-header">Заправки</div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Всего потрачено</div>
+              <div class="ios-cell-subtitle">${reportData.fuel.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴</div>
+            </div>
+          </div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Средний расход</div>
+              <div class="ios-cell-subtitle">${reportData.fuel.consumption ? reportData.fuel.consumption.toFixed(2) + ' L/100km' : 'Недостаточно данных'}</div>
+            </div>
+          </div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Количество заправок</div>
+              <div class="ios-cell-subtitle">${reportData.fuel.entriesCount}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ios-group" style="margin-top: var(--space-lg);">
+          <div class="ios-group-header">Сервис</div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Всего потрачено</div>
+              <div class="ios-cell-subtitle">${reportData.service.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴</div>
+            </div>
+          </div>
+          <div class="ios-cell">
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">Количество записей</div>
+              <div class="ios-cell-subtitle">${reportData.service.recordsCount}</div>
+            </div>
+          </div>
+          ${Object.keys(reportData.service.byType).length > 0 ? `
+            ${Object.values(reportData.service.byType).map(type => `
+              <div class="ios-cell">
+                <div class="ios-cell-content">
+                  <div class="ios-cell-title">${escapeHtml(type.type)}</div>
+                  <div class="ios-cell-subtitle">${type.total.toLocaleString('ru-RU', {minimumFractionDigits: 2})} ₴ • ${type.count} записей</div>
+                </div>
+              </div>
+            `).join('')}
+          ` : ''}
+        </div>
+      `;
+      
+      if(reportData.costPerKm) {
+        html += `
+          <div class="ios-group" style="margin-top: var(--space-lg);">
+            <div class="ios-group-header">Стоимость эксплуатации</div>
+            <div class="ios-cell">
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">Стоимость за км</div>
+                <div class="ios-cell-subtitle" style="font-size: var(--font-size-title-3); font-weight: 600; color: var(--primary);">
+                  ${reportData.costPerKm.toFixed(2)} ₴/км
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      content.innerHTML = html;
+      
+      // Also render print version
+      if(printContent) {
+        printContent.innerHTML = `
+          <div style="padding: var(--space-xl); font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+            <h1 style="font-size: 24px; margin-bottom: var(--space-md);">Отчет AutoDiary</h1>
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);">
+              ${escapeHtml(carName)} • ${escapeHtml(periodText)}
+            </p>
+            ${html.replace(/ios-group|ios-cell|ios-group-header|ios-cell-content|ios-cell-title|ios-cell-subtitle/g, (match) => {
+              const map = {
+                'ios-group': 'report-section',
+                'ios-cell': 'report-item',
+                'ios-group-header': 'report-header',
+                'ios-cell-content': 'report-item-content',
+                'ios-cell-title': 'report-item-title',
+                'ios-cell-subtitle': 'report-item-subtitle'
+              };
+              return map[match] || match;
+            })}
+          </div>
+        `;
+      }
+      
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    function printReport() {
+      const printContent = document.getElementById('reports-print-content');
+      if(!printContent || printContent.style.display === 'none') {
+        showToast('Сначала сформируйте отчет');
+        return;
+      }
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Отчет AutoDiary</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+            .report-section { margin-bottom: 20px; }
+            .report-header { font-weight: 600; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+            .report-item { margin: 10px 0; }
+            .report-item-title { font-weight: 500; }
+            .report-item-subtitle { color: #666; font-size: 14px; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    
+    // Initialize category picker
+    function initializeCategoryPicker() {
+      const pickerSheet = document.getElementById('category-picker-sheet');
+      if(!pickerSheet) return;
+      
+      let selectedCategoryId = null;
+      let selectedSubcategoryId = null;
+      
+      // Close on overlay click
+      pickerSheet.addEventListener('click', (e) => {
+        if(e.target === pickerSheet) {
+          closeCategoryPicker();
+        }
+      });
+      
+      // Back button
+      const backBtn = document.getElementById('category-picker-back');
+      if(backBtn) {
+        backBtn.addEventListener('click', () => {
+          showCategoryStep1();
+        });
+      }
+      
+      // Category selection
+      pickerSheet.addEventListener('click', (e) => {
+        const categoryCell = e.target.closest('[data-category-id]');
+        if(categoryCell) {
+          selectedCategoryId = categoryCell.dataset.categoryId;
+          showCategoryStep2(selectedCategoryId);
+          return;
+        }
+        
+        const subcategoryCell = e.target.closest('[data-subcategory-id]');
+        if(subcategoryCell) {
+          selectedSubcategoryId = subcategoryCell.dataset.subcategoryId;
+          completeCategorySelection(selectedCategoryId, selectedSubcategoryId);
+          return;
+        }
+        
+        const noSubcategoryBtn = e.target.closest('#no-subcategory-btn');
+        if(noSubcategoryBtn) {
+          completeCategorySelection(selectedCategoryId, null);
+          return;
+        }
+      });
+      
+      // Search handlers
+      const categorySearch = document.getElementById('category-search');
+      if(categorySearch) {
+        categorySearch.addEventListener('input', (e) => {
+          filterCategories(e.target.value);
+        });
+      }
+      
+      const subcategorySearch = document.getElementById('subcategory-search');
+      if(subcategorySearch) {
+        subcategorySearch.addEventListener('input', (e) => {
+          filterSubcategories(selectedCategoryId, e.target.value);
+        });
+      }
+      
+      // Add subcategory button
+      const addSubBtn = document.getElementById('add-subcategory-btn');
+      if(addSubBtn) {
+        addSubBtn.addEventListener('click', () => {
+          showAddSubcategoryDialog(selectedCategoryId);
+        });
+      }
+    }
+    
+    function openCategoryPicker() {
+      const pickerSheet = document.getElementById('category-picker-sheet');
+      if(!pickerSheet) return;
+      
+      selectedCategoryId = null;
+      selectedSubcategoryId = null;
+      
+      // Render categories
+      renderCategoryPicker();
+      
+      pickerSheet.classList.add('active');
+      showCategoryStep1();
+    }
+    
+    function closeCategoryPicker() {
+      const pickerSheet = document.getElementById('category-picker-sheet');
+      if(pickerSheet) {
+        pickerSheet.classList.remove('active');
+      }
+      showCategoryStep1();
+    }
+    
+    function showCategoryStep1() {
+      document.getElementById('category-picker-step1').style.display = 'block';
+      document.getElementById('category-picker-step2').style.display = 'none';
+      document.getElementById('category-picker-back').style.display = 'none';
+      document.getElementById('category-picker-title').textContent = 'Выберите категорию';
+      document.getElementById('category-picker-subtitle').textContent = 'Выберите категорию';
+      selectedCategoryId = null;
+    }
+    
+    function showCategoryStep2(categoryId) {
+      if(!categoryId) return;
+      
+      selectedCategoryId = categoryId;
+      document.getElementById('category-picker-step1').style.display = 'none';
+      document.getElementById('category-picker-step2').style.display = 'block';
+      document.getElementById('category-picker-back').style.display = 'block';
+      
+      const category = (state.categories || []).find(c => c.id === categoryId);
+      const categoryName = category ? category.name : 'Категория';
+      document.getElementById('category-picker-title').textContent = categoryName;
+      document.getElementById('category-picker-subtitle').textContent = 'Выберите подкатегорию';
+      
+      renderSubcategoryPicker(categoryId);
+    }
+    
+    function completeCategorySelection(categoryId, subcategoryId) {
+      if(!categoryId) return;
+      
+      // Validate subcategory belongs to category
+      if(subcategoryId) {
+        const sub = (state.subcategories || []).find(s => s.id === subcategoryId);
+        if(!sub || sub.categoryId !== categoryId) {
+          showToast('Ошибка: подкатегория не соответствует категории');
+          return;
+        }
+      }
+      
+      // Set values in form
+      document.getElementById('expense-category-id').value = categoryId;
+      document.getElementById('expense-subcategory-id').value = subcategoryId || '';
+      
+      // Update display
+      const displayText = (typeof Categories !== 'undefined' && Categories.getDisplayText) ? 
+        Categories.getDisplayText(state.categories || [], state.subcategories || [], categoryId, subcategoryId) :
+        (categoryId + (subcategoryId ? ' • ' + subcategoryId : ' • Не указано'));
+      document.getElementById('expense-category-value').textContent = displayText;
+      
+      closeCategoryPicker();
+    }
+    
+    function renderCategoryPicker() {
+      if(typeof Categories === 'undefined' || !Categories.getActive) return;
+      
+      const activeCategories = Categories.getActive(state.categories || []);
+      const carId = currentCarId || state.cars[0]?.id;
+      
+      // Render recent combos
+      if(carId && typeof Categories.getRecentCombos === 'function') {
+        const recent = Categories.getRecentCombos(state.expenses || [], carId, 5);
+        const recentList = document.getElementById('category-recent-list');
+        if(recentList && recent.length > 0) {
+          document.getElementById('category-recent-combos').style.display = 'block';
+          recentList.innerHTML = '';
+          const group = document.createElement('div');
+          group.className = 'ios-group';
+          recent.forEach(combo => {
+            const cat = activeCategories.find(c => c.id === combo.categoryId);
+            if(!cat) return;
+            const sub = combo.subcategoryId ? 
+              Categories.getSubcategoriesForCategory(state.subcategories || [], combo.categoryId)
+                .find(s => s.id === combo.subcategoryId) : null;
+            const displayText = Categories.getDisplayText(state.categories || [], state.subcategories || [], combo.categoryId, combo.subcategoryId);
+            const cell = document.createElement('div');
+            cell.className = 'ios-cell';
+            cell.dataset.categoryId = combo.categoryId;
+            cell.dataset.subcategoryId = combo.subcategoryId || '';
+            cell.innerHTML = `
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(displayText)}</div>
+              </div>
+            `;
+            group.appendChild(cell);
+          });
+          recentList.appendChild(group);
+        } else {
+          document.getElementById('category-recent-combos').style.display = 'none';
+        }
+      }
+      
+      // Render frequent categories
+      if(carId && typeof Categories.getFrequentCategories === 'function') {
+        const frequent = Categories.getFrequentCategories(state.expenses || [], carId, state.categories || [], 8);
+        const frequentList = document.getElementById('category-frequent-list');
+        if(frequentList && frequent.length > 0) {
+          document.getElementById('category-frequent').style.display = 'block';
+          frequentList.innerHTML = '';
+          const group = document.createElement('div');
+          group.className = 'ios-group';
+          frequent.forEach(cat => {
+            const cell = document.createElement('div');
+            cell.className = 'ios-cell';
+            cell.dataset.categoryId = cat.id;
+            cell.innerHTML = `
+              <div class="ios-cell-icon">
+                <i data-lucide="${cat.icon || 'more-horizontal'}"></i>
+              </div>
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(cat.name)}</div>
+              </div>
+              <div class="ios-cell-trailing">
+                <span class="arrow">›</span>
+              </div>
+            `;
+            group.appendChild(cell);
+          });
+          frequentList.appendChild(group);
+        } else {
+          document.getElementById('category-frequent').style.display = 'none';
+        }
+      }
+      
+      // Render all categories
+      const categoryList = document.getElementById('category-list');
+      if(categoryList) {
+        categoryList.innerHTML = '';
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        activeCategories.forEach(cat => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          cell.dataset.categoryId = cat.id;
+          cell.innerHTML = `
+            <div class="ios-cell-icon">
+              <i data-lucide="${cat.icon || 'more-horizontal'}"></i>
+            </div>
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">${escapeHtml(cat.name)}</div>
+            </div>
+            <div class="ios-cell-trailing">
+              <span class="arrow">›</span>
+            </div>
+          `;
+          group.appendChild(cell);
+        });
+        categoryList.appendChild(group);
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+    
+    function renderSubcategoryPicker(categoryId) {
+      if(!categoryId || typeof Categories === 'undefined' || !Categories.getSubcategoriesForCategory) return;
+      
+      const subcategories = Categories.getSubcategoriesForCategory(state.subcategories || [], categoryId);
+      const carId = currentCarId || state.cars[0]?.id;
+      
+      // Render frequent subcategories
+      if(carId && typeof Categories.getFrequentSubcategories === 'function') {
+        const frequent = Categories.getFrequentSubcategories(state.expenses || [], carId, categoryId, state.subcategories || [], 5);
+        const frequentList = document.getElementById('subcategory-frequent-list');
+        if(frequentList && frequent.length > 0) {
+          document.getElementById('subcategory-frequent').style.display = 'block';
+          frequentList.innerHTML = '';
+          const group = document.createElement('div');
+          group.className = 'ios-group';
+          frequent.forEach(sub => {
+            const cell = document.createElement('div');
+            cell.className = 'ios-cell';
+            cell.dataset.subcategoryId = sub.id;
+            cell.innerHTML = `
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(sub.name)}</div>
+              </div>
+            `;
+            group.appendChild(cell);
+          });
+          frequentList.appendChild(group);
+        } else {
+          document.getElementById('subcategory-frequent').style.display = 'none';
+        }
+      }
+      
+      // Render all subcategories
+      const subcategoryList = document.getElementById('subcategory-list');
+      if(subcategoryList) {
+        subcategoryList.innerHTML = '';
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        
+        // "No subcategory" option
+        const noSubCell = document.createElement('div');
+        noSubCell.className = 'ios-cell';
+        noSubCell.id = 'no-subcategory-btn';
+        noSubCell.style.cursor = 'pointer';
+        noSubCell.innerHTML = `
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">Не указано</div>
+            <div class="ios-cell-subtitle">Без подкатегории</div>
+          </div>
+        `;
+        group.appendChild(noSubCell);
+        
+        // Subcategories
+        subcategories.forEach(sub => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          cell.dataset.subcategoryId = sub.id;
+          cell.innerHTML = `
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">${escapeHtml(sub.name)}</div>
+            </div>
+          `;
+          group.appendChild(cell);
+        });
+        subcategoryList.appendChild(group);
+      }
+    }
+    
+    function filterCategories(searchTerm) {
+      // Simple filter - hide/show categories based on search
+      const normalized = (searchTerm || '').toLowerCase().trim();
+      const cells = document.querySelectorAll('#category-list .ios-cell');
+      cells.forEach(cell => {
+        const title = cell.querySelector('.ios-cell-title')?.textContent || '';
+        cell.style.display = title.toLowerCase().includes(normalized) ? '' : 'none';
+      });
+    }
+    
+    function filterSubcategories(categoryId, searchTerm) {
+      const normalized = (searchTerm || '').toLowerCase().trim();
+      const cells = document.querySelectorAll('#subcategory-list .ios-cell');
+      cells.forEach(cell => {
+        if(cell.id === 'no-subcategory-btn') {
+          cell.style.display = normalized === '' ? '' : 'none';
+          return;
+        }
+        const title = cell.querySelector('.ios-cell-title')?.textContent || '';
+        cell.style.display = title.toLowerCase().includes(normalized) ? '' : 'none';
+      });
+    }
+    
+    function showAddSubcategoryDialog(categoryId) {
+      const name = prompt('Введите название подкатегории:');
+      if(!name || !name.trim()) return;
+      
+      if(typeof Categories === 'undefined' || !Categories.createSubcategory) {
+        showToast('Модуль категорий не загружен');
+        return;
+      }
+      
+      // Check uniqueness
+      if(!Categories.isSubcategoryNameUnique(state.subcategories || [], categoryId, name)) {
+        showToast('Подкатегория с таким названием уже существует');
+        return;
+      }
+      
+      const subcategory = Categories.createSubcategory(categoryId, name);
+      if(!state.subcategories) state.subcategories = [];
+      state.subcategories.push(subcategory);
+      
+      if(saveAppState()) {
+        showToast('Подкатегория добавлена');
+        renderSubcategoryPicker(categoryId);
+      }
+    }
+    
+    // Settings functions
+    function initializeSettingsHandlers() {
+      // Currency click handler
+      const currencyItem = document.getElementById('currency-item');
+      if(currencyItem) {
+        currencyItem.addEventListener('click', () => {
+          const settings = state.settings || {};
+          const units = settings.units || {};
+          const current = units.currency || '₴';
+          const currencies = ['₴', '$', '€', '£', '₽', '¥'];
+          const currentIndex = currencies.indexOf(current);
+          const nextIndex = (currentIndex + 1) % currencies.length;
+          const nextCurrency = currencies[nextIndex];
+          
+          if(!state.settings) state.settings = {};
+          if(!state.settings.units) state.settings.units = {};
+          state.settings.units.currency = nextCurrency;
+          
+          if(saveAppState()) {
+            refreshSettingsScreen();
+            showToast(`Валюта: ${nextCurrency}`);
+          }
+        });
+      }
+      
+      // Require odometer toggle
+      const requireOdometerEl = document.getElementById('set-require-odometer');
+      if(requireOdometerEl) {
+        requireOdometerEl.addEventListener('change', (e) => {
+          if(!state.settings) state.settings = {};
+          state.settings.requireOdometer = e.target.checked;
+          if(saveAppState()) {
+            showToast(e.target.checked ? 'Пробег обязателен' : 'Пробег необязателен');
+          }
+        });
+      }
+    }
+    
+    // Templates and Recurring functions
+    function renderTemplates() {
+      const container = document.getElementById('templates-list');
+      const empty = document.getElementById('templates-empty');
+      if(!container) return;
+      
+      if(typeof Templates === 'undefined') {
+        if(empty) empty.style.display = 'block';
+        container.innerHTML = '';
+        return;
+      }
+      
+      const templates = Templates.getTemplates(null, state);
+      
+      if(templates.length === 0) {
+        container.innerHTML = '';
+        if(empty) empty.style.display = 'block';
+        return;
+      }
+      
+      if(empty) empty.style.display = 'none';
+      container.innerHTML = '';
+      
+      // Group by type
+      const byType = { expense: [], fuel: [], service: [] };
+      templates.forEach(t => {
+        if(byType[t.type]) byType[t.type].push(t);
+      });
+      
+      Object.keys(byType).forEach(type => {
+        if(byType[type].length === 0) return;
+        
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        const header = document.createElement('div');
+        header.className = 'ios-group-header';
+        header.textContent = type === 'expense' ? 'Расходы' : type === 'fuel' ? 'Заправки' : 'Сервис';
+        group.appendChild(header);
+        
+        byType[type].forEach(template => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          cell.innerHTML = `
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">${escapeHtml(template.name || 'Шаблон')}</div>
+              <div class="ios-cell-subtitle">
+                ${template.data.amount ? template.data.amount + ' ₴' : ''}
+                ${template.data.categoryId && typeof Categories !== 'undefined' ? 
+                  ' • ' + Categories.getCategoryName(template.data.categoryId, state) : ''}
+              </div>
+            </div>
+            <div class="ios-cell-trailing">
+              <button class="ios-cell-action-btn" data-use-template="${template.id}" title="Использовать">
+                <i data-lucide="plus"></i>
+              </button>
+              <button class="ios-cell-action-btn" data-delete-template="${template.id}" title="Удалить">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          `;
+          group.appendChild(cell);
+        });
+        
+        container.appendChild(group);
+      });
+      
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    function renderRecurring() {
+      const upcomingList = document.getElementById('recurring-upcoming-list');
+      const upcomingGroup = document.getElementById('recurring-upcoming-group');
+      const rulesList = document.getElementById('recurring-rules-list');
+      const empty = document.getElementById('recurring-empty');
+      
+      if(!rulesList) return;
+      
+      if(typeof Recurring === 'undefined') {
+        if(empty) empty.style.display = 'block';
+        if(upcomingGroup) upcomingGroup.style.display = 'none';
+        rulesList.innerHTML = '';
+        return;
+      }
+      
+      const upcoming = Recurring.getUpcoming(state);
+      const rules = (state.recurringRules || []).filter(r => !r.deletedAt);
+      
+      if(rules.length === 0 && upcoming.length === 0) {
+        if(empty) empty.style.display = 'block';
+        if(upcomingGroup) upcomingGroup.style.display = 'none';
+        rulesList.innerHTML = '';
+        return;
+      }
+      
+      if(empty) empty.style.display = 'none';
+      
+      // Render upcoming
+      if(upcoming.length > 0 && upcomingList && upcomingGroup) {
+        upcomingGroup.style.display = 'block';
+        upcomingList.innerHTML = '';
+        
+        upcoming.forEach(item => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          const dueDate = new Date(item.dueDate);
+          cell.innerHTML = `
+            <div class="ios-cell-content">
+              <div class="ios-cell-title">${escapeHtml(item.template.name || 'Шаблон')}</div>
+              <div class="ios-cell-subtitle">
+                ${escapeHtml(item.car)} • ${dueDate.toLocaleDateString('ru-RU')}
+              </div>
+            </div>
+            <div class="ios-cell-trailing">
+              <button class="ios-cell-action-btn" data-mark-paid="${item.id}" title="Отметить как оплачено" style="color: var(--success);">
+                <i data-lucide="check"></i>
+              </button>
+            </div>
+          `;
+          upcomingList.appendChild(cell);
+        });
+      } else if(upcomingGroup) {
+        upcomingGroup.style.display = 'none';
+      }
+      
+      // Update upcoming count in settings
+      const upcomingCountEl = document.getElementById('recurring-upcoming-count');
+      if(upcomingCountEl) upcomingCountEl.textContent = upcoming.length > 0 ? upcoming.length.toString() : '0';
+      
+      // Render rules
+      rulesList.innerHTML = '';
+      const group = document.createElement('div');
+      group.className = 'ios-group';
+      
+      rules.forEach(rule => {
+        const template = Templates.getTemplate(rule.templateId, state);
+        const car = state.cars.find(c => c.id === rule.carId);
+        const frequencyText = {
+          'weekly': 'Еженедельно',
+          'monthly': 'Ежемесячно',
+          'yearly': 'Ежегодно',
+          'custom': `Каждые ${rule.customDays} дней`
+        }[rule.frequency] || rule.frequency;
+        
+        const cell = document.createElement('div');
+        cell.className = 'ios-cell';
+        cell.innerHTML = `
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">${escapeHtml(template ? template.name : 'Шаблон')}</div>
+            <div class="ios-cell-subtitle">
+              ${car ? escapeHtml(`${car.brand} ${car.model}`) : 'Неизвестный автомобиль'} • ${frequencyText}
+            </div>
+            ${rule.nextDue ? `
+              <div class="ios-cell-subtitle" style="margin-top: var(--space-xs); color: var(--text-secondary);">
+                Следующий: ${new Date(rule.nextDue).toLocaleDateString('ru-RU')}
+              </div>
+            ` : ''}
+          </div>
+          <div class="ios-cell-trailing">
+            <button class="ios-cell-action-btn" data-delete-recurring="${rule.id}" title="Удалить">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        `;
+        group.appendChild(cell);
+      });
+      
+      rulesList.appendChild(group);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    function renderCategoriesManagement() {
+      const container = document.getElementById('categories-management-list');
+      const empty = document.getElementById('categories-empty');
+      if(!container) return;
+      
+      if(typeof Categories === 'undefined') {
+        if(empty) empty.style.display = 'block';
+        container.innerHTML = '';
+        return;
+      }
+      
+      const categories = Categories.getActive(state.categories || []);
+      
+      if(categories.length === 0) {
+        container.innerHTML = '';
+        if(empty) empty.style.display = 'block';
+        return;
+      }
+      
+      if(empty) empty.style.display = 'none';
+      container.innerHTML = '';
+      
+      categories.forEach(category => {
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        
+        // Category header
+        const categoryCell = document.createElement('div');
+        categoryCell.className = 'ios-cell';
+        categoryCell.setAttribute('data-category-id', category.id);
+        categoryCell.innerHTML = `
+          <div class="ios-cell-content">
+            <div style="display: flex; align-items: center; gap: var(--space-sm);">
+              <i data-lucide="${category.icon || 'folder'}" style="width: 20px; height: 20px;"></i>
+              <div>
+                <div class="ios-cell-title">${escapeHtml(category.name)}</div>
+                <div class="ios-cell-subtitle" style="font-size: var(--font-size-caption);">
+                  ${Categories.getSubcategoriesForCategory(state.subcategories || [], category.id).length} подкатегорий
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ios-cell-trailing">
+            <button class="ios-cell-action-btn" data-category-edit="${category.id}" title="Редактировать">
+              <i data-lucide="edit"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-category-move-up="${category.id}" title="Вверх">
+              <i data-lucide="chevron-up"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-category-move-down="${category.id}" title="Вниз">
+              <i data-lucide="chevron-down"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-category-archive="${category.id}" title="Архивировать">
+              <i data-lucide="archive"></i>
+            </button>
+            <button class="ios-cell-action-btn" data-category-toggle="${category.id}" title="Развернуть">
+              <i data-lucide="chevron-right" class="category-toggle-icon"></i>
+            </button>
+          </div>
+        `;
+        group.appendChild(categoryCell);
+        
+        // Subcategories container (initially hidden)
+        const subcategoriesContainer = document.createElement('div');
+        subcategoriesContainer.className = 'category-subcategories';
+        subcategoriesContainer.style.display = 'none';
+        subcategoriesContainer.setAttribute('data-category-id', category.id);
+        
+        const subcategories = Categories.getSubcategoriesForCategory(state.subcategories || [], category.id);
+        if(subcategories.length > 0) {
+          subcategories.forEach(subcategory => {
+            const subCell = document.createElement('div');
+            subCell.className = 'ios-cell';
+            subCell.style.paddingLeft = 'var(--space-xl)';
+            subCell.setAttribute('data-subcategory-id', subcategory.id);
+            subCell.innerHTML = `
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(subcategory.name)}</div>
+              </div>
+              <div class="ios-cell-trailing">
+                <button class="ios-cell-action-btn" data-subcategory-edit="${subcategory.id}" title="Редактировать">
+                  <i data-lucide="edit"></i>
+                </button>
+                <button class="ios-cell-action-btn" data-subcategory-move-up="${subcategory.id}" title="Вверх">
+                  <i data-lucide="chevron-up"></i>
+                </button>
+                <button class="ios-cell-action-btn" data-subcategory-move-down="${subcategory.id}" title="Вниз">
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <button class="ios-cell-action-btn" data-subcategory-archive="${subcategory.id}" title="Архивировать">
+                  <i data-lucide="archive"></i>
+                </button>
+              </div>
+            `;
+            subcategoriesContainer.appendChild(subCell);
+          });
+        } else {
+          const emptySub = document.createElement('div');
+          emptySub.className = 'ios-cell';
+          emptySub.style.paddingLeft = 'var(--space-xl)';
+          emptySub.style.color = 'var(--text-secondary)';
+          emptySub.style.fontSize = 'var(--font-size-caption)';
+          emptySub.textContent = 'Нет подкатегорий';
+          subcategoriesContainer.appendChild(emptySub);
+        }
+        
+        // Add subcategory button
+        const addSubBtn = document.createElement('div');
+        addSubBtn.className = 'ios-cell';
+        addSubBtn.style.paddingLeft = 'var(--space-xl)';
+        addSubBtn.style.cursor = 'pointer';
+        addSubBtn.setAttribute('data-add-subcategory', category.id);
+        addSubBtn.innerHTML = `
+          <div class="ios-cell-content">
+            <div class="ios-cell-title" style="color: var(--primary);">
+              <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-xs);"></i>
+              Добавить подкатегорию
+            </div>
+          </div>
+        `;
+        subcategoriesContainer.appendChild(addSubBtn);
+        
+        group.appendChild(subcategoriesContainer);
+        container.appendChild(group);
+      });
+      
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    // Handle template and recurring actions
+    document.body.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-use-template], [data-delete-template], [data-mark-paid], [data-delete-recurring]');
+      if(!target) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if(target.dataset.useTemplate) {
+        const template = Templates.getTemplate(target.dataset.useTemplate, state);
+        if(template) {
+          const carId = currentCarId || state.cars[0]?.id;
+          if(!carId) {
+            showToast('Выберите автомобиль');
+            return;
+          }
+          
+          const data = Templates.applyTemplate(template, carId);
+          
+          if(template.type === 'expense') {
+            // Fill expense form
+            document.getElementById('expense-category-id').value = data.categoryId || '';
+            document.getElementById('expense-subcategory-id').value = data.subcategoryId || '';
+            if(data.amount) document.getElementById('amount').value = data.amount;
+            if(data.notes) document.getElementById('notes').value = data.notes;
+            if(data.date) document.getElementById('date').value = data.date;
+            
+            // Update category display
+            if(data.categoryId && typeof Categories !== 'undefined') {
+              const catName = Categories.getCategoryName(data.categoryId, state);
+              const subName = data.subcategoryId ? Categories.getSubcategoryName(data.subcategoryId, state) : null;
+              const display = subName ? `${catName} • ${subName}` : catName;
+              const categoryValue = document.getElementById('expense-category-value');
+              if(categoryValue) categoryValue.textContent = display;
+            }
+            
+            showView('screen-expense-form');
+            showToast('Шаблон применен');
+          } else if(template.type === 'fuel') {
+            // Fill fuel form
+            if(data.liters) document.getElementById('fuel-liters').value = data.liters;
+            if(data.totalCost) document.getElementById('fuel-cost').value = data.totalCost;
+            if(data.fullTank) document.getElementById('fuel-full-tank').checked = true;
+            if(data.station) document.getElementById('fuel-station').value = data.station;
+            if(data.notes) document.getElementById('fuel-notes').value = data.notes;
+            if(data.date) document.getElementById('fuel-date').value = data.date;
+            
+            showView('screen-add-fuel');
+            showToast('Шаблон применен');
+          } else if(template.type === 'service') {
+            // Fill service form
+            if(data.type) document.getElementById('service-type').value = data.type;
+            if(data.cost) document.getElementById('service-cost').value = data.cost;
+            if(data.shop) document.getElementById('service-shop').value = data.shop;
+            if(data.notes) document.getElementById('service-notes').value = data.notes;
+            if(data.date) document.getElementById('service-date').value = data.date;
+            
+            showView('screen-add-service');
+            showToast('Шаблон применен');
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.deleteTemplate) {
+        const template = Templates.getTemplate(target.dataset.deleteTemplate, state);
+        if(template) {
+          showModal('Удалить шаблон?', `Удалить шаблон "${template.name}"?`, () => {
+            if(typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+              SoftDelete.delete(template, 'template', state);
+            } else {
+              template.deletedAt = new Date().toISOString();
+            }
+            if(saveAppState()) {
+              showToast('Шаблон удален');
+              renderTemplates();
+            }
+          });
+        }
+        return;
+      }
+      
+      if(target.dataset.markPaid) {
+        if(typeof Recurring === 'undefined') {
+          showToast('Модуль повторяющихся расходов не загружен');
+          return;
+        }
+        
+        const entry = Recurring.markAsPaid(target.dataset.markPaid, state);
+        if(entry && saveAppState()) {
+          showToast('Расход создан');
+          renderRecurring();
+          renderDiary();
+          if(currentCarId) {
+            renderFuelTab(currentCarId);
+            renderServiceTab(currentCarId);
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.deleteRecurring) {
+        const rule = state.recurringRules.find(r => r.id === target.dataset.deleteRecurring);
+        if(rule) {
+          showModal('Удалить правило?', 'Повторяющийся расход будет удален', () => {
+            if(typeof SoftDelete !== 'undefined' && SoftDelete.delete) {
+              SoftDelete.delete(rule, 'recurring', state);
+            } else {
+              rule.deletedAt = new Date().toISOString();
+            }
+            if(saveAppState()) {
+              showToast('Правило удалено');
+              renderRecurring();
+            }
+          });
+        }
+        return;
+      }
+    });
+    
+    // Handle categories management actions
+    document.body.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-category-edit], [data-category-archive], [data-category-move-up], [data-category-move-down], [data-category-toggle], [data-subcategory-edit], [data-subcategory-archive], [data-subcategory-move-up], [data-subcategory-move-down], [data-add-subcategory], [data-add-category]');
+      if(!target) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if(target.dataset.categoryEdit) {
+        const categoryId = target.dataset.categoryEdit;
+        const category = (state.categories || []).find(c => c.id === categoryId);
+        if(category) {
+          document.getElementById('category-edit-title').textContent = 'Редактировать категорию';
+          document.getElementById('category-edit-name').value = category.name;
+          document.getElementById('category-edit-icon').value = category.icon || '';
+          window.editingCategoryId = categoryId;
+          window.editingSubcategoryId = null;
+          const sheet = document.getElementById('category-edit-sheet');
+          if(sheet) {
+            sheet.style.display = 'block';
+            setTimeout(() => sheet.classList.add('active'), 10);
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.subcategoryEdit) {
+        const subcategoryId = target.dataset.subcategoryEdit;
+        const subcategory = (state.subcategories || []).find(s => s.id === subcategoryId);
+        if(subcategory) {
+          document.getElementById('subcategory-edit-title').textContent = 'Редактировать подкатегорию';
+          document.getElementById('subcategory-edit-name').value = subcategory.name;
+          window.editingCategoryId = null;
+          window.editingSubcategoryId = subcategoryId;
+          const sheet = document.getElementById('subcategory-edit-sheet');
+          if(sheet) {
+            sheet.style.display = 'block';
+            setTimeout(() => sheet.classList.add('active'), 10);
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.categoryArchive) {
+        const categoryId = target.dataset.categoryArchive;
+        const category = (state.categories || []).find(c => c.id === categoryId);
+        if(category) {
+          const action = category.isArchived ? 'восстановить' : 'архивировать';
+          showModal(`${action.charAt(0).toUpperCase() + action.slice(1)} категорию?`, 
+            category.isArchived ? 'Категория будет восстановлена' : 'Категория будет скрыта из списка', 
+            () => {
+              if(typeof Categories !== 'undefined' && Categories.archiveCategory) {
+                Categories.archiveCategory(categoryId, !category.isArchived, state);
+                if(saveAppState()) {
+                  showToast(category.isArchived ? 'Категория восстановлена' : 'Категория архивирована');
+                  renderCategoriesManagement();
+                }
+              }
+            });
+        }
+        return;
+      }
+      
+      if(target.dataset.subcategoryArchive) {
+        const subcategoryId = target.dataset.subcategoryArchive;
+        const subcategory = (state.subcategories || []).find(s => s.id === subcategoryId);
+        if(subcategory) {
+          const action = subcategory.isArchived ? 'восстановить' : 'архивировать';
+          showModal(`${action.charAt(0).toUpperCase() + action.slice(1)} подкатегорию?`, 
+            subcategory.isArchived ? 'Подкатегория будет восстановлена' : 'Подкатегория будет скрыта из списка', 
+            () => {
+              if(typeof Categories !== 'undefined' && Categories.archiveSubcategory) {
+                Categories.archiveSubcategory(subcategoryId, !subcategory.isArchived, state);
+                if(saveAppState()) {
+                  showToast(subcategory.isArchived ? 'Подкатегория восстановлена' : 'Подкатегория архивирована');
+                  renderCategoriesManagement();
+                }
+              }
+            });
+        }
+        return;
+      }
+      
+      if(target.dataset.categoryMoveUp || target.dataset.categoryMoveDown) {
+        const categoryId = target.dataset.categoryMoveUp || target.dataset.categoryMoveDown;
+        const direction = target.dataset.categoryMoveUp ? 'up' : 'down';
+        if(typeof Categories !== 'undefined' && Categories.moveCategory) {
+          if(Categories.moveCategory(categoryId, direction, state)) {
+            if(saveAppState()) {
+              renderCategoriesManagement();
+            }
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.subcategoryMoveUp || target.dataset.subcategoryMoveDown) {
+        const subcategoryId = target.dataset.subcategoryMoveUp || target.dataset.subcategoryMoveDown;
+        const direction = target.dataset.subcategoryMoveUp ? 'up' : 'down';
+        if(typeof Categories !== 'undefined' && Categories.moveSubcategory) {
+          if(Categories.moveSubcategory(subcategoryId, direction, state)) {
+            if(saveAppState()) {
+              renderCategoriesManagement();
+            }
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.categoryToggle) {
+        const categoryId = target.dataset.categoryToggle;
+        const container = document.querySelector(`[data-category-id="${categoryId}"].category-subcategories`);
+        const icon = target.querySelector('.category-toggle-icon');
+        if(container) {
+          const isVisible = container.style.display !== 'none';
+          container.style.display = isVisible ? 'none' : 'block';
+          if(icon) {
+            icon.setAttribute('data-lucide', isVisible ? 'chevron-right' : 'chevron-down');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.addSubcategory) {
+        const categoryId = target.dataset.addSubcategory;
+        const name = prompt('Введите название подкатегории:');
+        if(name && name.trim()) {
+          if(typeof Categories !== 'undefined' && Categories.createSubcategory) {
+            const subcategory = Categories.createSubcategory(categoryId, name.trim());
+            if(!state.subcategories) state.subcategories = [];
+            if(Categories.isSubcategoryNameUnique(state.subcategories, categoryId, name.trim())) {
+              state.subcategories.push(subcategory);
+              if(saveAppState()) {
+                showToast('Подкатегория добавлена');
+                renderCategoriesManagement();
+              }
+            } else {
+              showToast('Подкатегория с таким названием уже существует');
+            }
+          }
+        }
+        return;
+      }
+      
+      if(target.dataset.addCategory || target.id === 'add-category-btn') {
+        const name = prompt('Введите название категории:');
+        if(name && name.trim()) {
+          if(typeof Categories !== 'undefined' && Categories.createCategory) {
+            const category = Categories.createCategory(name.trim());
+            if(!state.categories) state.categories = [];
+            if(Categories.isCategoryNameUnique(state.categories, name.trim())) {
+              state.categories.push(category);
+              if(saveAppState()) {
+                showToast('Категория добавлена');
+                renderCategoriesManagement();
+              }
+            } else {
+              showToast('Категория с таким названием уже существует');
+            }
+          }
+        }
+        return;
+      }
+    });
+    
+    // Handle category/subcategory edit modals
+    const categoryEditSave = document.getElementById('category-edit-save');
+    const categoryEditCancel = document.getElementById('category-edit-cancel');
+    const categoryEditClose = document.getElementById('category-edit-close');
+    const subcategoryEditSave = document.getElementById('subcategory-edit-save');
+    const subcategoryEditCancel = document.getElementById('subcategory-edit-cancel');
+    const subcategoryEditClose = document.getElementById('subcategory-edit-close');
+    
+    function closeCategoryEditSheet() {
+      const sheet = document.getElementById('category-edit-sheet');
+      if(sheet) {
+        sheet.classList.remove('active');
+        setTimeout(() => sheet.style.display = 'none', 300);
+      }
+      window.editingCategoryId = null;
+    }
+    
+    function closeSubcategoryEditSheet() {
+      const sheet = document.getElementById('subcategory-edit-sheet');
+      if(sheet) {
+        sheet.classList.remove('active');
+        setTimeout(() => sheet.style.display = 'none', 300);
+      }
+      window.editingSubcategoryId = null;
+    }
+    
+    // Close modals on overlay click
+    const categoryEditSheet = document.getElementById('category-edit-sheet');
+    const subcategoryEditSheet = document.getElementById('subcategory-edit-sheet');
+    if(categoryEditSheet) {
+      categoryEditSheet.addEventListener('click', (e) => {
+        if(e.target === categoryEditSheet) {
+          closeCategoryEditSheet();
+        }
+      });
+    }
+    if(subcategoryEditSheet) {
+      subcategoryEditSheet.addEventListener('click', (e) => {
+        if(e.target === subcategoryEditSheet) {
+          closeSubcategoryEditSheet();
+        }
+      });
+    }
+    
+    if(categoryEditSave) {
+      categoryEditSave.addEventListener('click', () => {
+        const name = document.getElementById('category-edit-name').value.trim();
+        const icon = document.getElementById('category-edit-icon').value.trim();
+        if(!name) {
+          showToast('Введите название категории');
+          return;
+        }
+        
+        if(window.editingCategoryId) {
+          if(typeof Categories !== 'undefined' && Categories.updateCategory) {
+            if(Categories.updateCategory(window.editingCategoryId, { name, icon }, state)) {
+              if(saveAppState()) {
+                showToast('Категория обновлена');
+                closeCategoryEditSheet();
+                renderCategoriesManagement();
+              }
+            } else {
+              showToast('Категория с таким названием уже существует');
+            }
+          }
+        }
+      });
+    }
+    
+    if(categoryEditCancel || categoryEditClose) {
+      [categoryEditCancel, categoryEditClose].forEach(btn => {
+        if(btn) btn.addEventListener('click', closeCategoryEditSheet);
+      });
+    }
+    
+    if(subcategoryEditSave) {
+      subcategoryEditSave.addEventListener('click', () => {
+        const name = document.getElementById('subcategory-edit-name').value.trim();
+        if(!name) {
+          showToast('Введите название подкатегории');
+          return;
+        }
+        
+        if(window.editingSubcategoryId) {
+          if(typeof Categories !== 'undefined' && Categories.updateSubcategory) {
+            if(Categories.updateSubcategory(window.editingSubcategoryId, { name }, state)) {
+              if(saveAppState()) {
+                showToast('Подкатегория обновлена');
+                closeSubcategoryEditSheet();
+                renderCategoriesManagement();
+              }
+            } else {
+              showToast('Подкатегория с таким названием уже существует');
+            }
+          }
+        }
+      });
+    }
+    
+    if(subcategoryEditCancel || subcategoryEditClose) {
+      [subcategoryEditCancel, subcategoryEditClose].forEach(btn => {
+        if(btn) btn.addEventListener('click', closeSubcategoryEditSheet);
+      });
+    }
+    
+    function initializeUnitsSettings() {
+      const settings = state.settings || {};
+      const units = settings.units || { distance: 'km', fuel: 'L/100km' };
+      
+      // Set radio buttons
+      const distanceKm = document.getElementById('unit-distance-km');
+      const distanceMi = document.getElementById('unit-distance-mi');
+      if(distanceKm && distanceMi) {
+        if(units.distance === 'mi') {
+          distanceMi.checked = true;
+          distanceKm.checked = false;
+        } else {
+          distanceKm.checked = true;
+          distanceMi.checked = false;
+        }
+        
+        distanceKm.addEventListener('change', () => {
+          if(distanceKm.checked) {
+            if(!state.settings) state.settings = {};
+            if(!state.settings.units) state.settings.units = {};
+            state.settings.units.distance = 'km';
+            if(saveAppState()) {
+              showToast('Единицы: километры');
+            }
+          }
+        });
+        
+        distanceMi.addEventListener('change', () => {
+          if(distanceMi.checked) {
+            if(!state.settings) state.settings = {};
+            if(!state.settings.units) state.settings.units = {};
+            state.settings.units.distance = 'mi';
+            if(saveAppState()) {
+              showToast('Единицы: мили');
+            }
+          }
+        });
+      }
+      
+      const fuelL100km = document.getElementById('unit-fuel-l100km');
+      const fuelKmL = document.getElementById('unit-fuel-kml');
+      if(fuelL100km && fuelKmL) {
+        if(units.fuel === 'km/L') {
+          fuelKmL.checked = true;
+          fuelL100km.checked = false;
+        } else {
+          fuelL100km.checked = true;
+          fuelKmL.checked = false;
+        }
+        
+        fuelL100km.addEventListener('change', () => {
+          if(fuelL100km.checked) {
+            if(!state.settings) state.settings = {};
+            if(!state.settings.units) state.settings.units = {};
+            state.settings.units.fuel = 'L/100km';
+            if(saveAppState()) {
+              showToast('Единицы: L/100km');
+            }
+          }
+        });
+        
+        fuelKmL.addEventListener('change', () => {
+          if(fuelKmL.checked) {
+            if(!state.settings) state.settings = {};
+            if(!state.settings.units) state.settings.units = {};
+            state.settings.units.fuel = 'km/L';
+            if(saveAppState()) {
+              showToast('Единицы: km/L');
+            }
+          }
+        });
+      }
+    }
+    
+    let selectedCategoryId = null;
+    let selectedSubcategoryId = null;
+    
+    // Initialize advanced filters modal
+    function initializeAdvancedFilters() {
+      const advancedFiltersBtn = document.getElementById('advanced-filters-btn');
+      const filtersSheet = document.getElementById('advanced-filters-sheet');
+      const closeFiltersBtn = document.getElementById('close-filters-btn');
+      const applyFiltersBtn = document.getElementById('apply-filters-btn');
+      const resetFiltersBtn = document.getElementById('reset-filters-btn');
+      
+      if (!advancedFiltersBtn || !filtersSheet) return;
+      
+      // Open filters modal
+      advancedFiltersBtn.addEventListener('click', () => {
+        if (typeof Search !== 'undefined') {
+          populateFiltersModal();
+          filtersSheet.style.display = 'block';
+          setTimeout(() => {
+            filtersSheet.classList.add('active');
+          }, 10);
+        }
+      });
+      
+      // Close filters modal
+      if (closeFiltersBtn) {
+        closeFiltersBtn.addEventListener('click', () => {
+          filtersSheet.classList.remove('active');
+          setTimeout(() => {
+            filtersSheet.style.display = 'none';
+          }, 300);
+        });
+      }
+      
+      // Apply filters
+      if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', () => {
+          if (typeof Search !== 'undefined') {
+            applyAdvancedFilters();
+            filtersSheet.classList.remove('active');
+            setTimeout(() => {
+              filtersSheet.style.display = 'none';
+            }, 300);
+            renderDiary();
+          }
+        });
+      }
+      
+      // Reset filters
+      if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', () => {
+          if (typeof Search !== 'undefined') {
+            Search.resetFilters();
+            populateFiltersModal();
+            applyAdvancedFilters();
+            renderDiary();
+          }
+        });
+      }
+      
+      // Close on overlay click
+      filtersSheet.addEventListener('click', (e) => {
+        if (e.target === filtersSheet) {
+          filtersSheet.classList.remove('active');
+          setTimeout(() => {
+            filtersSheet.style.display = 'none';
+          }, 300);
+        }
+      });
+    }
+    
+    // Populate filters modal with current values
+    function populateFiltersModal() {
+      if (typeof Search === 'undefined') return;
+      
+      const filters = Search.advancedFilters;
+      
+      const carSelect = document.getElementById('filter-car');
+      if (carSelect) {
+        carSelect.innerHTML = '<option value="all">Все автомобили</option>';
+        (state.cars || []).filter(c => !c.deletedAt).forEach(car => {
+          const option = document.createElement('option');
+          option.value = car.id;
+          option.textContent = `${car.brand} ${car.model}`;
+          if (car.id === filters.carId) option.selected = true;
+          carSelect.appendChild(option);
+        });
+      }
+      
+      const typeSelect = document.getElementById('filter-type');
+      if (typeSelect) typeSelect.value = filters.type || 'all';
+      
+      const dateFrom = document.getElementById('filter-date-from');
+      if (dateFrom) dateFrom.value = filters.dateFrom || '';
+      
+      const dateTo = document.getElementById('filter-date-to');
+      if (dateTo) dateTo.value = filters.dateTo || '';
+      
+      const amountFrom = document.getElementById('filter-amount-from');
+      if (amountFrom) amountFrom.value = filters.amountFrom || '';
+      
+      const amountTo = document.getElementById('filter-amount-to');
+      if (amountTo) amountTo.value = filters.amountTo || '';
+      
+      const hasReceipt = document.getElementById('filter-has-receipt');
+      if (hasReceipt) hasReceipt.checked = filters.hasReceipt || false;
+      
+      const tags = document.getElementById('filter-tags');
+      if (tags) tags.value = Array.isArray(filters.tags) ? filters.tags.join(', ') : '';
+    }
+    
+    // Apply advanced filters from modal
+    function applyAdvancedFilters() {
+      if (typeof Search === 'undefined') return;
+      
+      const carSelect = document.getElementById('filter-car');
+      const typeSelect = document.getElementById('filter-type');
+      const dateFrom = document.getElementById('filter-date-from');
+      const dateTo = document.getElementById('filter-date-to');
+      const amountFrom = document.getElementById('filter-amount-from');
+      const amountTo = document.getElementById('filter-amount-to');
+      const hasReceipt = document.getElementById('filter-has-receipt');
+      const tags = document.getElementById('filter-tags');
+      
+      Search.advancedFilters = {
+        carId: carSelect ? carSelect.value : 'all',
+        type: typeSelect ? typeSelect.value : 'all',
+        dateFrom: dateFrom ? dateFrom.value : null,
+        dateTo: dateTo ? dateTo.value : null,
+        amountFrom: amountFrom ? amountFrom.value : null,
+        amountTo: amountTo ? amountTo.value : null,
+        hasReceipt: hasReceipt ? hasReceipt.checked : false,
+        tags: tags ? tags.value.split(',').map(t => t.trim()).filter(Boolean) : []
+      };
+    }
+    
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initApp);
