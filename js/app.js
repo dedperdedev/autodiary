@@ -1737,6 +1737,156 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
     
+    // Render maintenance plan widget in diary
+    function renderMaintenanceWidget() {
+      const widget = document.getElementById('maintenance-widget');
+      const content = document.getElementById('maintenance-widget-content');
+      const emptyMsg = document.getElementById('maintenance-widget-empty');
+      const showAllBtn = document.getElementById('maintenance-widget-show-all');
+      
+      if (!widget || !content) return;
+      
+      // Get cars to check (based on current filter)
+      let carsToCheck = [];
+      if (diaryFilters.carId === '__all__') {
+        carsToCheck = state.cars.filter(c => !c.deletedAt);
+      } else {
+        const car = state.cars.find(c => c.id === diaryFilters.carId && !c.deletedAt);
+        if (car) carsToCheck = [car];
+      }
+      
+      if (carsToCheck.length === 0) {
+        widget.style.display = 'none';
+        return;
+      }
+      
+      // Collect all maintenance items from selected cars
+      const allItems = [];
+      carsToCheck.forEach(car => {
+        if (!car.servicePlan || car.servicePlan.length === 0) return;
+        
+        // Get current odometer for this car
+        const carService = (state.service || []).filter(s => s.carId === car.id && !s.deletedAt);
+        const carFuel = (state.fuel || []).filter(f => f.carId === car.id && !f.deletedAt);
+        const carExpenses = (state.expenses || []).filter(e => e.carId === car.id && !e.deletedAt && e.odometer);
+        
+        let currentOdometer = 0;
+        if (carService.length > 0) {
+          const latest = carService.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+          currentOdometer = parseFloat(latest.odometer || 0);
+        }
+        if (carFuel.length > 0) {
+          const latest = carFuel.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+          currentOdometer = Math.max(currentOdometer, parseFloat(latest.odometer || 0));
+        }
+        if (carExpenses.length > 0) {
+          const latest = carExpenses.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+          currentOdometer = Math.max(currentOdometer, parseFloat(latest.odometer || 0));
+        }
+        
+        // Compute status for this car's plan
+        if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.computePlanStatus) {
+          const planItems = MaintenancePlan.computePlanStatus(car, new Date(), currentOdometer, state);
+          planItems.forEach(item => {
+            allItems.push({
+              ...item,
+              carId: car.id,
+              carName: `${car.brand} ${car.model}`
+            });
+          });
+        }
+      });
+      
+      // Filter by current tab (overdue/soon)
+      const currentTab = widget.querySelector('.maintenance-tab-btn.active')?.dataset.tab || 'overdue';
+      const filteredItems = allItems.filter(item => item.status === currentTab);
+      
+      if (filteredItems.length === 0) {
+        widget.style.display = 'none';
+        return;
+      }
+      
+      widget.style.display = 'block';
+      content.innerHTML = '';
+      
+      // Show up to 3 items
+      const itemsToShow = filteredItems.slice(0, 3);
+      const hasMore = filteredItems.length > 3;
+      
+      itemsToShow.forEach(item => {
+        const cell = document.createElement('div');
+        cell.className = 'ios-cell';
+        cell.style.cursor = 'pointer';
+        
+        let statusColor = 'var(--success)';
+        if (item.status === 'overdue') statusColor = 'var(--danger)';
+        else if (item.status === 'soon') statusColor = 'var(--warning)';
+        
+        let dueText = '';
+        if (item.displayDue) {
+          if (item.displayDue.type === 'km') {
+            dueText = `через ${item.displayDue.remaining.toLocaleString('ru-RU')} км`;
+          } else {
+            dueText = `через ${item.displayDue.remaining} дн.`;
+          }
+        }
+        
+        cell.innerHTML = `
+          <div class="ios-cell-content">
+            <div class="ios-cell-title">${escapeHtml(item.title)}</div>
+            <div class="ios-cell-subtitle">${escapeHtml(item.carName)} • ${escapeHtml(dueText || item.statusMessage)}</div>
+          </div>
+          <div class="ios-cell-trailing">
+            <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+              ${item.status === 'overdue' ? 'Просрочено' : 'Скоро'}
+            </span>
+          </div>
+        `;
+        
+        cell.addEventListener('click', () => {
+          currentCarId = item.carId;
+          loadCarDetails(item.carId);
+          showView('screen-maintenance-plan');
+        });
+        
+        content.appendChild(cell);
+      });
+      
+      if (hasMore) {
+        showAllBtn.style.display = 'block';
+        showAllBtn.onclick = () => {
+          if (diaryFilters.carId === '__all__') {
+            // Show combined view or first car
+            if (carsToCheck.length > 0) {
+              currentCarId = carsToCheck[0].id;
+              loadCarDetails(currentCarId);
+              showView('screen-maintenance-plan');
+            }
+          } else {
+            showView('screen-maintenance-plan');
+          }
+        };
+      } else {
+        showAllBtn.style.display = 'none';
+      }
+      
+      if (emptyMsg) emptyMsg.style.display = 'none';
+      
+      // Tab switching
+      widget.querySelectorAll('.maintenance-tab-btn').forEach(btn => {
+        btn.onclick = null;
+        btn.addEventListener('click', () => {
+          widget.querySelectorAll('.maintenance-tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.style.background = 'transparent';
+          });
+          btn.classList.add('active');
+          btn.style.background = 'var(--surface)';
+          renderMaintenanceWidget();
+        });
+      });
+    }
+    
     // Initialize maintenance plan handlers
     function initializeMaintenancePlanHandlers() {
       // Template application handlers
