@@ -434,9 +434,9 @@
       window.scrollTo({top:0,behavior:'instant'});
       
       if(id==='screen-garage'){
-        // Reload state from storage before checking
-        state.cars = StorageCompat.get('autodiary:cars', []);
-        if(state.cars.length === 0){
+        // Ensure state is up to date (but don't overwrite with old format)
+        // state.cars should already be current from initializeState
+        if(!state.cars || state.cars.length === 0){
           showView('screen-garage-empty');
           return;
         }
@@ -529,9 +529,8 @@
 
     // Render garage
     function renderGarage(){
-      // Reload state from storage to ensure we have latest data
-      state.cars = StorageCompat.get('autodiary:cars', []);
-      state.expenses = StorageCompat.get('autodiary:expenses', []);
+      // Use current state (already loaded via initializeState)
+      // Don't reload from old format as it may be out of sync
       
       const container = document.querySelector('#screen-garage .main-pad');
       if(!container) {
@@ -1173,13 +1172,21 @@
         vin,
         notes,
         purchasePrice,
-        purchaseDate
+        purchaseDate,
+        servicePlan: editingCarId ? (state.cars.find(c => c.id === editingCarId)?.servicePlan || []) : [],
+        deletedAt: null
       };
       
       if(editingCarId) {
         const index = state.cars.findIndex(c => c.id === editingCarId);
         if(index !== -1) {
-          state.cars[index] = car;
+          // Preserve existing servicePlan and other fields
+          const existingCar = state.cars[index];
+          state.cars[index] = {
+            ...car,
+            servicePlan: existingCar.servicePlan || [],
+            deletedAt: existingCar.deletedAt || null
+          };
           showToast('Автомобиль обновлен');
         }
         editingCarId = null;
