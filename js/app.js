@@ -1524,8 +1524,14 @@
       
       document.getElementById('car-name').textContent = name;
       document.getElementById('car-sub-line').textContent = sub;
-      document.getElementById('car-name-settings').textContent = 'РРЅС‚РµСЂРІР°Р»С‹ РўРћ вЂ” ' + name;
+      document.getElementById('car-name-settings').textContent = 'Интервалы ТО — ' + name;
       document.getElementById('car-sub-settings').textContent = sub;
+      
+      // Update maintenance plan screen header
+      const planNameEl = document.getElementById('maintenance-plan-car-name');
+      const planSubEl = document.getElementById('maintenance-plan-car-sub');
+      if (planNameEl) planNameEl.textContent = 'Регламент (ТО) — ' + name;
+      if (planSubEl) planSubEl.textContent = sub;
       
       // Load maintenance data
       const maint = state.maintenance[carId] || {};
@@ -1567,6 +1573,150 @@
       
       // Initialize tabs
       initializeCarTabs();
+    }
+    
+    // Render maintenance plan screen
+    function renderMaintenancePlan() {
+      if (!currentCarId) {
+        showToast('Выберите автомобиль');
+        showView('screen-garage');
+        return;
+      }
+      
+      const car = state.cars.find(c => c.id === currentCarId);
+      if (!car) {
+        showToast('Автомобиль не найден');
+        showView('screen-garage');
+        return;
+      }
+      
+      // Get current odometer (from latest service/fuel entry or expense)
+      const carService = (state.service || []).filter(s => s.carId === currentCarId && !s.deletedAt);
+      const carFuel = (state.fuel || []).filter(f => f.carId === currentCarId && !f.deletedAt);
+      const carExpenses = (state.expenses || []).filter(e => e.carId === currentCarId && !e.deletedAt && e.odometer);
+      
+      let currentOdometer = 0;
+      if (carService.length > 0) {
+        const latestService = carService.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+        currentOdometer = parseFloat(latestService.odometer || 0);
+      }
+      if (carFuel.length > 0) {
+        const latestFuel = carFuel.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+        currentOdometer = Math.max(currentOdometer, parseFloat(latestFuel.odometer || 0));
+      }
+      if (carExpenses.length > 0) {
+        const latestExpense = carExpenses.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+        currentOdometer = Math.max(currentOdometer, parseFloat(latestExpense.odometer || 0));
+      }
+      
+      // Compute plan status
+      const planItems = typeof MaintenancePlan !== 'undefined' 
+        ? MaintenancePlan.computePlanStatus(car, new Date(), currentOdometer, state)
+        : [];
+      
+      const container = document.getElementById('maintenance-plan-list');
+      const emptyMsg = document.getElementById('maintenance-plan-empty');
+      
+      if (!container) return;
+      
+      if (planItems.length === 0) {
+        container.innerHTML = '';
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+      }
+      
+      if (emptyMsg) emptyMsg.style.display = 'none';
+      container.innerHTML = '';
+      
+      // Group by status
+      const byStatus = {
+        overdue: [],
+        soon: [],
+        ok: []
+      };
+      
+      planItems.forEach(item => {
+        if (item.status === 'overdue') {
+          byStatus.overdue.push(item);
+        } else if (item.status === 'soon') {
+          byStatus.soon.push(item);
+        } else {
+          byStatus.ok.push(item);
+        }
+      });
+      
+      // Render groups
+      ['overdue', 'soon', 'ok'].forEach(status => {
+        if (byStatus[status].length === 0) return;
+        
+        const group = document.createElement('div');
+        group.className = 'ios-group';
+        
+        const header = document.createElement('div');
+        header.className = 'ios-group-header';
+        if (status === 'overdue') {
+          header.textContent = 'Просрочено';
+          header.style.color = 'var(--danger)';
+        } else if (status === 'soon') {
+          header.textContent = 'Скоро ТО';
+          header.style.color = 'var(--warning)';
+        } else {
+          header.textContent = 'В порядке';
+        }
+        group.appendChild(header);
+        
+        byStatus[status].forEach(item => {
+          const cell = document.createElement('div');
+          cell.className = 'ios-cell';
+          cell.dataset.planItemId = item.id;
+          
+          // Status pill
+          let statusPill = '';
+          if (item.status === 'overdue') {
+            statusPill = '<span style="background: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">Просрочено</span>';
+          } else if (item.status === 'soon') {
+            statusPill = '<span style="background: var(--warning); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">Скоро</span>';
+          } else {
+            statusPill = '<span style="background: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">OK</span>';
+          }
+          
+          // Next due summary
+          let dueSummary = '';
+          if (item.displayDue) {
+            if (item.displayDue.type === 'km') {
+              dueSummary = `Следующее: ${item.displayDue.value.toLocaleString('ru-RU')} км (через ${item.displayDue.remaining.toLocaleString('ru-RU')} км)`;
+            } else {
+              const dateStr = item.displayDue.value.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+              dueSummary = `Следующее: ${dateStr} (через ${item.displayDue.remaining} дн.)`;
+            }
+          } else if (!item.lastServiceOdometer && !item.lastServiceDate) {
+            dueSummary = 'Не задано последнее обслуживание';
+          } else {
+            dueSummary = item.statusMessage || 'В порядке';
+          }
+          
+          cell.innerHTML = `
+            <div class="ios-cell-content">
+              <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs);">
+                <div class="ios-cell-title" style="flex: 1;">${escapeHtml(item.title)}</div>
+                ${statusPill}
+              </div>
+              <div class="ios-cell-subtitle">${escapeHtml(dueSummary)}</div>
+            </div>
+            <div class="ios-cell-trailing">
+              <button class="ios-cell-action-btn" data-edit-plan-item="${item.id}" title="Редактировать">
+                <i data-lucide="pencil"></i>
+              </button>
+            </div>
+          `;
+          
+          group.appendChild(cell);
+        });
+        
+        container.appendChild(group);
+      });
+      
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
     
     // Initialize car detail tabs
