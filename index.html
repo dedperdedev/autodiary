@@ -82,6 +82,9 @@
       <div>
         <h1 class="ios-navbar-large-title" id="car-name">Авто</h1>
         <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" data-goto="screen-maintenance-plan" data-backto="screen-car-details" title="Регламент (ТО)">
+            <i data-lucide="calendar-check"></i>
+          </button>
           <button class="ios-navbar-button" data-goto="screen-car-settings" data-backto="screen-car-details" title="Интервалы ТО">
             <svg viewBox="0 0 24 24">
           <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -395,6 +398,48 @@
     </div>
     <div class="save-btn">
       <button data-goto="screen-car-details">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Maintenance Plan (Регламент) Screen -->
+  <section id="screen-maintenance-plan" class="view">
+    <div class="ios-navbar">
+      <div>
+        <h1 class="ios-navbar-large-title" id="maintenance-plan-car-name">Регламент (ТО)</h1>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="car-head">
+      <div class="car-head-left">
+        <div class="car-sub" id="maintenance-plan-car-sub">Настройки для выбранного авто</div>
+      </div>
+    </div>
+    <div class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h3>Пункты обслуживания</h3>
+        <div style="display: flex; gap: var(--space-sm);">
+          <button class="ios-button-compact" id="apply-template-basic-btn" style="padding: var(--space-sm) var(--space-md);">
+            Базовый шаблон
+          </button>
+          <button class="ios-button-compact" id="apply-template-extended-btn" style="padding: var(--space-sm) var(--space-md);">
+            Расширенный
+          </button>
+        </div>
+      </div>
+      <div class="ios-grouped-list" id="maintenance-plan-list">
+        <!-- Plan items will be rendered here -->
+      </div>
+      <div id="maintenance-plan-empty" style="display: none; padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+        <div style="font-size: 48px; margin-bottom: var(--space-md;">📋</div>
+        <p>Регламент не настроен</p>
+        <p style="font-size: var(--font-size-footnote); margin-top: var(--space-sm);">Примените шаблон или добавьте пункты вручную</p>
+      </div>
+      <div style="margin-top: var(--space-lg);">
+        <button class="ios-button ios-button-primary" id="add-plan-item-btn" style="width: 100%;">
+          <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-xs);"></i>
+          Добавить пункт
+        </button>
+      </div>
     </div>
   </section>
 
@@ -1149,6 +1194,7 @@
   <script src="js/soft-delete.js"></script>
   <script src="js/fuel.js"></script>
   <script src="js/service.js"></script>
+  <script src="js/maintenancePlan.js"></script>
   <script src="js/categories.js"></script>
   <script src="js/receipts.js"></script>
   <script src="js/reports.js"></script>

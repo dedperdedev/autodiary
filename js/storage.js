@@ -1,7 +1,7 @@
 // Storage module with schema versioning and migrations
 // Handles all data persistence, versioning, and recovery
 
-const STORAGE_SCHEMA_VERSION = 3; // Increment when schema changes (v3: categories/subcategories)
+const STORAGE_SCHEMA_VERSION = 4; // Increment when schema changes (v4: maintenance plan per vehicle)
 const STORAGE_PREFIX = 'autodiary:';
 
 // Storage utility with error handling
@@ -174,6 +174,26 @@ const migrations = {
     
     // Update schema version
     migrated.schemaVersion = 3;
+    
+    return migrated;
+  },
+  
+  // Migration from v3 to v4: Add servicePlan to vehicles
+  3: (data) => {
+    const migrated = { ...data };
+    
+    // Add servicePlan array to each vehicle if missing
+    if (migrated.cars) {
+      migrated.cars = migrated.cars.map(car => {
+        if (!car.servicePlan) {
+          car.servicePlan = [];
+        }
+        return car;
+      });
+    }
+    
+    // Update schema version
+    migrated.schemaVersion = 4;
     
     return migrated;
   }
