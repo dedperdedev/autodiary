@@ -478,13 +478,16 @@
         return e.category === 'Заправка' || e.category === 'Электрозарядка';
       });
       
+      // Get fuel entries from fuel module
+      const fuelEntries = (state.fuel || []).filter(f => f.carId === carId && !f.deletedAt);
+      
       let fuelConsumption = 0;
       let costPerKm = 0;
       let avgDay = 0;
       
       // Calculate fuel consumption (L/100km) - prefer fuel module if available
-      if(fuelEntries.length >= 2) {
-        const sorted = [...fuelEntries].sort((a,b) => parseFloat(a.odometer) - parseFloat(b.odometer));
+      if(fuelEntries.length >= 2 && typeof Fuel !== 'undefined' && Fuel.getAverageConsumption) {
+        const sorted = [...fuelEntries].sort((a,b) => parseFloat(a.odometer || 0) - parseFloat(b.odometer || 0));
         const avgConsumption = Fuel.getAverageConsumption(sorted);
         if(avgConsumption) {
           fuelConsumption = avgConsumption;
