@@ -4233,6 +4233,10 @@
     window.tempServiceReceipts = tempServiceReceipts;
     
     function initializeReceiptsHandlers() {
+      // Prevent duplicate handlers
+      if (window.receiptsHandlersInitialized) return;
+      window.receiptsHandlersInitialized = true;
+      
       // Expense receipts
       const expenseAddBtn = document.getElementById('expense-add-receipt-btn');
       const expenseInput = document.getElementById('expense-receipt-input');
