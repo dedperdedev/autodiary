@@ -1045,48 +1045,48 @@
           const carName = car ? `${car.brand} ${car.model}` : '';
           
           const record = document.createElement('div');
-            record.className = 'ios-cell';
+          record.className = 'ios-cell';
           record.dataset.expenseId = exp.id;
           
-            const iconDiv = document.createElement('div');
-            iconDiv.className = 'ios-cell-icon';
-            const iconPath = getCategoryIcon(exp.categoryId || exp.category);
-            iconDiv.innerHTML = `<i data-lucide="${iconPath}"></i>`;
-            
-            const categoryDisplay = (exp.categoryId && typeof Categories !== 'undefined' && Categories.getDisplayText) ? 
-              Categories.getDisplayText(state.categories || [], state.subcategories || [], exp.categoryId, exp.subcategoryId) :
-              (exp.category || 'Расход');
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'ios-cell-content';
-            const timeStr = exp.time ? ', ' + exp.time.substring(0, 5) : '';
-            contentDiv.innerHTML = `
-              <div class="ios-cell-title">${escapeHtml(categoryDisplay)}</div>
-              <div class="ios-cell-subtitle">${carName ? escapeHtml(carName) + ' • ' : ''}${exp.odometer ? exp.odometer + ' км' : ''}${timeStr}</div>
-            `;
-            
-            const trailingDiv = document.createElement('div');
-            trailingDiv.className = 'ios-cell-trailing';
-            trailingDiv.innerHTML = `
-              <strong style="font-size:var(--font-size-body);font-weight:600;color:var(--text)">${amountStr} ₴</strong>
-            `;
+          const iconDiv = document.createElement('div');
+          iconDiv.className = 'ios-cell-icon';
+          const iconPath = getCategoryIcon(exp.categoryId || exp.category);
+          iconDiv.innerHTML = `<i data-lucide="${iconPath}"></i>`;
+          
+          const categoryDisplay = (exp.categoryId && typeof Categories !== 'undefined' && Categories.getDisplayText) ? 
+            Categories.getDisplayText(state.categories || [], state.subcategories || [], exp.categoryId, exp.subcategoryId) :
+            (exp.category || 'Расход');
+          
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'ios-cell-content';
+          const timeStr = exp.time ? ', ' + exp.time.substring(0, 5) : '';
+          contentDiv.innerHTML = `
+            <div class="ios-cell-title">${escapeHtml(categoryDisplay)}</div>
+            <div class="ios-cell-subtitle">${carName ? escapeHtml(carName) + ' • ' : ''}${exp.odometer ? exp.odometer + ' км' : ''}${timeStr}</div>
+          `;
+          
+          const trailingDiv = document.createElement('div');
+          trailingDiv.className = 'ios-cell-trailing';
+          trailingDiv.innerHTML = `
+            <strong style="font-size:var(--font-size-body);font-weight:600;color:var(--text)">${amountStr} ₴</strong>
+          `;
           
           const actionsDiv = document.createElement('div');
           actionsDiv.className = 'record-actions';
-            actionsDiv.style.display = 'none';
+          actionsDiv.style.display = 'none';
           actionsDiv.innerHTML = `
-              <button data-save-template-expense="${exp.id}" title="Сохранить как шаблон" class="ios-cell-action-btn">
-                <i data-lucide="file-text"></i>
-              </button>
-              <button data-edit-expense="${exp.id}" title="Редактировать" class="ios-cell-action-btn">
-                <i data-lucide="pencil"></i>
-              </button>
-              <button data-delete-expense="${exp.id}" title="Удалить" class="ios-cell-action-btn ios-cell-action-btn-danger">
-                <i data-lucide="trash-2"></i>
-              </button>
-            `;
-            
-            trailingDiv.appendChild(actionsDiv);
+            <button data-save-template-expense="${exp.id}" title="Сохранить как шаблон" class="ios-cell-action-btn">
+              <i data-lucide="file-text"></i>
+            </button>
+            <button data-edit-expense="${exp.id}" title="Редактировать" class="ios-cell-action-btn">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button data-delete-expense="${exp.id}" title="Удалить" class="ios-cell-action-btn ios-cell-action-btn-danger">
+              <i data-lucide="trash-2"></i>
+            </button>
+          `;
+          
+          trailingDiv.appendChild(actionsDiv);
             
             // Add swipe handler
             let startX = 0;
@@ -2698,7 +2698,7 @@
       const notes = document.getElementById('reminder-notes')?.value?.trim() || '';
       
       if(!title || !carId) {
-        showToast('Р—Р°РїРѕР»РЅРёС‚Рµ РЅР°Р·РІР°РЅРёРµ Рё РІС‹Р±РµСЂРёС‚Рµ Р°РІС‚РѕРјРѕР±РёР»СЊ');
+        showToast('Заполните название и выберите автомобиль');
         return;
       }
       
@@ -2814,7 +2814,7 @@
       link.href = URL.createObjectURL(blob);
       link.download = `autodiary_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
-      showToast('CSV СЌРєСЃРїРѕСЂС‚РёСЂРѕРІР°РЅ');
+      showToast('CSV экспортирован');
     }
 
     function exportJSON() {
@@ -2834,7 +2834,7 @@
       link.href = URL.createObjectURL(blob);
       link.download = `autodiary_backup_${new Date().toISOString().split('T')[0]}.json`;
       link.click();
-      showToast('JSON СЌРєСЃРїРѕСЂС‚РёСЂРѕРІР°РЅ');
+      showToast('JSON экспортирован');
     }
 
     function importJSON() {
@@ -2862,12 +2862,12 @@
               saveAppState();
               StorageCompat.set('autodiary:reminders', state.reminders);
               
-              showToast('Р”Р°РЅРЅС‹Рµ РёРјРїРѕСЂС‚РёСЂРѕРІР°РЅС‹');
+              showToast('Данные импортированы');
               renderGarage();
               renderDiary();
               renderReminders();
             } catch(e) {
-              showToast('РћС€РёР±РєР° РёРјРїРѕСЂС‚Р°: РЅРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚ С„Р°Р№Р»Р°');
+              showToast('Ошибка импорта: неверный формат файла');
               console.error(e);
             }
           };
