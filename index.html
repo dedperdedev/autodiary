@@ -38,6 +38,26 @@
       </button>
     </div>
     
+    <!-- Maintenance Plan Widget -->
+    <div class="section" id="maintenance-widget" style="display: none; margin: var(--space-md) var(--space-lg);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+        <h3 style="margin: 0;">ТО и замены</h3>
+        <div style="display: flex; gap: var(--space-xs); border: 1px solid var(--separator); border-radius: 12px; padding: 2px;">
+          <button class="maintenance-tab-btn active" data-tab="overdue" style="padding: var(--space-xs) var(--space-sm); border-radius: 10px; background: var(--surface); border: none; font-size: var(--font-size-footnote);">Просрочено</button>
+          <button class="maintenance-tab-btn" data-tab="soon" style="padding: var(--space-xs) var(--space-sm); border-radius: 10px; background: transparent; border: none; font-size: var(--font-size-footnote);">Скоро</button>
+        </div>
+      </div>
+      <div id="maintenance-widget-content">
+        <!-- Maintenance items will be rendered here -->
+      </div>
+      <div id="maintenance-widget-empty" style="display: none; padding: var(--space-md); text-align: center; color: var(--text-secondary); font-size: var(--font-size-footnote);">
+        Нет просроченных или предстоящих ТО
+      </div>
+      <button class="ios-button-compact" id="maintenance-widget-show-all" style="width: 100%; margin-top: var(--space-sm); display: none;">
+        Показать все
+      </button>
+    </div>
+    
     <!-- Statistics Summary -->
     <div class="diary-stats" id="diary-stats">
       <!-- Stats will be rendered dynamically -->

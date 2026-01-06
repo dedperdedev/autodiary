@@ -160,6 +160,8 @@
     let editingExpenseId = null;
     let editingCarId = null;
     let editingReminderId = null;
+    let editingFuelId = null;
+    let editingServiceId = null;
     // Initialize diary filters using Diary module
     let diaryFilters = typeof Diary !== 'undefined' && Diary.initFilters ? 
       Diary.initFilters() : {
@@ -463,6 +465,9 @@
         renderCategoriesManagement();
       } else if(id==='screen-units-settings'){
         initializeUnitsSettings();
+      } else if(id==='screen-maintenance-plan'){
+        renderMaintenancePlan();
+        initializeMaintenancePlanHandlers();
       }
     }
 
@@ -783,6 +788,9 @@
       if (typeof Diary !== 'undefined' && Diary.initToolbar) {
         Diary.initToolbar(container, diaryFilters, state);
       }
+      
+      // Render maintenance plan widget
+      renderMaintenanceWidget();
       
       // Filter out deleted items
       const activeExpenses = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
@@ -1729,6 +1737,228 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
     
+    // Initialize maintenance plan handlers
+    function initializeMaintenancePlanHandlers() {
+      // Template application handlers
+      const basicTemplateBtn = document.getElementById('apply-template-basic-btn');
+      const extendedTemplateBtn = document.getElementById('apply-template-extended-btn');
+      const addPlanItemBtn = document.getElementById('add-plan-item-btn');
+      
+      if (basicTemplateBtn) {
+        basicTemplateBtn.addEventListener('click', () => {
+          if (!currentCarId) return;
+          const car = state.cars.find(c => c.id === currentCarId);
+          if (!car) return;
+          
+          if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.applyTemplate) {
+            MaintenancePlan.applyTemplate(car, 'basic', state);
+            if (saveAppState()) {
+              showToast('Базовый шаблон применен');
+              renderMaintenancePlan();
+            }
+          }
+        });
+      }
+      
+      if (extendedTemplateBtn) {
+        extendedTemplateBtn.addEventListener('click', () => {
+          if (!currentCarId) return;
+          const car = state.cars.find(c => c.id === currentCarId);
+          if (!car) return;
+          
+          if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.applyTemplate) {
+            MaintenancePlan.applyTemplate(car, 'extended', state);
+            if (saveAppState()) {
+              showToast('Расширенный шаблон применен');
+              renderMaintenancePlan();
+            }
+          }
+        });
+      }
+      
+      if (addPlanItemBtn) {
+        addPlanItemBtn.addEventListener('click', () => {
+          showPlanItemEditor(null);
+        });
+      }
+      
+      // Edit plan item handler (delegated)
+      document.body.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-edit-plan-item]');
+        if (editBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const itemId = editBtn.dataset.editPlanItem;
+          showPlanItemEditor(itemId);
+        }
+      });
+    }
+    
+    // Show plan item editor modal
+    function showPlanItemEditor(itemId) {
+      if (!currentCarId) return;
+      const car = state.cars.find(c => c.id === currentCarId);
+      if (!car) return;
+      
+      const planItems = car.servicePlan || [];
+      const item = itemId ? planItems.find(p => p.id === itemId) : null;
+      const isNew = !item;
+      
+      // Create or get modal
+      let modal = document.getElementById('plan-item-editor-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'plan-item-editor-modal';
+        modal.className = 'ios-sheet-overlay';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+      }
+      
+      modal.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-header">
+            <h2>${isNew ? 'Добавить пункт' : 'Редактировать пункт'}</h2>
+            <button class="ios-sheet-close" data-close-plan-editor>
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="ios-sheet-content">
+            <div class="field">
+              <label>Название *</label>
+              <input type="text" id="plan-item-title" placeholder="Например: Масло двигателя" value="${item ? escapeHtml(item.title) : ''}">
+            </div>
+            <div class="field">
+              <label>Интервал по пробегу (км)</label>
+              <input type="number" id="plan-item-interval-km" placeholder="10000" value="${item && item.intervalKm !== null ? item.intervalKm : ''}">
+            </div>
+            <div class="field">
+              <label>Интервал по времени (месяцев)</label>
+              <input type="number" id="plan-item-interval-months" placeholder="12" value="${item && item.intervalMonths !== null ? item.intervalMonths : ''}">
+            </div>
+            <div class="field">
+              <label>Напоминать за (км до срока)</label>
+              <input type="number" id="plan-item-remind-km" placeholder="1000" value="${item && item.remindBeforeKm !== null ? item.remindBeforeKm : ''}">
+            </div>
+            <div class="field">
+              <label>Напоминать за (дней до срока)</label>
+              <input type="number" id="plan-item-remind-days" placeholder="14" value="${item && item.remindBeforeDays !== null ? item.remindBeforeDays : ''}">
+            </div>
+            <div class="field">
+              <label>Последнее обслуживание - пробег (км)</label>
+              <input type="number" id="plan-item-last-odo" placeholder="0" value="${item && item.lastServiceOdometer !== null ? item.lastServiceOdometer : ''}">
+            </div>
+            <div class="field">
+              <label>Последнее обслуживание - дата</label>
+              <input type="date" id="plan-item-last-date" value="${item && item.lastServiceDate ? item.lastServiceDate.split('T')[0] : ''}">
+            </div>
+            <div class="field" style="display: flex; align-items: center; gap: var(--space-sm);">
+              <input type="checkbox" id="plan-item-enabled" ${item && item.enabled !== false ? 'checked' : ''}>
+              <label for="plan-item-enabled" style="margin: 0;">Включено</label>
+            </div>
+            <div class="field">
+              <label>Заметки</label>
+              <textarea id="plan-item-notes" placeholder="Дополнительная информация" rows="3">${item && item.notes ? escapeHtml(item.notes) : ''}</textarea>
+            </div>
+            ${!isNew ? `
+            <div style="margin-top: var(--space-lg);">
+              <button class="ios-button" style="width: 100%; color: var(--destructive);" data-delete-plan-item="${itemId}">
+                Удалить пункт
+              </button>
+            </div>
+            ` : ''}
+            <div style="margin-top: var(--space-lg); display: flex; gap: var(--space-sm);">
+              <button class="ios-button" style="flex: 1;" data-close-plan-editor>Отмена</button>
+              <button class="ios-button ios-button-primary" style="flex: 1;" data-save-plan-item>Сохранить</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      modal.style.display = 'block';
+      setTimeout(() => modal.classList.add('active'), 10);
+      
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      
+      // Close handlers
+      modal.querySelectorAll('[data-close-plan-editor]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          modal.classList.remove('active');
+          setTimeout(() => {
+            modal.style.display = 'none';
+          }, 300);
+        });
+      });
+      
+      // Delete handler
+      const deleteBtn = modal.querySelector('[data-delete-plan-item]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+          const deleteItemId = deleteBtn.dataset.deletePlanItem;
+          showModal('Удалить пункт?', 'Это действие нельзя отменить.', () => {
+            if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.deletePlanItem) {
+              MaintenancePlan.deletePlanItem(car, deleteItemId, state);
+              if (saveAppState()) {
+                showToast('Пункт удален');
+                modal.classList.remove('active');
+                setTimeout(() => {
+                  modal.style.display = 'none';
+                }, 300);
+                renderMaintenancePlan();
+              }
+            }
+          });
+        });
+      }
+      
+      // Save handler
+      const saveBtn = modal.querySelector('[data-save-plan-item]');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const title = document.getElementById('plan-item-title').value.trim();
+          if (!title) {
+            showToast('Введите название');
+            return;
+          }
+          
+          const planItem = {
+            id: itemId || 'plan-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+            typeKey: item ? item.typeKey : null,
+            title: title,
+            intervalKm: document.getElementById('plan-item-interval-km').value ? parseInt(document.getElementById('plan-item-interval-km').value) : null,
+            intervalMonths: document.getElementById('plan-item-interval-months').value ? parseInt(document.getElementById('plan-item-interval-months').value) : null,
+            remindBeforeKm: document.getElementById('plan-item-remind-km').value ? parseInt(document.getElementById('plan-item-remind-km').value) : null,
+            remindBeforeDays: document.getElementById('plan-item-remind-days').value ? parseInt(document.getElementById('plan-item-remind-days').value) : null,
+            lastServiceOdometer: document.getElementById('plan-item-last-odo').value ? parseFloat(document.getElementById('plan-item-last-odo').value) : null,
+            lastServiceDate: document.getElementById('plan-item-last-date').value || null,
+            enabled: document.getElementById('plan-item-enabled').checked,
+            notes: document.getElementById('plan-item-notes').value.trim() || null
+          };
+          
+          if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.upsertPlanItem) {
+            MaintenancePlan.upsertPlanItem(car, planItem, state);
+            if (saveAppState()) {
+              showToast(isNew ? 'Пункт добавлен' : 'Пункт обновлен');
+              modal.classList.remove('active');
+              setTimeout(() => {
+                modal.style.display = 'none';
+              }, 300);
+              renderMaintenancePlan();
+            }
+          }
+        });
+      }
+      
+      // Close on overlay click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          setTimeout(() => {
+            modal.style.display = 'none';
+          }, 300);
+        }
+      });
+    }
+    
     // Initialize car detail tabs
     function initializeCarTabs() {
       const tabs = document.querySelectorAll('.car-tab');
@@ -2156,8 +2386,106 @@
       
       container.innerHTML = '';
       
-      if(state.reminders.length === 0) {
-        container.innerHTML = '<div class="empty-text">РќРµС‚ РЅР°РїРѕРјРёРЅР°РЅРёР№</div>';
+      // Render auto-reminders from maintenance plan
+      if (typeof MaintenancePlan !== 'undefined') {
+        const autoReminders = [];
+        state.cars.filter(c => !c.deletedAt).forEach(car => {
+          if (!car.servicePlan || car.servicePlan.length === 0) return;
+          
+          // Get current odometer for this car
+          const carService = (state.service || []).filter(s => s.carId === car.id && !s.deletedAt);
+          const carFuel = (state.fuel || []).filter(f => f.carId === car.id && !f.deletedAt);
+          const carExpenses = (state.expenses || []).filter(e => e.carId === car.id && !e.deletedAt && e.odometer);
+          
+          let currentOdometer = 0;
+          if (carService.length > 0) {
+            const latest = carService.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+            currentOdometer = parseFloat(latest.odometer || 0);
+          }
+          if (carFuel.length > 0) {
+            const latest = carFuel.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+            currentOdometer = Math.max(currentOdometer, parseFloat(latest.odometer || 0));
+          }
+          if (carExpenses.length > 0) {
+            const latest = carExpenses.sort((a, b) => parseFloat(b.odometer || 0) - parseFloat(a.odometer || 0))[0];
+            currentOdometer = Math.max(currentOdometer, parseFloat(latest.odometer || 0));
+          }
+          
+          const planItems = MaintenancePlan.computePlanStatus(car, new Date(), currentOdometer, state);
+          planItems.filter(item => (item.status === 'overdue' || item.status === 'soon') && item.enabled).forEach(item => {
+            autoReminders.push({
+              ...item,
+              carId: car.id,
+              carName: `${car.brand} ${car.model}`,
+              isAutoReminder: true
+            });
+          });
+        });
+        
+        if (autoReminders.length > 0) {
+          const autoGroup = document.createElement('div');
+          autoGroup.className = 'ios-group';
+          
+          const autoHeader = document.createElement('div');
+          autoHeader.className = 'ios-group-header';
+          autoHeader.textContent = 'Авто-напоминания (из регламента)';
+          autoGroup.appendChild(autoHeader);
+          
+          autoReminders.forEach(item => {
+            const cell = document.createElement('div');
+            cell.className = 'ios-cell';
+            cell.style.cursor = 'pointer';
+            
+            let statusColor = 'var(--warning)';
+            if (item.status === 'overdue') statusColor = 'var(--danger)';
+            
+            let dueText = '';
+            if (item.displayDue) {
+              if (item.displayDue.type === 'km') {
+                dueText = `через ${item.displayDue.remaining.toLocaleString('ru-RU')} км`;
+              } else {
+                dueText = `через ${item.displayDue.remaining} дн.`;
+              }
+            }
+            
+            cell.innerHTML = `
+              <div class="ios-cell-content">
+                <div class="ios-cell-title">${escapeHtml(item.title)}</div>
+                <div class="ios-cell-subtitle">${escapeHtml(item.carName)} • ${escapeHtml(dueText || item.statusMessage)}</div>
+              </div>
+              <div class="ios-cell-trailing">
+                <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                  ${item.status === 'overdue' ? 'Просрочено' : 'Скоро'}
+                </span>
+              </div>
+            `;
+            
+            cell.addEventListener('click', () => {
+              currentCarId = item.carId;
+              loadCarDetails(item.carId);
+              showView('screen-maintenance-plan');
+            });
+            
+            autoGroup.appendChild(cell);
+          });
+          
+          container.appendChild(autoGroup);
+          
+          // Add separator if there are manual reminders
+          if (state.reminders.length > 0) {
+            const separator = document.createElement('div');
+            separator.style.height = 'var(--space-lg)';
+            container.appendChild(separator);
+          }
+        }
+      }
+      
+      // Render manual reminders
+      const activeReminders = (typeof SoftDelete !== 'undefined' && SoftDelete.getActive) ? 
+        SoftDelete.getActive(state.reminders) : state.reminders.filter(r => !r.deletedAt);
+      
+      if(activeReminders.length === 0 && container.children.length === 0) {
+        container.innerHTML = '<div class="empty-text">Нет напоминаний</div>';
         return;
       }
       
@@ -2468,6 +2796,47 @@
           if(dateEl) dateEl.value = '';
           if(odometerEl) odometerEl.value = '';
           if(notesEl) notesEl.value = '';
+          editingReminderId = null;
+        } else if(id === 'screen-add-fuel') {
+          // Reset form if not editing
+          if(!editingFuelId) {
+            const dateEl = document.getElementById('fuel-date');
+            const odometerEl = document.getElementById('fuel-odometer');
+            const litersEl = document.getElementById('fuel-liters');
+            const costEl = document.getElementById('fuel-cost');
+            const fullTankEl = document.getElementById('fuel-full-tank');
+            const stationEl = document.getElementById('fuel-station');
+            const notesEl = document.getElementById('fuel-notes');
+            if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+            if(odometerEl) odometerEl.value = '';
+            if(litersEl) litersEl.value = '';
+            if(costEl) costEl.value = '';
+            if(fullTankEl) fullTankEl.checked = false;
+            if(stationEl) stationEl.value = '';
+            if(notesEl) notesEl.value = '';
+          }
+        } else if(id === 'screen-add-service') {
+          // Reset form if not editing
+          if(!editingServiceId) {
+            const typeEl = document.getElementById('service-type');
+            const typeLabelEl = document.getElementById('service-type-label');
+            const otherField = document.getElementById('service-other-field');
+            const dateEl = document.getElementById('service-date');
+            const odometerEl = document.getElementById('service-odometer');
+            const costEl = document.getElementById('service-cost');
+            const shopEl = document.getElementById('service-shop');
+            const notesEl = document.getElementById('service-notes');
+            if(typeEl) typeEl.value = '';
+            if(typeLabelEl) typeLabelEl.value = '';
+            if(otherField) otherField.style.display = 'none';
+            if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+            if(odometerEl) odometerEl.value = '';
+            if(costEl) costEl.value = '';
+            if(shopEl) shopEl.value = '';
+            if(notesEl) notesEl.value = '';
+            window.tempServiceReceipts = [];
+            renderReceiptsPreview('service-receipts-preview', []);
+          }
           populateReminderCarSelect();
         }
         
@@ -3117,8 +3486,7 @@
       e.stopPropagation();
       
       if(target.dataset.editFuel) {
-        // TODO: Implement edit fuel
-        showToast('Редактирование заправки будет добавлено');
+        editFuelEntry(target.dataset.editFuel);
       }
       
       if(target.dataset.deleteFuel) {
@@ -3139,8 +3507,7 @@
       }
       
       if(target.dataset.editService) {
-        // TODO: Implement edit service
-        showToast('Редактирование сервиса будет добавлено');
+        editServiceEntry(target.dataset.editService);
       }
       
       if(target.dataset.deleteService) {
@@ -3432,34 +3799,54 @@
     function proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes) {
       if(!state.fuel) state.fuel = [];
       
-      const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ? 
-        Fuel.addEntry(carId, {
-          date,
-          odometer,
-          liters,
-          totalCost,
-          fullTank,
-          station,
-          notes
-        }) : {
-          id: Date.now().toString(),
-          carId,
-          date,
-          odometer,
-          liters,
-          totalCost,
-          pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
-          fullTank,
-          station,
-          notes,
-          createdAt: new Date().toISOString(),
-          deletedAt: null
-        };
-      
-      state.fuel.push(fuelEntry);
+      if(editingFuelId) {
+        // Update existing entry
+        const index = state.fuel.findIndex(f => f.id === editingFuelId);
+        if(index >= 0) {
+          state.fuel[index] = {
+            ...state.fuel[index],
+            date,
+            odometer,
+            liters,
+            totalCost,
+            pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
+            fullTank,
+            station,
+            notes
+          };
+          editingFuelId = null;
+        }
+      } else {
+        // Create new entry
+        const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ? 
+          Fuel.addEntry(carId, {
+            date,
+            odometer,
+            liters,
+            totalCost,
+            fullTank,
+            station,
+            notes
+          }) : {
+            id: Date.now().toString(),
+            carId,
+            date,
+            odometer,
+            liters,
+            totalCost,
+            pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
+            fullTank,
+            station,
+            notes,
+            createdAt: new Date().toISOString(),
+            deletedAt: null
+          };
+        
+        state.fuel.push(fuelEntry);
+      }
       
       if(saveAppState()) {
-        showToast('Заправка добавлена');
+        showToast(editingFuelId ? 'Заправка обновлена' : 'Заправка добавлена');
         // Reset form
         document.getElementById('fuel-date').value = new Date().toISOString().split('T')[0];
         document.getElementById('fuel-odometer').value = '';
@@ -3468,6 +3855,7 @@
         document.getElementById('fuel-full-tank').checked = false;
         document.getElementById('fuel-station').value = '';
         document.getElementById('fuel-notes').value = '';
+        editingFuelId = null;
         
         // Return to car details or diary
         if(currentCarId) {
@@ -3477,6 +3865,46 @@
           showView('screen-diary');
         }
       }
+    }
+    
+    // Edit service entry
+    function editServiceEntry(serviceId) {
+      const service = (state.service || []).find(s => s.id === serviceId);
+      if(!service) return;
+      
+      editingServiceId = serviceId;
+      currentCarId = service.carId;
+      
+      // Fill form
+      const typeInput = document.getElementById('service-type');
+      const typeLabelInput = document.getElementById('service-type-label');
+      const otherField = document.getElementById('service-other-field');
+      const dateInput = document.getElementById('service-date');
+      const odometerInput = document.getElementById('service-odometer');
+      const costInput = document.getElementById('service-cost');
+      const shopInput = document.getElementById('service-shop');
+      const notesInput = document.getElementById('service-notes');
+      
+      if(typeInput) {
+        typeInput.value = service.type || '';
+        if(service.type === 'other' && otherField) {
+          otherField.style.display = 'block';
+          if(typeLabelInput) typeLabelInput.value = service.typeLabel || '';
+        }
+      }
+      if(dateInput) dateInput.value = service.date || '';
+      if(odometerInput) odometerInput.value = service.odometer || '';
+      if(costInput) costInput.value = service.cost || '';
+      if(shopInput) shopInput.value = service.shop || '';
+      if(notesInput) notesInput.value = service.notes || '';
+      
+      // Load receipts if any
+      if(service.receipts && service.receipts.length > 0) {
+        window.tempServiceReceipts = service.receipts;
+        renderReceiptsPreview('service-receipts-preview', service.receipts);
+      }
+      
+      showView('screen-add-service');
     }
     
     // Save service entry
@@ -3522,35 +3950,105 @@
       // Get receipts from preview
       const receipts = window.tempServiceReceipts || [];
       
-      const serviceRecord = (typeof Service !== 'undefined' && Service.addRecord) ? 
-        Service.addRecord(carId, {
-          type,
-          typeLabel,
-          date,
-          odometer,
-          cost,
-          shop,
-          notes
-        }) : {
-          id: Date.now().toString(),
-          carId,
-          date,
-          odometer,
-          type,
-          typeLabel,
-          cost,
-          shop,
-          notes,
-          createdAt: new Date().toISOString(),
-          deletedAt: null
-        };
-      
-      // Add receipts to record
-      if(receipts.length > 0) {
-        serviceRecord.receipts = receipts;
+      if(editingServiceId) {
+        // Update existing entry
+        const index = state.service.findIndex(s => s.id === editingServiceId);
+        if(index >= 0) {
+          const existing = state.service[index];
+          state.service[index] = {
+            ...existing,
+            type,
+            typeLabel,
+            date,
+            odometer,
+            cost,
+            shop,
+            notes,
+            receipts: receipts.length > 0 ? receipts : existing.receipts
+          };
+          
+          // Auto-update maintenance plan
+          if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.matchServiceToPlan) {
+            const car = state.cars.find(c => c.id === carId);
+            if (car && car.servicePlan && car.servicePlan.length > 0) {
+              const planItems = car.servicePlan.filter(p => p.enabled);
+              const matchedItem = MaintenancePlan.matchServiceToPlan(state.service[index], planItems);
+              if (matchedItem) {
+                const updatedItem = MaintenancePlan.updateFromServiceEntry(matchedItem, state.service[index]);
+                const planIndex = car.servicePlan.findIndex(p => p.id === matchedItem.id);
+                if (planIndex >= 0) {
+                  car.servicePlan[planIndex] = updatedItem;
+                }
+              }
+            }
+          }
+          
+          editingServiceId = null;
+        }
+      } else {
+        // Create new entry
+        const serviceRecord = (typeof Service !== 'undefined' && Service.addRecord) ? 
+          Service.addRecord(carId, {
+            type,
+            typeLabel,
+            date,
+            odometer,
+            cost,
+            shop,
+            notes
+          }) : {
+            id: Date.now().toString(),
+            carId,
+            date,
+            odometer,
+            type,
+            typeLabel,
+            cost,
+            shop,
+            notes,
+            createdAt: new Date().toISOString(),
+            deletedAt: null
+          };
+        
+        // Add receipts to record
+        if(receipts.length > 0) {
+          serviceRecord.receipts = receipts;
+        }
+        
+        state.service.push(serviceRecord);
+        
+        // Auto-update maintenance plan if matching item exists
+        if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.matchServiceToPlan) {
+          const car = state.cars.find(c => c.id === carId);
+          if (car && car.servicePlan && car.servicePlan.length > 0) {
+            const planItems = car.servicePlan.filter(p => p.enabled);
+            const matchedItem = MaintenancePlan.matchServiceToPlan(serviceRecord, planItems);
+            if (matchedItem) {
+              const updatedItem = MaintenancePlan.updateFromServiceEntry(matchedItem, serviceRecord);
+              const index = car.servicePlan.findIndex(p => p.id === matchedItem.id);
+              if (index >= 0) {
+                car.servicePlan[index] = updatedItem;
+              }
+            }
+          }
+        }
       }
       
-      state.service.push(serviceRecord);
+      // Auto-update maintenance plan if matching item exists
+      if (typeof MaintenancePlan !== 'undefined' && MaintenancePlan.matchServiceToPlan) {
+        const car = state.cars.find(c => c.id === carId);
+        if (car && car.servicePlan && car.servicePlan.length > 0) {
+          const planItems = car.servicePlan.filter(p => p.enabled);
+          const matchedItem = MaintenancePlan.matchServiceToPlan(serviceRecord, planItems);
+          if (matchedItem) {
+            const updatedItem = MaintenancePlan.updateFromServiceEntry(matchedItem, serviceRecord);
+            const index = car.servicePlan.findIndex(p => p.id === matchedItem.id);
+            if (index >= 0) {
+              car.servicePlan[index] = updatedItem;
+            }
+          }
+        }
+      }
       
       if(saveAppState()) {
         showToast('Запись сервиса добавлена');
