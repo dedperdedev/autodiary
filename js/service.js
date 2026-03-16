@@ -16,6 +16,10 @@ const Service = {
     'coolant': 'Охлаждающая жидкость',
     'sparkPlugs': 'Свечи зажигания',
     'timingBelt': 'Ремень ГРМ',
+    'brakeDiscsFront': 'Тормозные диски передние',
+    'brakeDiscsRear': 'Тормозные диски задние',
+    'brakePadsFront': 'Тормозные колодки передние',
+    'brakePadsRear': 'Тормозные колодки задние',
     'other': 'Другое'
   },
   

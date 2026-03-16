@@ -429,10 +429,15 @@
         views = [...document.querySelectorAll('.view')];
       }
       if(tabs.length === 0) {
-        tabs = [...document.querySelectorAll('.tab')];
+        // support legacy .tab as well as new .ios-tab
+        tabs = [...document.querySelectorAll('.tab, .ios-tab')];
       }
       [...document.querySelectorAll('.view')].forEach(v=>v.classList.toggle('active',v.id===id));
-      tabs.forEach(t=>t.classList.toggle('active',t.dataset.goto===id || (id==='screen-garage-empty' && t.dataset.goto==='screen-garage')));
+      tabs.forEach(t=>{
+        const isActive = t.dataset.goto===id || (id==='screen-garage-empty' && t.dataset.goto==='screen-garage');
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
       window.scrollTo({top:0,behavior:'instant'});
       
       if(id==='screen-garage'){
@@ -1607,7 +1612,13 @@
         showView('screen-garage');
         return;
       }
-      
+
+      // Auto-apply basic template if no plan exists yet
+      if ((!car.servicePlan || car.servicePlan.length === 0) && typeof MaintenancePlan !== 'undefined' && MaintenancePlan.applyTemplate) {
+        MaintenancePlan.applyTemplate(car, 'basic', state);
+        saveAppState();
+      }
+
       // Get current odometer (from latest service/fuel entry or expense)
       const carService = (state.service || []).filter(s => s.carId === currentCarId && !s.deletedAt);
       const carFuel = (state.fuel || []).filter(f => f.carId === currentCarId && !f.deletedAt);
@@ -1928,7 +1939,7 @@
       
       if (addPlanItemBtn) {
         addPlanItemBtn.addEventListener('click', () => {
-          showPlanItemEditor(null);
+          showMaintenanceCategoryPicker();
         });
       }
       
@@ -1944,6 +1955,259 @@
       });
     }
     
+    // Service type categories for the icon picker
+    const SERVICE_TYPE_CATS = [
+      { type: 'oil',            label: 'Моторное масло',           icon: 'droplets', color: '#FF9500', bg: 'rgba(255,149,0,0.15)' },
+      { type: 'oilFilter',      label: 'Фильтр масляный',          icon: 'filter',   color: '#FFCC00', bg: 'rgba(255,204,0,0.15)' },
+      { type: 'cabinFilter',    label: 'Фильтр салона',            icon: 'wind',     color: '#007AFF', bg: 'rgba(0,122,255,0.15)' },
+      { type: 'airFilter',      label: 'Фильтр двигателя',         icon: 'filter',   color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
+      { type: 'fuelFilter',     label: 'Фильтр топливный',         icon: 'fuel',     color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
+      { type: 'brakeDiscsFront',label: 'Диски передние',           icon: 'circle',   color: '#FF3B30', bg: 'rgba(255,59,48,0.15)' },
+      { type: 'brakeDiscsRear', label: 'Диски задние',             icon: 'circle',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
+      { type: 'brakePadsFront', label: 'Колодки передние',         icon: 'square',   color: '#FF3B30', bg: 'rgba(255,59,48,0.15)' },
+      { type: 'brakePadsRear',  label: 'Колодки задние',           icon: 'square',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
+      { type: 'sparkPlugs',     label: 'Свечи зажигания',          icon: 'zap',      color: '#FFCC00', bg: 'rgba(255,204,0,0.15)' },
+    ];
+
+    // Update the visual display of selected service types
+    function updateServiceTypeDisplay() {
+      const display = document.getElementById('service-type-display');
+      if (!display) return;
+      const types = window.selectedServiceTypes || [];
+      if (types.length === 0) {
+        // Fallback to single hidden select value
+        const sel = document.getElementById('service-type');
+        const val = sel ? sel.value : '';
+        if (val) {
+          const cat = SERVICE_TYPE_CATS.find(c => c.type === val);
+          display.textContent = cat ? cat.label : (sel.options[sel.selectedIndex]?.text || val);
+          display.style.color = 'var(--text)';
+        } else {
+          display.textContent = 'Выбрать';
+          display.style.color = 'var(--text-secondary)';
+        }
+      } else {
+        display.innerHTML = types.map(t => {
+          const cat = SERVICE_TYPE_CATS.find(c => c.type === t.type);
+          return `<span style="display:inline-block;background:${cat ? cat.bg : 'rgba(0,122,255,0.1)'};color:${cat ? cat.color : '#007AFF'};padding:3px 10px;border-radius:12px;font-size:var(--font-size-footnote);margin:2px 2px 2px 0;">${escapeHtml(t.label)}</span>`;
+        }).join('');
+        display.style.color = 'var(--text)';
+      }
+    }
+
+    // Show service type picker modal (multi-select)
+    function showServiceTypePicker() {
+      const selected = new Set((window.selectedServiceTypes || []).map(t => t.type));
+
+      // Also include single-select value if set
+      const singleType = document.getElementById('service-type')?.value;
+      if (singleType) selected.add(singleType);
+
+      let modal = document.getElementById('service-type-picker-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'service-type-picker-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+      }
+
+      function renderModal() {
+        modal.innerHTML = `
+          <div class="ios-sheet">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+              <div>
+                <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Категория расходов</h2>
+                <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Выберите один или несколько видов работ</p>
+              </div>
+              <button class="ios-sheet-close" id="svc-picker-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ios-sheet-content">
+              <div class="expense-category-grid">
+                ${SERVICE_TYPE_CATS.map(cat => {
+                  const isSel = selected.has(cat.type);
+                  return `
+                    <button class="expense-category-item" data-svc-type="${cat.type}"
+                      style="position:relative;${isSel ? 'box-shadow:0 0 0 2px #34C759;border-radius:14px;' : ''}">
+                      <div class="expense-category-icon" style="background:${cat.bg};color:${cat.color};">
+                        <i data-lucide="${cat.icon}"></i>
+                      </div>
+                      <span>${escapeHtml(cat.label)}</span>
+                      ${isSel ? '<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;"><i data-lucide="check" style="width:11px;height:11px;color:white;"></i></div>' : ''}
+                    </button>`;
+                }).join('')}
+              </div>
+              <div style="margin-top:var(--space-lg);">
+                <button class="ios-button ios-button-primary" id="svc-picker-save" style="width:100%;"
+                  ${selected.size === 0 ? 'disabled' : ''}>
+                  Выбрать${selected.size > 0 ? ' (' + selected.size + ')' : ''}
+                </button>
+              </div>
+            </div>
+          </div>`;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        modal.querySelectorAll('[data-svc-type]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const t = btn.dataset.svcType;
+            if (selected.has(t)) selected.delete(t); else selected.add(t);
+            renderModal();
+          });
+        });
+
+        document.getElementById('svc-picker-close').addEventListener('click', closeModal);
+
+        const saveBtn = document.getElementById('svc-picker-save');
+        if (saveBtn && !saveBtn.disabled) {
+          saveBtn.addEventListener('click', () => {
+            window.selectedServiceTypes = Array.from(selected).map(t => {
+              const cat = SERVICE_TYPE_CATS.find(c => c.type === t);
+              return { type: t, label: cat ? cat.label : t };
+            });
+            // Sync single hidden select with first type
+            const sel = document.getElementById('service-type');
+            if (sel && window.selectedServiceTypes.length > 0) {
+              sel.value = window.selectedServiceTypes[0].type;
+            }
+            updateServiceTypeDisplay();
+            closeModal();
+          });
+        }
+
+        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+      }
+
+      renderModal();
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
+    // Maintenance category picker modal (multi-select)
+    function showMaintenanceCategoryPicker() {
+      if (!currentCarId) return;
+      const car = state.cars.find(c => c.id === currentCarId);
+      if (!car) return;
+
+      const MAINT_CATS = [
+        { typeKey: 'engineOil',      title: 'Моторное масло',         icon: 'droplets', color: '#FF9500', bg: 'rgba(255,149,0,0.15)' },
+        { typeKey: 'oilFilter',      title: 'Фильтр масляный',        icon: 'filter',   color: '#FFCC00', bg: 'rgba(255,204,0,0.15)' },
+        { typeKey: 'cabinFilter',    title: 'Фильтр салона',          icon: 'wind',     color: '#007AFF', bg: 'rgba(0,122,255,0.15)' },
+        { typeKey: 'airFilter',      title: 'Фильтр двигателя',       icon: 'filter',   color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
+        { typeKey: 'fuelFilter',     title: 'Фильтр топливный',       icon: 'fuel',     color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
+        { typeKey: 'brakeDiscsFront',title: 'Диски передние',         icon: 'circle',   color: '#FF3B30', bg: 'rgba(255,59,48,0.15)' },
+        { typeKey: 'brakeDiscsRear', title: 'Диски задние',           icon: 'circle',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
+        { typeKey: 'brakePadsFront', title: 'Колодки передние',       icon: 'square',   color: '#FF3B30', bg: 'rgba(255,59,48,0.15)' },
+        { typeKey: 'brakePadsRear',  title: 'Колодки задние',         icon: 'square',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
+        { typeKey: 'sparkPlugs',     title: 'Свечи зажигания',        icon: 'zap',      color: '#FFCC00', bg: 'rgba(255,204,0,0.15)' },
+      ];
+
+      const selected = new Set();
+      const existingTypeKeys = new Set((car.servicePlan || []).map(p => p.typeKey).filter(Boolean));
+
+      let modal = document.getElementById('maint-category-picker-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'maint-category-picker-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+      }
+
+      function renderModal() {
+        modal.innerHTML = `
+          <div class="ios-sheet">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+              <div>
+                <h2 style="font-size: var(--font-size-title-3); font-weight: 600; color: var(--text); margin: 0;">Добавить в ТО</h2>
+                <p style="font-size: var(--font-size-subheadline); color: var(--text-secondary); margin: var(--space-xs) 0 0 0;">Выберите один или несколько пунктов</p>
+              </div>
+              <button class="ios-sheet-close" id="maint-cat-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ios-sheet-content">
+              <div class="expense-category-grid">
+                ${MAINT_CATS.map(cat => {
+                  const isExisting = existingTypeKeys.has(cat.typeKey);
+                  const isSel = selected.has(cat.typeKey);
+                  return `
+                    <button class="expense-category-item" data-cat-key="${cat.typeKey}"
+                      ${isExisting ? 'disabled' : ''}
+                      style="position:relative;${isExisting ? 'opacity:0.4;' : ''}${isSel ? 'box-shadow:0 0 0 2px #34C759;border-radius:14px;' : ''}">
+                      <div class="expense-category-icon" style="background:${cat.bg};color:${cat.color};">
+                        <i data-lucide="${cat.icon}"></i>
+                      </div>
+                      <span>${escapeHtml(cat.title)}</span>
+                      ${isSel ? '<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;"><i data-lucide="check" style="width:11px;height:11px;color:white;"></i></div>' : ''}
+                      ${isExisting ? '<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#8E8E93;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;"><i data-lucide="check" style="width:11px;height:11px;color:white;"></i></div>' : ''}
+                    </button>`;
+                }).join('')}
+              </div>
+              <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);">
+                <button class="ios-button" id="maint-cat-custom" style="flex:0 0 auto;">
+                  <i data-lucide="pencil" style="width:16px;height:16px;margin-right:4px;vertical-align:middle;"></i>
+                  Свой пункт
+                </button>
+                <button class="ios-button ios-button-primary" id="maint-cat-save" style="flex:1;"
+                  ${selected.size === 0 ? 'disabled' : ''}>
+                  Добавить${selected.size > 0 ? ' (' + selected.size + ')' : ''}
+                </button>
+              </div>
+            </div>
+          </div>`;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        modal.querySelectorAll('[data-cat-key]').forEach(btn => {
+          if (btn.disabled) return;
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.catKey;
+            if (selected.has(key)) selected.delete(key); else selected.add(key);
+            renderModal();
+          });
+        });
+
+        document.getElementById('maint-cat-close').addEventListener('click', closeModal);
+
+        document.getElementById('maint-cat-custom').addEventListener('click', () => {
+          closeModal();
+          setTimeout(() => showPlanItemEditor(null), 320);
+        });
+
+        const saveBtn = document.getElementById('maint-cat-save');
+        if (saveBtn && !saveBtn.disabled) {
+          saveBtn.addEventListener('click', () => {
+            let added = 0;
+            selected.forEach(typeKey => {
+              if (typeof MaintenancePlan !== 'undefined') {
+                const item = MaintenancePlan.createPresetItem(typeKey);
+                if (item) { MaintenancePlan.upsertPlanItem(car, item, state); added++; }
+              }
+            });
+            if (added > 0 && saveAppState()) {
+              showToast('Добавлено: ' + added + ' пункт' + (added > 1 ? (added < 5 ? 'а' : 'ов') : ''));
+              closeModal();
+              setTimeout(() => {
+                showView('screen-maintenance-plan');
+                renderMaintenancePlan();
+              }, 320);
+            }
+          });
+        }
+
+        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+      }
+
+      renderModal();
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
     // Show plan item editor modal
     function showPlanItemEditor(itemId) {
       if (!currentCarId) return;
@@ -2985,8 +3249,19 @@
             if(shopEl) shopEl.value = '';
             if(notesEl) notesEl.value = '';
             window.tempServiceReceipts = [];
+            window.selectedServiceTypes = [];
             renderReceiptsPreview('service-receipts-preview', []);
+            // Reset quick chips
+            document.querySelectorAll('.service-chip').forEach(c => c.classList.remove('selected'));
+            updateServiceTypeDisplay();
           }
+          // Bind category picker field click
+          const svcPickerField = document.getElementById('service-type-picker-field');
+          if (svcPickerField && !svcPickerField._pickerBound) {
+            svcPickerField._pickerBound = true;
+            svcPickerField.addEventListener('click', () => showServiceTypePicker());
+          }
+          initServiceQuickChips();
           populateReminderCarSelect();
         }
         
@@ -3755,6 +4030,17 @@
         renderDiary();
       });
       
+      // Coupon copy handler
+      document.addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('.coupon-copy-btn');
+        if (copyBtn) {
+          const code = copyBtn.closest('.coupon-code-row')?.querySelector('.coupon-code')?.textContent?.trim();
+          if (code && navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(() => showToast('Код скопирован: ' + code));
+          }
+        }
+      });
+
       // Initialize receipts handlers
       if(typeof initializeReceiptsHandlers === 'function') {
         initializeReceiptsHandlers();
@@ -3833,7 +4119,16 @@
             showView('screen-add-service');
             return;
           }
-          
+
+          // Quick path for ТО — navigate to service form
+          if(categoryItem.dataset.type === 'to') {
+            expenseCategorySheet.classList.remove('active');
+            window.selectedServiceTypes = [];
+            updateServiceTypeDisplay();
+            showView('screen-add-service');
+            return;
+          }
+
           const category = categoryItem.dataset.category;
           const scrollTo = categoryItem.dataset.scroll;
           
@@ -4065,8 +4360,11 @@
         return;
       }
       
+      const multiTypes = window.selectedServiceTypes && window.selectedServiceTypes.length > 0
+        ? window.selectedServiceTypes
+        : null;
       const type = document.getElementById('service-type')?.value;
-      const typeLabel = type === 'other' ? 
+      const typeLabel = type === 'other' ?
         (document.getElementById('service-type-label')?.value?.trim() || 'Другое') :
         ((typeof Service !== 'undefined' && Service.TYPES && Service.TYPES[type]) ? Service.TYPES[type] : 'Другое');
       const date = document.getElementById('service-date')?.value;
@@ -4074,12 +4372,32 @@
       const cost = parseFloat(document.getElementById('service-cost')?.value || 0);
       const shop = document.getElementById('service-shop')?.value?.trim() || '';
       const notes = document.getElementById('service-notes')?.value?.trim() || '';
-      
-      if(!date || !type) {
-        showToast('Заполните все обязательные поля');
+
+      if(!date || (!type && !multiTypes)) {
+        showToast('Выберите категорию расходов');
         return;
       }
-      
+
+      // Multi-type: create one record per type
+      if (multiTypes && multiTypes.length > 1) {
+        const proceed = () => {
+          multiTypes.forEach(t => {
+            proceedSaveService(carId, t.type, t.label, date, odometer, cost, shop, notes);
+          });
+          window.selectedServiceTypes = [];
+          updateServiceTypeDisplay();
+        };
+        if (odometer > 0) {
+          const validation = validateOdometer(carId, odometer);
+          if (!validation.valid) {
+            showModal('Предупреждение', validation.message, proceed);
+            return;
+          }
+        }
+        proceed();
+        return;
+      }
+
       // Validate odometer if provided
       if(odometer > 0) {
         const validation = validateOdometer(carId, odometer);

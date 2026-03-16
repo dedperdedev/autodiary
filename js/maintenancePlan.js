@@ -15,7 +15,11 @@ const MaintenancePlan = {
     'sparkPlugs': { title: 'Свечи зажигания', icon: 'zap', defaultKm: 60000, defaultMonths: 60 },
     'timingBelt': { title: 'Ремень ГРМ / цепь', icon: 'settings', defaultKm: 100000, defaultMonths: 60 },
     'powerSteeringOil': { title: 'Масло ГУР', icon: 'droplet', defaultKm: 60000, defaultMonths: 36 },
-    'differentialOil': { title: 'Масло дифференциала / раздатки', icon: 'droplet', defaultKm: 80000, defaultMonths: 48 }
+    'differentialOil': { title: 'Масло дифференциала / раздатки', icon: 'droplet', defaultKm: 80000, defaultMonths: 48 },
+    'brakeDiscsFront': { title: 'Тормозные диски передние', icon: 'circle', defaultKm: 80000, defaultMonths: 60 },
+    'brakeDiscsRear': { title: 'Тормозные диски задние', icon: 'circle', defaultKm: 100000, defaultMonths: 72 },
+    'brakePadsFront': { title: 'Тормозные колодки передние', icon: 'square', defaultKm: 40000, defaultMonths: 36 },
+    'brakePadsRear': { title: 'Тормозные колодки задние', icon: 'square', defaultKm: 60000, defaultMonths: 48 }
   },
   
   // Get basic template items

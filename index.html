@@ -2,20 +2,29 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0A84FF">
   <meta name="description" content="Дневник расходов на автомобиль">
-  <title>AutoDiary — мини-приложение</title>
+  <title>AutoDiary</title>
   <link rel="manifest" href="manifest.json">
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
   <!-- Diary View -->
   <section id="screen-diary" class="view active">
     <div class="ios-navbar">
-      <div>
-        <div class="ios-navbar-actions"></div>
+      <div style="position: relative; justify-content: center;">
+        <div class="diary-navbar-car-picker" id="diary-vehicle-chip">
+          <i data-lucide="car"></i>
+          <span class="chip-text">Все авто</span>
+          <i data-lucide="chevron-down"></i>
+        </div>
+        <div class="ios-navbar-actions" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);"></div>
       </div>
     </div>
     <div class="time-filter">
@@ -24,11 +33,6 @@
       <button>Год</button>
     </div>
     <div class="diary-toolbar">
-      <div class="diary-toolbar-chip" id="diary-vehicle-chip">
-        <i data-lucide="car"></i>
-        <span class="chip-text">Все авто</span>
-        <i data-lucide="chevron-down"></i>
-      </div>
       <div class="diary-toolbar-chip" id="diary-category-chip">
         <i data-lucide="filter"></i>
         <span class="chip-text">Категория: Все</span>
@@ -64,11 +68,6 @@
     </div>
 
     <!-- Records rendered dynamically -->
-
-    <!-- Floating Action Button -->
-    <button class="ios-fab" id="diary-add-btn" title="Добавить расход">
-      <i data-lucide="plus"></i>
-    </button>
   </section>
 
   <!-- Garage View -->
@@ -92,7 +91,7 @@
     </div>
     <div class="empty-wrap">
       <div class="empty-text">У вас ещё нет автомобилей</div>
-      <button class="add-btn" data-goto="screen-add-car">➕ Добавить авто</button>
+      <button class="add-btn" data-goto="screen-add-car"><i data-lucide="plus"></i> Добавить авто</button>
     </div>
   </section>
 
@@ -100,18 +99,12 @@
   <section id="screen-car-details" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title" id="car-name">Авто</h1>
+        <h2 class="ios-navbar-compact-title" id="car-name">Авто</h2>
         <div class="ios-navbar-actions">
           <button class="ios-navbar-button" data-goto="screen-maintenance-plan" data-backto="screen-car-details" title="Регламент (ТО)">
             <i data-lucide="calendar-check"></i>
           </button>
-          <button class="ios-navbar-button" data-goto="screen-car-settings" data-backto="screen-car-details" title="Интервалы ТО">
-            <svg viewBox="0 0 24 24">
-          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.27 1 1.51.32.13.66.2 1.01.2H21a2 2 0 1 1 0 4h-.09c-.35 0-.69.07-1.01.2a1.65 1.65 0 0 0-1 1.09Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
+        </div>
       </div>
     </div>
     <div class="car-head">
@@ -306,11 +299,11 @@
     </div>
   </section>
 
-  <!-- Intervals SETTINGS PAGE -->
-  <section id="screen-car-settings" class="view">
+  <!-- Intervals SETTINGS PAGE (removed) -->
+  <section id="screen-car-settings" class="view" style="display:none !important">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title" id="car-name-settings">Интервалы ТО</h1>
+        <h2 class="ios-navbar-compact-title" id="car-name-settings">Интервалы ТО</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -425,8 +418,12 @@
   <section id="screen-maintenance-plan" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title" id="maintenance-plan-car-name">Регламент (ТО)</h1>
-        <div class="ios-navbar-actions"></div>
+        <h2 class="ios-navbar-compact-title" id="maintenance-plan-car-name">Регламент (ТО)</h2>
+        <div class="ios-navbar-actions">
+          <button class="ios-navbar-button" data-goto="screen-car-settings" data-backto="screen-maintenance-plan" title="Редактировать интервалы">
+            <i data-lucide="settings-2"></i>
+          </button>
+        </div>
       </div>
     </div>
     <div class="car-head">
@@ -435,16 +432,8 @@
       </div>
     </div>
     <div class="section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+      <div style="margin-bottom: var(--space-md);">
         <h3>Пункты обслуживания</h3>
-        <div style="display: flex; gap: var(--space-sm);">
-          <button class="ios-button-compact" id="apply-template-basic-btn" style="padding: var(--space-sm) var(--space-md);">
-            Базовый шаблон
-          </button>
-          <button class="ios-button-compact" id="apply-template-extended-btn" style="padding: var(--space-sm) var(--space-md);">
-            Расширенный
-          </button>
-        </div>
       </div>
       <div class="ios-grouped-list" id="maintenance-plan-list">
         <!-- Plan items will be rendered here -->
@@ -467,7 +456,6 @@
   <section id="screen-add-car" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Добавить авто</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -528,11 +516,19 @@
   <section id="screen-expense-form" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Добавить расход</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
     <div class="section">
+      <div class="field nav" id="expense-category-picker" data-backto="screen-expense-form">
+        <label>Категория расходов *</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="expense-category-value" style="color:var(--text);opacity:.9">Выбрать</div>
+          <span class="arrow">›</span>
+        </div>
+        <input type="hidden" id="expense-category-id">
+        <input type="hidden" id="expense-subcategory-id">
+      </div>
       <div class="field">
         <label>Пробег</label>
         <div style="display:flex;align-items:center;gap:8px">
@@ -556,15 +552,6 @@
           <input id="date" type="date">
           <input id="time" type="time">
         </div>
-      </div>
-      <div class="field nav" id="expense-category-picker" data-backto="screen-expense-form">
-        <label>Категория расходов *</label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div id="expense-category-value" style="color:var(--text);opacity:.9">Выбрать</div>
-          <span class="arrow">›</span>
-        </div>
-        <input type="hidden" id="expense-category-id">
-        <input type="hidden" id="expense-subcategory-id">
       </div>
       <div class="field">
         <label>Чеки/Фото</label>
@@ -612,7 +599,6 @@
   <section id="screen-add-expense" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Категории</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -661,7 +647,6 @@
   <section id="screen-trash" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Корзина</h1>
         <div class="ios-navbar-actions">
           <button class="ios-navbar-button" id="trash-empty-btn" style="color: var(--destructive);">
             Очистить
@@ -680,21 +665,30 @@
     </div>
   </section>
 
-  <!-- Bottom Tabbar -->
-  <nav class="tabbar">
-    <div class="tab active" data-goto="screen-diary">
-      <i data-lucide="book-open"></i>
-      <span>Дневник</span>
-    </div>
-    <div class="tab" data-goto="screen-garage">
-      <i data-lucide="home"></i>
-      <span>Гараж</span>
-    </div>
-  <div class="tab" data-goto="screen-settings">
-      <i data-lucide="settings"></i>
-    <span>Параметры</span>
+  <!-- Bottom navigation: capsule pill + FAB -->
+  <div class="tabbar-container">
+    <nav class="ios-tabbar" aria-label="Основная навигация">
+      <div class="ios-tab active" data-goto="screen-diary" aria-label="Дневник" role="button" tabindex="0" aria-selected="true">
+        <i data-lucide="book-open"></i>
+        <span>Дневник</span>
+      </div>
+      <div class="ios-tab" data-goto="screen-garage" aria-label="Гараж" role="button" tabindex="0" aria-selected="false">
+        <i data-lucide="car"></i>
+        <span>Гараж</span>
+      </div>
+      <div class="ios-tab" data-goto="screen-coupons" aria-label="Купоны" role="button" tabindex="0" aria-selected="false">
+        <i data-lucide="ticket"></i>
+        <span>Купоны</span>
+      </div>
+      <div class="ios-tab" data-goto="screen-settings" aria-label="Параметры" role="button" tabindex="0" aria-selected="false">
+        <i data-lucide="settings"></i>
+        <span>Параметры</span>
+      </div>
+    </nav>
+    <button class="tabbar-add-btn" id="diary-add-btn" title="Добавить запись" aria-label="Добавить запись">
+      <i data-lucide="plus"></i>
+    </button>
   </div>
-</nav>
 
   <!-- Expense Category Bottom Sheet -->
   <div class="ios-sheet-overlay" id="expense-category-sheet">
@@ -726,9 +720,9 @@
             </div>
             <span>Зарядка</span>
           </button>
-          <button class="expense-category-item" data-category="Техническое обслуживание">
+          <button class="expense-category-item" data-type="to">
             <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.15); color: #007AFF;">
-              <i data-lucide="tool"></i>
+              <i data-lucide="wrench"></i>
             </div>
             <span>ТО</span>
           </button>
@@ -801,7 +795,7 @@
     </div>
     <div class="main-pad">
       <div id="reminders-list"></div>
-      <button class="add-btn" data-goto="screen-add-reminder">➕ Добавить напоминание</button>
+      <button class="add-btn" data-goto="screen-add-reminder"><i data-lucide="plus"></i> Добавить напоминание</button>
     </div>
   </section>
 
@@ -809,7 +803,6 @@
   <section id="screen-add-reminder" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Добавить напоминание</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -846,7 +839,6 @@
   <section id="screen-export" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Экспорт данных</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -865,7 +857,6 @@
   <section id="screen-reports" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Отчеты</h1>
         <div class="ios-navbar-actions">
           <button class="ios-navbar-button" id="reports-print-btn" title="Печать">
             <i data-lucide="printer"></i>
@@ -902,7 +893,6 @@
   <section id="screen-recovery" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Восстановление данных</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -951,11 +941,283 @@
     <input type="file" id="recovery-import-input" accept=".json" style="display: none;">
   </section>
 
+<!-- Coupons Screen -->
+<section id="screen-coupons" class="view">
+  <div class="ios-navbar">
+    <div>
+      <div class="ios-navbar-actions"></div>
+    </div>
+  </div>
+  <div class="coupons-header">
+    <div class="coupons-header-title">Купоны</div>
+    <div class="coupons-header-sub">Скидки от партнёров AutoDiary</div>
+  </div>
+  <div class="coupons-list">
+
+    <!-- Coupon 1 -->
+    <div class="coupon-card coupon-active">
+      <div class="coupon-left">
+        <div class="coupon-partner-icon" style="background: rgba(10,132,255,0.12); color: #0A84FF;">
+          <i data-lucide="droplets"></i>
+        </div>
+        <div class="coupon-discount">−100 ₴</div>
+        <div class="coupon-min">при заказе от 1 000 ₴</div>
+      </div>
+      <div class="coupon-divider"></div>
+      <div class="coupon-right">
+        <div class="coupon-partner">АвтоМойка Pro</div>
+        <div class="coupon-desc">Скидка на мойку кузова любого класса автомобиля</div>
+        <div class="coupon-meta">
+          <span class="coupon-tag">Мойка</span>
+          <span class="coupon-expire">до 31 марта 2026</span>
+        </div>
+        <div class="coupon-code-row">
+          <span class="coupon-code">AUTO100</span>
+          <button class="coupon-copy-btn"><i data-lucide="copy"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon 2 -->
+    <div class="coupon-card coupon-active">
+      <div class="coupon-left">
+        <div class="coupon-partner-icon" style="background: rgba(255,149,0,0.12); color: #FF9500;">
+          <i data-lucide="fuel"></i>
+        </div>
+        <div class="coupon-discount">−5%</div>
+        <div class="coupon-min">на любую заправку</div>
+      </div>
+      <div class="coupon-divider"></div>
+      <div class="coupon-right">
+        <div class="coupon-partner">ОККО Нафта</div>
+        <div class="coupon-desc">Скидка 5% на топливо всех видов на АЗС сети ОККО</div>
+        <div class="coupon-meta">
+          <span class="coupon-tag">Заправка</span>
+          <span class="coupon-expire">до 15 апреля 2026</span>
+        </div>
+        <div class="coupon-code-row">
+          <span class="coupon-code">OKKO5PCT</span>
+          <button class="coupon-copy-btn"><i data-lucide="copy"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon 3 -->
+    <div class="coupon-card coupon-active">
+      <div class="coupon-left">
+        <div class="coupon-partner-icon" style="background: rgba(52,199,89,0.12); color: #34C759;">
+          <i data-lucide="wrench"></i>
+        </div>
+        <div class="coupon-discount">−200 ₴</div>
+        <div class="coupon-min">при заказе от 2 000 ₴</div>
+      </div>
+      <div class="coupon-divider"></div>
+      <div class="coupon-right">
+        <div class="coupon-partner">СТО Мастер</div>
+        <div class="coupon-desc">Скидка на замену масла и технический осмотр</div>
+        <div class="coupon-meta">
+          <span class="coupon-tag">Сервис</span>
+          <span class="coupon-expire">до 30 апреля 2026</span>
+        </div>
+        <div class="coupon-code-row">
+          <span class="coupon-code">MASTER200</span>
+          <button class="coupon-copy-btn"><i data-lucide="copy"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon 4 -->
+    <div class="coupon-card coupon-active">
+      <div class="coupon-left">
+        <div class="coupon-partner-icon" style="background: rgba(175,82,222,0.12); color: #AF52DE;">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="coupon-discount">−10%</div>
+        <div class="coupon-min">на КАСКО / ОСАГО</div>
+      </div>
+      <div class="coupon-divider"></div>
+      <div class="coupon-right">
+        <div class="coupon-partner">УкрСтрахування</div>
+        <div class="coupon-desc">Скидка при оформлении полиса онлайн через приложение</div>
+        <div class="coupon-meta">
+          <span class="coupon-tag">Страхование</span>
+          <span class="coupon-expire">до 1 июня 2026</span>
+        </div>
+        <div class="coupon-code-row">
+          <span class="coupon-code">INSURE10</span>
+          <button class="coupon-copy-btn"><i data-lucide="copy"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon 5 — used -->
+    <div class="coupon-card coupon-used">
+      <div class="coupon-left">
+        <div class="coupon-partner-icon" style="background: rgba(142,142,147,0.12); color: var(--text-tertiary);">
+          <i data-lucide="sparkles"></i>
+        </div>
+        <div class="coupon-discount">−150 ₴</div>
+        <div class="coupon-min">при заказе от 800 ₴</div>
+      </div>
+      <div class="coupon-divider"></div>
+      <div class="coupon-right">
+        <div class="coupon-partner">AutoGloss Detail</div>
+        <div class="coupon-desc">Скидка на полировку кузова и химчистку салона</div>
+        <div class="coupon-meta">
+          <span class="coupon-tag">Детейлинг</span>
+          <span class="coupon-used-label">Использован</span>
+        </div>
+        <div class="coupon-code-row">
+          <span class="coupon-code">GLOSS150</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Transfer Car Screen -->
+<section id="screen-transfer-car" class="view">
+  <div class="ios-navbar">
+    <div>
+      <h2 class="ios-navbar-compact-title">Передать авто</h2>
+      <div class="ios-navbar-actions"></div>
+    </div>
+  </div>
+
+  <!-- SEND SECTION -->
+  <div class="transfer-section">
+
+    <!-- Step 1: Select cars -->
+    <div class="transfer-step" id="transfer-step-1">
+      <div class="transfer-step-label">Шаг 1 — Выберите авто</div>
+      <div class="ios-group" id="transfer-car-list">
+        <div class="ios-cell">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title" style="color: var(--text-secondary); font-style: italic;">Нет добавленных авто</div>
+          </div>
+        </div>
+      </div>
+      <div class="ios-group" style="margin-top: 0;">
+        <div class="ios-cell" id="transfer-select-all-btn" style="cursor:pointer;">
+          <div class="ios-cell-content">
+            <div class="ios-cell-title" style="color: var(--accent);">Выбрать все</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Choose method -->
+    <div class="transfer-step" id="transfer-step-2">
+      <div class="transfer-step-label">Шаг 2 — Способ передачи</div>
+      <div class="transfer-methods">
+        <button class="transfer-method-btn" id="method-link">
+          <i data-lucide="link"></i>
+          <span>Ссылка</span>
+        </button>
+        <button class="transfer-method-btn" id="method-qr">
+          <i data-lucide="qr-code"></i>
+          <span>QR-код</span>
+        </button>
+        <button class="transfer-method-btn" id="method-contact">
+          <i data-lucide="user"></i>
+          <span>Email / тел.</span>
+        </button>
+        <button class="transfer-method-btn" id="method-code">
+          <i data-lucide="hash"></i>
+          <span>Код</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Result -->
+    <div class="transfer-step" id="transfer-step-3" style="display:none;">
+      <div class="transfer-step-label" id="transfer-result-label">Результат</div>
+
+      <!-- Link result -->
+      <div id="transfer-result-link" class="transfer-result-block" style="display:none;">
+        <div class="transfer-result-url" id="transfer-link-value"></div>
+        <button class="ios-button" style="width:100%; margin-top: var(--space-md);" id="transfer-copy-link-btn">
+          <i data-lucide="copy"></i> Копировать ссылку
+        </button>
+        <button class="ios-button ios-button-secondary" style="width:100%; margin-top: var(--space-sm);" id="transfer-share-link-btn">
+          <i data-lucide="share-2"></i> Поделиться
+        </button>
+      </div>
+
+      <!-- QR result -->
+      <div id="transfer-result-qr" class="transfer-result-block" style="display:none;">
+        <div class="transfer-qr-wrap">
+          <img id="transfer-qr-img" src="" alt="QR код" style="width:200px;height:200px;border-radius:12px;">
+        </div>
+        <div class="transfer-code-hint">Или передайте код вручную:</div>
+        <div class="transfer-code-display" id="transfer-qr-code-value"></div>
+        <button class="ios-button" style="width:100%; margin-top: var(--space-md);" id="transfer-share-qr-btn">
+          <i data-lucide="share-2"></i> Поделиться QR
+        </button>
+      </div>
+
+      <!-- Contact result -->
+      <div id="transfer-result-contact" class="transfer-result-block" style="display:none;">
+        <div class="field">
+          <label>Email или номер телефона</label>
+          <input type="text" id="transfer-contact-input" placeholder="+380... или user@email.com">
+        </div>
+        <button class="ios-button" style="width:100%; margin-top: var(--space-md);" id="transfer-send-contact-btn">
+          <i data-lucide="send"></i> Отправить приглашение
+        </button>
+      </div>
+
+      <!-- Code result -->
+      <div id="transfer-result-code" class="transfer-result-block" style="display:none;">
+        <div class="transfer-code-hint">Передайте этот код получателю</div>
+        <div class="transfer-code-display" id="transfer-code-value"></div>
+        <div class="transfer-code-expire">Код действует 24 часа</div>
+        <button class="ios-button" style="width:100%; margin-top: var(--space-md);" id="transfer-copy-code-btn">
+          <i data-lucide="copy"></i> Копировать код
+        </button>
+      </div>
+
+      <button class="ios-button ios-button-secondary" style="width:100%; margin-top: var(--space-md);" id="transfer-reset-btn">
+        Начать заново
+      </button>
+    </div>
+  </div>
+
+  <!-- RECEIVE SECTION -->
+  <div class="transfer-divider">
+    <span>или</span>
+  </div>
+  <div class="transfer-section">
+    <div class="transfer-step-label">Получить авто</div>
+    <div class="field" style="margin: 0 var(--space-lg);">
+      <label>Введите код передачи</label>
+      <div style="display:flex; gap: var(--space-sm);">
+        <input type="text" id="transfer-receive-code" placeholder="XXXXXXXX" maxlength="10"
+          style="text-transform:uppercase; letter-spacing: 2px; font-weight: 700; font-size: 18px; flex:1;">
+        <button class="ios-button" style="flex-shrink:0; padding: 0 var(--space-lg);" id="transfer-receive-btn">
+          Получить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accept banner (shown after code entry) -->
+  <div id="transfer-accept-banner" class="transfer-accept-banner" style="display:none;">
+    <div class="transfer-accept-icon"><i data-lucide="car"></i></div>
+    <div class="transfer-accept-title">Вам передали авто</div>
+    <div class="transfer-accept-desc" id="transfer-accept-desc">Пользователь хочет передать вам автомобиль со всеми данными.</div>
+    <div class="transfer-accept-actions">
+      <button class="ios-button" id="transfer-accept-btn"><i data-lucide="check"></i> Принять</button>
+      <button class="ios-button ios-button-secondary" id="transfer-decline-btn">Отменить</button>
+    </div>
+  </div>
+</section>
+
 <!-- Settings PAGE -->
 <section id="screen-settings" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Параметры</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -970,6 +1232,17 @@
           <div class="sub">Используйте без ограничений</div>
         </div>
       </div>
+    </div>
+  </div>
+  <div class="s-list card-ios">
+    <div class="s-item" data-goto="screen-transfer-car">
+      <div class="left">
+        <span class="tile" style="background: linear-gradient(135deg, #0A84FF, #5E5CE6);">
+          <i data-lucide="send"></i>
+        </span>
+        <div class="label">Передать авто</div>
+      </div>
+      <div class="right chevron">›</div>
     </div>
   </div>
   <div class="s-list card-ios">
@@ -1100,7 +1373,6 @@
   <section id="screen-add-fuel" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Заправка</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1145,14 +1417,50 @@
   <section id="screen-add-service" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Сервис</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
+    <!-- Quick service chips -->
+    <div class="service-quick-chips-wrap">
+      <div class="service-quick-chips" id="service-quick-chips">
+        <button class="service-chip" data-value="oil" data-label="Замена масла">
+          <span>🛢</span> Замена масла
+        </button>
+        <button class="service-chip" data-value="oilFilter" data-label="Масляный фильтр">
+          <span>🔧</span> Масл. фильтр
+        </button>
+        <button class="service-chip" data-value="airFilter" data-label="Воздушный фильтр">
+          <span>💨</span> Возд. фильтр
+        </button>
+        <button class="service-chip" data-value="cabinFilter" data-label="Салонный фильтр">
+          <span>🌬</span> Салон. фильтр
+        </button>
+        <button class="service-chip" data-value="fuelFilter" data-label="Топливный фильтр">
+          <span>⛽</span> Топл. фильтр
+        </button>
+        <button class="service-chip" data-value="brakePads" data-label="Тормозные колодки (перед)">
+          <span>🔴</span> Колодки пер.
+        </button>
+        <button class="service-chip" data-value="brakePadsRear" data-label="Тормозные колодки (зад)">
+          <span>🔴</span> Колодки зад.
+        </button>
+        <button class="service-chip" data-value="brakeDiscs" data-label="Тормозные диски">
+          <span>⚙️</span> Торм. диски
+        </button>
+        <button class="service-chip" data-value="sparkPlugs" data-label="Свечи зажигания">
+          <span>⚡</span> Свечи
+        </button>
+      </div>
+    </div>
+
     <div class="section">
-      <div class="field">
-        <label>Тип работ *</label>
-        <select id="service-type" required>
+      <div class="field" style="cursor:pointer;" id="service-type-picker-field">
+        <label>Категория расходов *</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-xs) 0;min-height:44px;">
+          <div id="service-type-display" style="flex:1;color:var(--text-secondary);font-size:var(--font-size-body);">Выбрать</div>
+          <span style="color:var(--text-secondary);font-size:20px;line-height:1;">›</span>
+        </div>
+        <select id="service-type" style="display:none">
           <option value="">Выбрать</option>
           <option value="oil">Замена масла</option>
           <option value="oilFilter">Замена масляного фильтра</option>
@@ -1161,6 +1469,10 @@
           <option value="fuelFilter">Замена топливного фильтра</option>
           <option value="transmissionOil">Замена масла КПП</option>
           <option value="brakes">Тормозные колодки/диски</option>
+          <option value="brakeDiscsFront">Тормозные диски передние</option>
+          <option value="brakeDiscsRear">Тормозные диски задние</option>
+          <option value="brakePadsFront">Тормозные колодки передние</option>
+          <option value="brakePadsRear">Тормозные колодки задние</option>
           <option value="tires">Шины</option>
           <option value="battery">Аккумулятор</option>
           <option value="coolant">Охлаждающая жидкость</option>
@@ -1221,13 +1533,13 @@
   <script src="js/templates.js"></script>
   <script src="js/search.js"></script>
   <script src="js/diary.js"></script>
+  <script src="js/transfer.js"></script>
   <script src="js/app.js"></script>
   
   <!-- Units Settings Screen -->
   <section id="screen-units-settings" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Единицы измерения</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1277,7 +1589,6 @@
   <section id="screen-templates" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Шаблоны</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1297,7 +1608,6 @@
   <section id="screen-recurring" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Повторяющиеся</h1>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1325,7 +1635,6 @@
   <section id="screen-categories-management" class="view">
     <div class="ios-navbar">
       <div>
-        <h1 class="ios-navbar-large-title">Управление категориями</h1>
         <div class="ios-navbar-actions">
           <button class="ios-navbar-btn" id="add-category-btn" title="Добавить категорию">
             <i data-lucide="plus"></i>
