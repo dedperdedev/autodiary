@@ -454,6 +454,11 @@
         refreshSettingsScreen();
       } else if(id==='screen-reminders'){
         renderReminders();
+      } else if(id==='screen-expense-form'){
+        // Restore notes field visibility (Прочее flow hides it; reset here for other categories)
+        const notesEl = document.getElementById('notes');
+        const notesField = notesEl?.closest('.field');
+        if(notesField) notesField.style.display = '';
       } else if(id==='screen-add-reminder'){
         populateReminderCarSelect();
       } else if(id==='screen-export'){
@@ -2135,6 +2140,63 @@
           closeModal();
           if (ct) onSelect(ct);
         });
+      });
+
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
+    // "Прочее" — text input sub-sheet
+    function showOtherExpensePicker(onConfirm) {
+      let modal = document.getElementById('other-expense-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'other-expense-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+      }
+
+      modal.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header">
+            <div>
+              <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Прочие расходы</h2>
+              <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Опишите расход</p>
+            </div>
+            <button class="ios-sheet-close" id="other-exp-close"><i data-lucide="x"></i></button>
+          </div>
+          <div class="ios-sheet-content">
+            <div>
+              <input id="other-exp-text" type="text" placeholder="Например: замена дворников, наклейки…"
+                style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+            </div>
+            <div style="margin-top:var(--space-lg);">
+              <button class="ios-button ios-button-primary" id="other-exp-confirm" style="width:100%;">Готово</button>
+            </div>
+          </div>
+        </div>`;
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      const input = document.getElementById('other-exp-text');
+      setTimeout(() => input?.focus(), 350);
+
+      document.getElementById('other-exp-close').addEventListener('click', closeModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+      document.getElementById('other-exp-confirm').addEventListener('click', () => {
+        const text = input?.value?.trim() || '';
+        closeModal();
+        onConfirm(text);
+      });
+
+      // Also confirm on Enter
+      input?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('other-exp-confirm')?.click(); }
       });
 
       requestAnimationFrame(() => modal.classList.add('active'));
@@ -4420,6 +4482,24 @@
           if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
             expenseCategorySheet.classList.remove('active');
             showView('screen-add-service');
+            return;
+          }
+
+          // Quick path for Прочее — show text input sub-sheet
+          if(categoryItem.dataset.type === 'other') {
+            expenseCategorySheet.classList.remove('active');
+            showOtherExpensePicker((text) => {
+              setTimeout(() => {
+                const categoryValue = document.getElementById('expense-category-value');
+                if(categoryValue) categoryValue.textContent = text ? 'Прочее — ' + text : 'Прочее';
+                showView('screen-expense-form'); // restores notes field first
+                // Pre-fill notes with typed text and hide notes field
+                const notesEl = document.getElementById('notes');
+                if(notesEl) notesEl.value = text;
+                const notesField = notesEl?.closest('.field');
+                if(notesField) notesField.style.display = 'none';
+              }, 320);
+            });
             return;
           }
 
