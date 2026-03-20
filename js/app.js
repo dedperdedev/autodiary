@@ -2003,6 +2003,10 @@
       const singleType = document.getElementById('service-type')?.value;
       if (singleType) selected.add(singleType);
 
+      // Pre-fill oil details from existing selection
+      const existingOil = (window.selectedServiceTypes || []).find(t => t.type === 'oil');
+      const oilDetails = { brand: existingOil?.brand || '', viscosity: existingOil?.viscosity || '', volume: existingOil?.volume || '' };
+
       let modal = document.getElementById('service-type-picker-modal');
       if (modal) modal.remove();
       modal = document.createElement('div');
@@ -2041,6 +2045,27 @@
                     </button>`;
                 }).join('')}
               </div>
+              ${selected.has('oil') ? `
+              <div id="oil-details-panel" style="margin-top:var(--space-md);background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-md);border:0.5px solid rgba(255,149,0,0.3);">
+                <p style="font-size:var(--font-size-footnote);font-weight:600;color:#FF9500;margin:0 0 var(--space-sm) 0;text-transform:uppercase;letter-spacing:0.5px;">Детали масла</p>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                  <div>
+                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Фирма</label>
+                    <input id="oil-brand" type="text" placeholder="Например, Mobil, Castrol…" value="${escapeHtml(oilDetails.brand)}"
+                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+                  </div>
+                  <div>
+                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Вязкость</label>
+                    <input id="oil-viscosity" type="text" placeholder="Например, 5W-30, 0W-20…" value="${escapeHtml(oilDetails.viscosity)}"
+                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+                  </div>
+                  <div>
+                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Объём (л)</label>
+                    <input id="oil-volume" type="number" placeholder="Например, 4.5" min="0" step="0.1" value="${escapeHtml(oilDetails.volume)}"
+                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+                  </div>
+                </div>
+              </div>` : ''}
               <div style="margin-top:var(--space-lg);">
                 <button class="ios-button ios-button-primary" id="svc-picker-save" style="width:100%;"
                   ${selected.size === 0 ? 'disabled' : ''}>
@@ -2060,14 +2085,32 @@
           });
         });
 
+        // Persist oil detail values across re-renders
+        const oilBrandEl = document.getElementById('oil-brand');
+        const oilViscosityEl = document.getElementById('oil-viscosity');
+        const oilVolumeEl = document.getElementById('oil-volume');
+        if (oilBrandEl) oilBrandEl.addEventListener('input', e => { oilDetails.brand = e.target.value; });
+        if (oilViscosityEl) oilViscosityEl.addEventListener('input', e => { oilDetails.viscosity = e.target.value; });
+        if (oilVolumeEl) oilVolumeEl.addEventListener('input', e => { oilDetails.volume = e.target.value; });
+
         document.getElementById('svc-picker-close').addEventListener('click', closeModal);
 
         const saveBtn = document.getElementById('svc-picker-save');
         if (saveBtn && !saveBtn.disabled) {
           saveBtn.addEventListener('click', () => {
+            // Capture latest oil input values before saving
+            const brandVal = document.getElementById('oil-brand')?.value || oilDetails.brand;
+            const viscosityVal = document.getElementById('oil-viscosity')?.value || oilDetails.viscosity;
+            const volumeVal = document.getElementById('oil-volume')?.value || oilDetails.volume;
             window.selectedServiceTypes = Array.from(selected).map(t => {
               const cat = SERVICE_TYPE_CATS.find(c => c.type === t);
-              return { type: t, label: cat ? cat.label : t };
+              const entry = { type: t, label: cat ? cat.label : t };
+              if (t === 'oil') {
+                if (brandVal) entry.brand = brandVal;
+                if (viscosityVal) entry.viscosity = viscosityVal;
+                if (volumeVal) entry.volume = volumeVal;
+              }
+              return entry;
             });
             // Sync single hidden select with first type
             const sel = document.getElementById('service-type');
