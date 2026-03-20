@@ -714,7 +714,7 @@
             </div>
             <span>Сервис</span>
           </button>
-          <button class="expense-category-item" data-category="Электрозарядка">
+          <button class="expense-category-item" data-goto="screen-add-charge" data-type="charge">
             <div class="expense-category-icon" style="background: rgba(52, 199, 89, 0.15); color: #34C759;">
               <i data-lucide="zap"></i>
             </div>
@@ -1414,6 +1414,48 @@
     </div>
     <div class="save-btn">
       <button id="save-fuel-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Charge Entry View -->
+  <section id="screen-add-charge" class="view">
+    <div class="ios-navbar">
+      <div>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="charge-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км) *</label>
+        <input type="number" id="charge-odometer" placeholder="0" min="0" required>
+      </div>
+      <div class="field">
+        <label>кВт·ч *</label>
+        <input type="number" id="charge-kwh" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+      <div class="field">
+        <label>Стоимость (₴) *</label>
+        <input type="number" id="charge-cost" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+      <div class="field" id="charge-price-per-kwh-row" style="display:none;">
+        <label>Цена за кВт·ч (₴)</label>
+        <span id="charge-price-per-kwh" style="font-weight:600;color:var(--text);"></span>
+      </div>
+      <div class="field">
+        <label>Станция зарядки</label>
+        <input type="text" id="charge-station" placeholder="Название станции">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="charge-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-charge-btn">Сохранить</button>
     </div>
   </section>
 

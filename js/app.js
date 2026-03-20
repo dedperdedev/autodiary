@@ -3339,6 +3339,39 @@
           if (litersInput) { litersInput.removeEventListener('input', updateFuelPricePerUnit); litersInput.addEventListener('input', updateFuelPricePerUnit); }
           if (costInput) { costInput.removeEventListener('input', updateFuelPricePerUnit); costInput.addEventListener('input', updateFuelPricePerUnit); }
           updateFuelPricePerUnit();
+        } else if(id === 'screen-add-charge') {
+          // Reset charge form
+          const chargeDateEl = document.getElementById('charge-date');
+          const chargeOdometerEl = document.getElementById('charge-odometer');
+          const chargeKwhEl = document.getElementById('charge-kwh');
+          const chargeCostEl = document.getElementById('charge-cost');
+          const chargeStationEl = document.getElementById('charge-station');
+          const chargeNotesEl = document.getElementById('charge-notes');
+          if(chargeDateEl) chargeDateEl.value = new Date().toISOString().split('T')[0];
+          if(chargeOdometerEl) chargeOdometerEl.value = '';
+          if(chargeKwhEl) chargeKwhEl.value = '';
+          if(chargeCostEl) chargeCostEl.value = '';
+          if(chargeStationEl) chargeStationEl.value = '';
+          if(chargeNotesEl) chargeNotesEl.value = '';
+          // Wire up price-per-kwh auto-calculation
+          function updateChargePricePerKwh() {
+            const kwh = parseFloat(document.getElementById('charge-kwh')?.value || 0);
+            const cost = parseFloat(document.getElementById('charge-cost')?.value || 0);
+            const row = document.getElementById('charge-price-per-kwh-row');
+            const display = document.getElementById('charge-price-per-kwh');
+            if (!row || !display) return;
+            if (kwh > 0 && cost > 0) {
+              display.textContent = (cost / kwh).toFixed(2) + ' ₴';
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          }
+          const kwhInput = document.getElementById('charge-kwh');
+          const chargeCostInput = document.getElementById('charge-cost');
+          if (kwhInput) { kwhInput.removeEventListener('input', updateChargePricePerKwh); kwhInput.addEventListener('input', updateChargePricePerKwh); }
+          if (chargeCostInput) { chargeCostInput.removeEventListener('input', updateChargePricePerKwh); chargeCostInput.addEventListener('input', updateChargePricePerKwh); }
+          updateChargePricePerKwh();
         } else if(id === 'screen-add-service') {
           // Reset form if not editing
           if(!editingServiceId) {
@@ -4222,6 +4255,13 @@
             showView('screen-add-fuel');
             return;
           }
+
+          // Quick path for charge
+          if(categoryItem.dataset.type === 'charge' || categoryItem.dataset.goto === 'screen-add-charge') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-charge');
+            return;
+          }
           
           // Quick path for service
           if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
@@ -4285,6 +4325,14 @@
         });
       }
       
+      // Initialize charge form handlers
+      const saveChargeBtn = document.getElementById('save-charge-btn');
+      if(saveChargeBtn) {
+        saveChargeBtn.addEventListener('click', () => {
+          saveChargeEntry();
+        });
+      }
+
       // Initialize service form handlers
       const saveServiceBtn = document.getElementById('save-service-btn');
       if(saveServiceBtn) {
@@ -4427,6 +4475,53 @@
       }
     }
     
+    // Save charge (EV) entry
+    function saveChargeEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Выберите автомобиль'); return; }
+
+      const date = document.getElementById('charge-date')?.value;
+      const odometer = parseFloat(document.getElementById('charge-odometer')?.value || 0);
+      const kwh = parseFloat(document.getElementById('charge-kwh')?.value || 0);
+      const totalCost = parseFloat(document.getElementById('charge-cost')?.value || 0);
+      const station = document.getElementById('charge-station')?.value?.trim() || '';
+      const notes = document.getElementById('charge-notes')?.value?.trim() || '';
+
+      if(!date || !odometer || !kwh || !totalCost) {
+        showToast('Заполните все обязательные поля');
+        return;
+      }
+
+      if(!state.charges) state.charges = [];
+      state.charges.push({
+        id: Date.now().toString(),
+        carId,
+        date,
+        odometer,
+        kwh,
+        totalCost,
+        pricePerKwh: kwh > 0 ? (totalCost / kwh).toFixed(2) : 0,
+        station,
+        notes,
+        createdAt: new Date().toISOString(),
+        deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Зарядка добавлена');
+        document.getElementById('charge-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('charge-odometer').value = '';
+        document.getElementById('charge-kwh').value = '';
+        document.getElementById('charge-cost').value = '';
+        document.getElementById('charge-station').value = '';
+        document.getElementById('charge-notes').value = '';
+        const row = document.getElementById('charge-price-per-kwh-row');
+        if(row) row.style.display = 'none';
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     // Edit service entry
     function editServiceEntry(serviceId) {
       const service = (state.service || []).find(s => s.id === serviceId);
