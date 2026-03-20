@@ -2045,27 +2045,6 @@
                     </button>`;
                 }).join('')}
               </div>
-              ${selected.has('oil') ? `
-              <div id="oil-details-panel" style="margin-top:var(--space-md);background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-md);border:0.5px solid rgba(255,149,0,0.3);">
-                <p style="font-size:var(--font-size-footnote);font-weight:600;color:#FF9500;margin:0 0 var(--space-sm) 0;text-transform:uppercase;letter-spacing:0.5px;">Детали масла</p>
-                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
-                  <div>
-                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Фирма</label>
-                    <input id="oil-brand" type="text" placeholder="Например, Mobil, Castrol…" value="${escapeHtml(oilDetails.brand)}"
-                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-                  </div>
-                  <div>
-                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Вязкость</label>
-                    <input id="oil-viscosity" type="text" placeholder="Например, 5W-30, 0W-20…" value="${escapeHtml(oilDetails.viscosity)}"
-                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-                  </div>
-                  <div>
-                    <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Объём (л)</label>
-                    <input id="oil-volume" type="number" placeholder="Например, 4.5" min="0" step="0.1" value="${escapeHtml(oilDetails.volume)}"
-                      style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-                  </div>
-                </div>
-              </div>` : ''}
               <div style="margin-top:var(--space-lg);">
                 <button class="ios-button ios-button-primary" id="svc-picker-save" style="width:100%;"
                   ${selected.size === 0 ? 'disabled' : ''}>
@@ -2080,35 +2059,35 @@
         modal.querySelectorAll('[data-svc-type]').forEach(btn => {
           btn.addEventListener('click', () => {
             const t = btn.dataset.svcType;
-            if (selected.has(t)) selected.delete(t); else selected.add(t);
-            renderModal();
+            if (t === 'oil') {
+              if (selected.has('oil')) {
+                // Deselect
+                selected.delete('oil');
+                oilDetails.brand = ''; oilDetails.viscosity = ''; oilDetails.volume = '';
+                renderModal();
+              } else {
+                // Show oil details sub-sheet
+                showOilDetailsSheet();
+              }
+            } else {
+              if (selected.has(t)) selected.delete(t); else selected.add(t);
+              renderModal();
+            }
           });
         });
-
-        // Persist oil detail values across re-renders
-        const oilBrandEl = document.getElementById('oil-brand');
-        const oilViscosityEl = document.getElementById('oil-viscosity');
-        const oilVolumeEl = document.getElementById('oil-volume');
-        if (oilBrandEl) oilBrandEl.addEventListener('input', e => { oilDetails.brand = e.target.value; });
-        if (oilViscosityEl) oilViscosityEl.addEventListener('input', e => { oilDetails.viscosity = e.target.value; });
-        if (oilVolumeEl) oilVolumeEl.addEventListener('input', e => { oilDetails.volume = e.target.value; });
 
         document.getElementById('svc-picker-close').addEventListener('click', closeModal);
 
         const saveBtn = document.getElementById('svc-picker-save');
         if (saveBtn && !saveBtn.disabled) {
           saveBtn.addEventListener('click', () => {
-            // Capture latest oil input values before saving
-            const brandVal = document.getElementById('oil-brand')?.value || oilDetails.brand;
-            const viscosityVal = document.getElementById('oil-viscosity')?.value || oilDetails.viscosity;
-            const volumeVal = document.getElementById('oil-volume')?.value || oilDetails.volume;
             window.selectedServiceTypes = Array.from(selected).map(t => {
               const cat = SERVICE_TYPE_CATS.find(c => c.type === t);
               const entry = { type: t, label: cat ? cat.label : t };
               if (t === 'oil') {
-                if (brandVal) entry.brand = brandVal;
-                if (viscosityVal) entry.viscosity = viscosityVal;
-                if (volumeVal) entry.volume = volumeVal;
+                if (oilDetails.brand) entry.brand = oilDetails.brand;
+                if (oilDetails.viscosity) entry.viscosity = oilDetails.viscosity;
+                if (oilDetails.volume) entry.volume = oilDetails.volume;
               }
               return entry;
             });
@@ -2123,6 +2102,71 @@
         }
 
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+      }
+
+      function showOilDetailsSheet() {
+        let subModal = document.getElementById('oil-details-submodal');
+        if (subModal) subModal.remove();
+        subModal = document.createElement('div');
+        subModal.id = 'oil-details-submodal';
+        subModal.className = 'ios-sheet-overlay';
+        subModal.style.zIndex = '10001';
+        document.body.appendChild(subModal);
+
+        subModal.innerHTML = `
+          <div class="ios-sheet">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+              <div>
+                <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Моторное масло</h2>
+                <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Укажите детали масла</p>
+              </div>
+              <button class="ios-sheet-close" id="oil-sub-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ios-sheet-content">
+              <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+                <div>
+                  <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">Фирма</label>
+                  <input id="oil-sub-brand" type="text" placeholder="Например, Mobil, Castrol…" value="${escapeHtml(oilDetails.brand)}"
+                    style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+                </div>
+                <div>
+                  <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">Вязкость</label>
+                  <input id="oil-sub-viscosity" type="text" placeholder="Например, 5W-30, 0W-20…" value="${escapeHtml(oilDetails.viscosity)}"
+                    style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+                </div>
+                <div>
+                  <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">Объём (л)</label>
+                  <input id="oil-sub-volume" type="number" placeholder="Например, 4.5" min="0" step="0.1" value="${escapeHtml(oilDetails.volume)}"
+                    style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+                </div>
+              </div>
+              <div style="margin-top:var(--space-lg);">
+                <button class="ios-button ios-button-primary" id="oil-sub-confirm" style="width:100%;">Готово</button>
+              </div>
+            </div>
+          </div>`;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        function closeSubModal() {
+          subModal.classList.remove('active');
+          setTimeout(() => { if (subModal.parentNode) subModal.remove(); }, 300);
+        }
+
+        document.getElementById('oil-sub-close').addEventListener('click', closeSubModal);
+        subModal.addEventListener('click', e => { if (e.target === subModal) closeSubModal(); });
+
+        document.getElementById('oil-sub-confirm').addEventListener('click', () => {
+          oilDetails.brand = document.getElementById('oil-sub-brand').value;
+          oilDetails.viscosity = document.getElementById('oil-sub-viscosity').value;
+          oilDetails.volume = document.getElementById('oil-sub-volume').value;
+          selected.add('oil');
+          closeSubModal();
+          renderModal();
+        });
+
+        requestAnimationFrame(() => subModal.classList.add('active'));
       }
 
       renderModal();
