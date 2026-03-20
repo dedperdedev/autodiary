@@ -12,7 +12,7 @@ const Categories = {
         { id: 'cat-parts', name: 'Запчасти', icon: 'package', sortOrder: 4, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'cat-insurance', name: 'Страхование', icon: 'shield', sortOrder: 5, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'cat-taxes', name: 'Налоги/Регистрация', icon: 'file-text', sortOrder: 6, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'cat-wash', name: 'Мойка', icon: 'droplet', sortOrder: 7, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'cat-wash', name: 'Уход', icon: 'droplet', sortOrder: 7, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'cat-parking', name: 'Парковка/Платные дороги', icon: 'map-pin', sortOrder: 8, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'cat-tires', name: 'Шины', icon: 'circle', sortOrder: 9, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'cat-fines', name: 'Штрафы', icon: 'alert-circle', sortOrder: 10, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -52,8 +52,9 @@ const Categories = {
         { id: 'sub-tax-inspection', categoryId: 'cat-taxes', name: 'Техосмотр', sortOrder: 3, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         // Wash subcategories
         { id: 'sub-wash-wash', categoryId: 'cat-wash', name: 'Мойка', sortOrder: 1, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'sub-wash-detail', categoryId: 'cat-wash', name: 'Детейлинг', sortOrder: 2, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'sub-wash-detail', categoryId: 'cat-wash', name: 'Химчистка салона', sortOrder: 2, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'sub-wash-polish', categoryId: 'cat-wash', name: 'Полировка', sortOrder: 3, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'sub-wash-other', categoryId: 'cat-wash', name: 'Прочее', sortOrder: 4, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         // Parking subcategories
         { id: 'sub-park-parking', categoryId: 'cat-parking', name: 'Парковка', sortOrder: 1, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         { id: 'sub-park-tolls', categoryId: 'cat-parking', name: 'Платные дороги', sortOrder: 2, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
