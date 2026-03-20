@@ -2060,15 +2060,8 @@
           btn.addEventListener('click', () => {
             const t = btn.dataset.svcType;
             if (t === 'oil') {
-              if (selected.has('oil')) {
-                // Deselect
-                selected.delete('oil');
-                oilDetails.brand = ''; oilDetails.viscosity = ''; oilDetails.volume = '';
-                renderModal();
-              } else {
-                // Show oil details sub-sheet
-                showOilDetailsSheet();
-              }
+              // Always open the sub-sheet (whether selected or not)
+              showOilDetailsSheet();
             } else {
               if (selected.has(t)) selected.delete(t); else selected.add(t);
               renderModal();
@@ -2141,8 +2134,9 @@
                     style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
                 </div>
               </div>
-              <div style="margin-top:var(--space-lg);">
-                <button class="ios-button ios-button-primary" id="oil-sub-confirm" style="width:100%;">Готово</button>
+              <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);">
+                ${selected.has('oil') ? `<button class="ios-button" id="oil-sub-remove" style="flex:0 0 auto;">Снять</button>` : ''}
+                <button class="ios-button ios-button-primary" id="oil-sub-confirm" style="flex:1;">Готово</button>
               </div>
             </div>
           </div>`;
@@ -2156,6 +2150,16 @@
 
         document.getElementById('oil-sub-close').addEventListener('click', closeSubModal);
         subModal.addEventListener('click', e => { if (e.target === subModal) closeSubModal(); });
+
+        const removeBtn = document.getElementById('oil-sub-remove');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => {
+            selected.delete('oil');
+            oilDetails.brand = ''; oilDetails.viscosity = ''; oilDetails.volume = '';
+            closeSubModal();
+            renderModal();
+          });
+        }
 
         document.getElementById('oil-sub-confirm').addEventListener('click', () => {
           oilDetails.brand = document.getElementById('oil-sub-brand').value;
