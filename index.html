@@ -726,7 +726,7 @@
             </div>
             <span>Сервис</span>
           </button>
-          <button class="expense-category-item" data-category="Шиномонтаж">
+          <button class="expense-category-item" data-type="wheels" data-goto="screen-add-wheels">
             <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
               <i data-lucide="circle"></i>
             </div>
@@ -1415,6 +1415,114 @@
     </div>
     <div class="save-btn">
       <button id="save-fuel-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Wheels Entry View -->
+  <section id="screen-add-wheels" class="view">
+    <div class="ios-navbar">
+      <div><div class="ios-navbar-actions"></div></div>
+    </div>
+
+    <div class="section">
+      <!-- Tire installation: radio (only one) -->
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Установка резины</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md);">
+        <button class="expense-category-item wheels-install-btn" id="btn-summer" data-install="summer"
+          style="position:relative;flex-direction:row;justify-content:flex-start;gap:12px;padding:14px;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;flex-shrink:0;">
+            <i data-lucide="sun"></i>
+          </div>
+          <span style="font-size:var(--font-size-subheadline);text-align:left;">Летняя<br>резина</span>
+        </button>
+        <button class="expense-category-item wheels-install-btn" id="btn-winter" data-install="winter"
+          style="position:relative;flex-direction:row;justify-content:flex-start;gap:12px;padding:14px;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;flex-shrink:0;">
+            <i data-lucide="snowflake"></i>
+          </div>
+          <span style="font-size:var(--font-size-subheadline);text-align:left;">Зимняя<br>резина</span>
+        </button>
+      </div>
+
+      <!-- New tires: toggle card -->
+      <button class="expense-category-item" id="btn-new-tire"
+        style="position:relative;flex-direction:row;justify-content:flex-start;gap:12px;padding:14px;width:100%;margin-bottom:var(--space-md);">
+        <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;flex-shrink:0;">
+          <i data-lucide="package"></i>
+        </div>
+        <div style="flex:1;text-align:left;">
+          <div style="font-size:var(--font-size-subheadline);font-weight:500;">Новая резина</div>
+          <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);">Данные попадут в паспорт авто</div>
+        </div>
+      </button>
+      <!-- New tire sub-form -->
+      <div id="new-tire-form" style="display:none;background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);border:0.5px solid rgba(52,199,89,0.3);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:#34C759;margin:0 0 var(--space-sm) 0;text-transform:uppercase;letter-spacing:0.5px;">Данные резины</p>
+        <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+          <div>
+            <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Марка</label>
+            <input id="tire-brand" type="text" placeholder="Например, Michelin, Nokian…"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Размер</label>
+            <input id="tire-size" type="text" placeholder="Например, 205/55 R16"
+              style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Works: multi-select -->
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Работы</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+        <button class="expense-category-item wheels-work-btn" data-work="balance" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+            <i data-lucide="circle-dot"></i>
+          </div>
+          <span>Балансировка</span>
+        </button>
+        <button class="expense-category-item wheels-work-btn" data-work="inflate" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;">
+            <i data-lucide="wind"></i>
+          </div>
+          <span>Подкачка</span>
+        </button>
+        <button class="expense-category-item wheels-work-btn" data-work="other" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="more-horizontal"></i>
+          </div>
+          <span>Прочее</span>
+        </button>
+      </div>
+      <!-- Прочее text input -->
+      <div id="wheels-other-wrap" style="display:none;margin-bottom:var(--space-md);">
+        <input id="wheels-other-text" type="text" placeholder="Опишите работу…"
+          style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+      </div>
+
+      <!-- Шиномонтаж -->
+      <div class="field">
+        <label>Шиномонтаж</label>
+        <input id="wheels-shop" type="text" placeholder="Например, Шиномонтаж у Пэтра">
+      </div>
+
+      <!-- Standard fields -->
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="wheels-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="wheels-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Общая стоимость (₴)</label>
+        <input type="number" id="wheels-cost" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div class="save-btn">
+      <button id="save-wheels-btn">Сохранить</button>
     </div>
   </section>
 
