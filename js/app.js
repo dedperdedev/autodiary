@@ -1995,6 +1995,91 @@
       }
     }
 
+    // Fuel type picker (single-select: бензин / дизель / газ / электро)
+    const FUEL_TYPES = [
+      { type: 'petrol',   label: 'Бензин',  icon: 'fuel',       color: '#FF9500', bg: 'rgba(255,149,0,0.15)' },
+      { type: 'diesel',   label: 'Дизель',  icon: 'droplets',   color: '#007AFF', bg: 'rgba(0,122,255,0.15)' },
+      { type: 'gas',      label: 'Газ',     icon: 'flame',      color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
+    ];
+
+    function updateFuelTypeDisplay() {
+      const display = document.getElementById('fuel-type-display');
+      if (!display) return;
+      const ft = window.selectedFuelType;
+      if (ft) {
+        const t = FUEL_TYPES.find(f => f.type === ft.type);
+        display.innerHTML = `<span style="display:inline-block;background:${t ? t.bg : 'rgba(0,122,255,0.1)'};color:${t ? t.color : '#007AFF'};padding:3px 10px;border-radius:12px;font-size:var(--font-size-footnote);">${escapeHtml(ft.label)}</span>`;
+        display.style.color = 'var(--text)';
+      } else {
+        display.textContent = 'Выбрать';
+        display.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    function showFuelTypePicker() {
+      let selected = window.selectedFuelType?.type || null;
+
+      let modal = document.getElementById('fuel-type-picker-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'fuel-type-picker-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+      }
+
+      function renderModal() {
+        modal.innerHTML = `
+          <div class="ios-sheet">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+              <div>
+                <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Тип топлива</h2>
+                <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Выберите вид топлива</p>
+              </div>
+              <button class="ios-sheet-close" id="fuel-type-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ios-sheet-content">
+              <div class="expense-category-grid" style="grid-template-columns:repeat(3,1fr);">
+                ${FUEL_TYPES.map(ft => {
+                  const isSel = selected === ft.type;
+                  return `
+                    <button class="expense-category-item" data-fuel-type="${ft.type}"
+                      style="position:relative;${isSel ? 'box-shadow:0 0 0 2px #34C759;border-radius:14px;' : ''}">
+                      <div class="expense-category-icon" style="background:${ft.bg};color:${ft.color};">
+                        <i data-lucide="${ft.icon}"></i>
+                      </div>
+                      <span>${escapeHtml(ft.label)}</span>
+                      ${isSel ? '<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;"><i data-lucide="check" style="width:11px;height:11px;color:white;"></i></div>' : ''}
+                    </button>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>`;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        modal.querySelectorAll('[data-fuel-type]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const t = btn.dataset.fuelType;
+            const ft = FUEL_TYPES.find(f => f.type === t);
+            window.selectedFuelType = ft ? { type: ft.type, label: ft.label } : null;
+            updateFuelTypeDisplay();
+            closeModal();
+          });
+        });
+
+        document.getElementById('fuel-type-close').addEventListener('click', closeModal);
+        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+      }
+
+      renderModal();
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
     // Show service type picker modal (multi-select)
     function showServiceTypePicker() {
       const selected = new Set((window.selectedServiceTypes || []).map(t => t.type));
@@ -3319,6 +3404,14 @@
             if(fullTankEl) fullTankEl.checked = false;
             if(stationEl) stationEl.value = '';
             if(notesEl) notesEl.value = '';
+            window.selectedFuelType = null;
+            updateFuelTypeDisplay();
+          }
+          // Bind fuel type picker field
+          const ftField = document.getElementById('fuel-type-picker-field');
+          if (ftField && !ftField._ftBound) {
+            ftField._ftBound = true;
+            ftField.addEventListener('click', () => showFuelTypePicker());
           }
           // Wire up price-per-unit auto-calculation
           function updateFuelPricePerUnit() {
@@ -4386,7 +4479,9 @@
       const fullTank = document.getElementById('fuel-full-tank')?.checked || false;
       const station = document.getElementById('fuel-station')?.value?.trim() || '';
       const notes = document.getElementById('fuel-notes')?.value?.trim() || '';
-      
+      const fuelType = window.selectedFuelType?.type || '';
+      const fuelTypeLabel = window.selectedFuelType?.label || '';
+
       if(!date || !odometer || !liters || !totalCost) {
         showToast('Заполните все обязательные поля');
         return;
@@ -4396,15 +4491,15 @@
       const validation = validateOdometer(carId, odometer);
       if(!validation.valid) {
         showModal('Предупреждение', validation.message, () => {
-          proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes);
+          proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes, fuelType, fuelTypeLabel);
         });
         return;
       }
-      
-      proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes);
+
+      proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes, fuelType, fuelTypeLabel);
     }
-    
-    function proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes) {
+
+    function proceedSaveFuel(carId, date, odometer, liters, totalCost, fullTank, station, notes, fuelType, fuelTypeLabel) {
       if(!state.fuel) state.fuel = [];
       
       if(editingFuelId) {
@@ -4419,6 +4514,8 @@
             totalCost,
             pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
             fullTank,
+            fuelType,
+            fuelTypeLabel,
             station,
             notes
           };
@@ -4426,13 +4523,15 @@
         }
       } else {
         // Create new entry
-        const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ? 
+        const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ?
           Fuel.addEntry(carId, {
             date,
             odometer,
             liters,
             totalCost,
             fullTank,
+            fuelType,
+            fuelTypeLabel,
             station,
             notes
           }) : {
@@ -4444,6 +4543,8 @@
             totalCost,
             pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
             fullTank,
+            fuelType,
+            fuelTypeLabel,
             station,
             notes,
             createdAt: new Date().toISOString(),
@@ -4463,6 +4564,8 @@
         document.getElementById('fuel-full-tank').checked = false;
         document.getElementById('fuel-station').value = '';
         document.getElementById('fuel-notes').value = '';
+        window.selectedFuelType = null;
+        updateFuelTypeDisplay();
         editingFuelId = null;
         
         // Return to car details or diary

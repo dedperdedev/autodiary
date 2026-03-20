@@ -1379,6 +1379,13 @@
         <label>Пробег (км) *</label>
         <input type="number" id="fuel-odometer" placeholder="0" min="0" required>
       </div>
+      <div class="field" style="cursor:pointer;" id="fuel-type-picker-field">
+        <label>Тип топлива *</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-xs) 0;min-height:44px;">
+          <div id="fuel-type-display" style="flex:1;color:var(--text-secondary);font-size:var(--font-size-body);">Выбрать</div>
+          <span style="color:var(--text-secondary);font-size:20px;line-height:1;">›</span>
+        </div>
+      </div>
       <div class="field">
         <label>Литры *</label>
         <input type="number" id="fuel-liters" placeholder="0.00" step="0.01" min="0" required>
