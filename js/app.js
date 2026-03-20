@@ -2080,6 +2080,66 @@
       requestAnimationFrame(() => modal.classList.add('active'));
     }
 
+    // Care subcategory picker (мойка / химчистка / полировка / прочее)
+    const CARE_TYPES = [
+      { type: 'wash',     label: 'Мойка',             icon: 'droplets',    color: '#007AFF', bg: 'rgba(0,122,255,0.15)' },
+      { type: 'dry',      label: 'Химчистка салона',  icon: 'sparkles',    color: '#5856D6', bg: 'rgba(88,86,214,0.15)' },
+      { type: 'polish',   label: 'Полировка',          icon: 'sun',         color: '#FF9500', bg: 'rgba(255,149,0,0.15)' },
+      { type: 'other',    label: 'Прочее',             icon: 'more-horizontal', color: '#8E8E93', bg: 'rgba(142,142,147,0.15)' },
+    ];
+
+    function showCareTypePicker(onSelect) {
+      let modal = document.getElementById('care-type-picker-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'care-type-picker-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 300);
+      }
+
+      modal.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header">
+            <div>
+              <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Уход</h2>
+              <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Выберите вид ухода</p>
+            </div>
+            <button class="ios-sheet-close" id="care-type-close"><i data-lucide="x"></i></button>
+          </div>
+          <div class="ios-sheet-content">
+            <div class="expense-category-grid" style="grid-template-columns:repeat(4,1fr);">
+              ${CARE_TYPES.map(ct => `
+                <button class="expense-category-item" data-care-type="${ct.type}">
+                  <div class="expense-category-icon" style="background:${ct.bg};color:${ct.color};">
+                    <i data-lucide="${ct.icon}"></i>
+                  </div>
+                  <span>${escapeHtml(ct.label)}</span>
+                </button>`).join('')}
+            </div>
+          </div>
+        </div>`;
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      document.getElementById('care-type-close').addEventListener('click', closeModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+      modal.querySelectorAll('[data-care-type]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ct = CARE_TYPES.find(c => c.type === btn.dataset.careType);
+          closeModal();
+          if (ct) onSelect(ct);
+        });
+      });
+
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
     // Show service type picker modal (multi-select)
     function showServiceTypePicker() {
       const selected = new Set((window.selectedServiceTypes || []).map(t => t.type));
@@ -4360,6 +4420,19 @@
           if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
             expenseCategorySheet.classList.remove('active');
             showView('screen-add-service');
+            return;
+          }
+
+          // Quick path for Уход — show subcategory picker
+          if(categoryItem.dataset.type === 'care') {
+            expenseCategorySheet.classList.remove('active');
+            showCareTypePicker((ct) => {
+              setTimeout(() => {
+                const categoryValue = document.getElementById('expense-category-value');
+                if(categoryValue) categoryValue.textContent = 'Уход — ' + ct.label;
+                showView('screen-expense-form');
+              }, 320);
+            });
             return;
           }
 
