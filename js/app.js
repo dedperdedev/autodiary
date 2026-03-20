@@ -3320,6 +3320,25 @@
             if(stationEl) stationEl.value = '';
             if(notesEl) notesEl.value = '';
           }
+          // Wire up price-per-unit auto-calculation
+          function updateFuelPricePerUnit() {
+            const liters = parseFloat(document.getElementById('fuel-liters')?.value || 0);
+            const cost = parseFloat(document.getElementById('fuel-cost')?.value || 0);
+            const row = document.getElementById('fuel-price-per-unit-row');
+            const display = document.getElementById('fuel-price-per-unit');
+            if (!row || !display) return;
+            if (liters > 0 && cost > 0) {
+              display.textContent = (cost / liters).toFixed(2) + ' ₴';
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          }
+          const litersInput = document.getElementById('fuel-liters');
+          const costInput = document.getElementById('fuel-cost');
+          if (litersInput) { litersInput.removeEventListener('input', updateFuelPricePerUnit); litersInput.addEventListener('input', updateFuelPricePerUnit); }
+          if (costInput) { costInput.removeEventListener('input', updateFuelPricePerUnit); costInput.addEventListener('input', updateFuelPricePerUnit); }
+          updateFuelPricePerUnit();
         } else if(id === 'screen-add-service') {
           // Reset form if not editing
           if(!editingServiceId) {
