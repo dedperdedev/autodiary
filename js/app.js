@@ -4752,7 +4752,7 @@
       window._wheelsNewTire = false;
 
       // Reset form fields
-      ['wheels-date','wheels-odometer','wheels-cost','wheels-shop','tire-brand','tire-size','wheels-other-text']
+      ['wheels-date','wheels-odometer','wheels-cost','wheels-shop','tire-brand','tire-size','tire-cost','wheels-other-text']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('wheels-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -4858,6 +4858,7 @@
       const shop = document.getElementById('wheels-shop')?.value?.trim() || '';
       const tireBrand = document.getElementById('tire-brand')?.value?.trim() || '';
       const tireSize = document.getElementById('tire-size')?.value?.trim() || '';
+      const tireCost = parseFloat(document.getElementById('tire-cost')?.value || 0);
       const otherText = document.getElementById('wheels-other-text')?.value?.trim() || '';
 
       // Build label
@@ -4896,6 +4897,7 @@
           car.tires = car.tires || {};
           car.tires.brand = tireBrand || car.tires.brand;
           car.tires.size = tireSize || car.tires.size;
+          car.tires.cost = tireCost || car.tires.cost;
           car.tires.installedDate = date;
           car.tires.installedOdometer = odometer || car.tires.installedOdometer;
           car.tires.type = window._wheelsInstall || car.tires.type;
