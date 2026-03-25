@@ -1560,11 +1560,6 @@
             <input id="tire-size" type="text" placeholder="Например, 205/55 R16"
               style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
           </div>
-          <div>
-            <label style="font-size:var(--font-size-footnote);color:var(--text-secondary);display:block;margin-bottom:4px;">Стоимость (₴)</label>
-            <input id="tire-cost" type="number" placeholder="0.00" step="0.01" min="0"
-              style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-          </div>
         </div>
       </div>
 
@@ -1617,9 +1612,14 @@
         <label>Пробег (км)</label>
         <input type="number" id="wheels-odometer" placeholder="0" min="0">
       </div>
-      <div class="field">
-        <label>Общая стоимость (₴)</label>
-        <input type="number" id="wheels-cost" placeholder="0.00" step="0.01" min="0">
+      <!-- Per-item cost inputs (rendered by JS) -->
+      <div id="wheels-costs-wrap" style="display:none;margin-bottom:var(--space-sm);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимість послуг</p>
+        <div id="wheels-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
+        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
+          <label style="font-weight:600;">Итого (₴)</label>
+          <span id="wheels-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        </div>
       </div>
     </div>
 
