@@ -4867,6 +4867,7 @@
       if(window._wheelsInstall === 'winter') parts.push('Установка зимней резины');
       if(hasNewTire) parts.push('Новая резина' + (tireBrand ? ' ' + tireBrand : '') + (tireSize ? ' ' + tireSize : ''));
       if(window._wheelsWorks.has('balance')) parts.push('Балансировка');
+      if(window._wheelsWorks.has('bead')) parts.push('Бортировка');
       if(window._wheelsWorks.has('inflate')) parts.push('Подкачка');
       if(window._wheelsWorks.has('other') && otherText) parts.push(otherText);
       else if(window._wheelsWorks.has('other')) parts.push('Прочее');
