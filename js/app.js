@@ -2400,7 +2400,6 @@
         { typeKey: 'brakeDiscsRear', title: 'Диски задние',           icon: 'circle',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
         { typeKey: 'brakePadsFront', title: 'Колодки передние',       icon: 'square',   color: '#FF3B30', bg: 'rgba(255,59,48,0.15)' },
         { typeKey: 'brakePadsRear',  title: 'Колодки задние',         icon: 'square',   color: '#C41E3A', bg: 'rgba(196,30,58,0.15)' },
-        { typeKey: 'sparkPlugs',     title: 'Свечи зажигания',        icon: 'zap',      color: '#FFCC00', bg: 'rgba(255,204,0,0.15)' },
       ];
 
       const selected = new Set();
