@@ -3554,6 +3554,8 @@
           if (litersInput) { litersInput.removeEventListener('input', updateFuelPricePerUnit); litersInput.addEventListener('input', updateFuelPricePerUnit); }
           if (costInput) { costInput.removeEventListener('input', updateFuelPricePerUnit); costInput.addEventListener('input', updateFuelPricePerUnit); }
           updateFuelPricePerUnit();
+        } else if(id === 'screen-add-admin') {
+          initAdminScreen();
         } else if(id === 'screen-add-wheels') {
           initWheelsScreen();
         } else if(id === 'screen-add-charge') {
@@ -4480,6 +4482,13 @@
             return;
           }
 
+          // Quick path for admin
+          if(categoryItem.dataset.type === 'admin' || categoryItem.dataset.goto === 'screen-add-admin') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-admin');
+            return;
+          }
+
           // Quick path for wheels
           if(categoryItem.dataset.type === 'wheels' || categoryItem.dataset.goto === 'screen-add-wheels') {
             expenseCategorySheet.classList.remove('active');
@@ -4580,6 +4589,10 @@
         });
       }
       
+      // Initialize admin form handlers
+      const saveAdminBtn = document.getElementById('save-admin-btn');
+      if(saveAdminBtn) saveAdminBtn.addEventListener('click', () => saveAdminEntry());
+
       // Initialize wheels form handlers
       const saveWheelsBtn = document.getElementById('save-wheels-btn');
       if(saveWheelsBtn) saveWheelsBtn.addEventListener('click', () => saveWheelsEntry());
@@ -4744,6 +4757,91 @@
       }
     }
     
+    // ── Admin screen ───────────────────────────────────────────────
+    const ADMIN_CATS = {
+      'parking':      'Парковка',
+      'parking-rent': 'Аренда паркинга',
+      'toll':         'Платные дороги',
+      'tow':          'Эвакуатор',
+      'insurance':    'Страховка',
+      'fine':         'Штраф',
+      'tax':          'Налоги и пошлины',
+      'other':        'Прочее',
+    };
+
+    function initAdminScreen() {
+      window._adminSelected = new Set();
+
+      ['admin-date','admin-odometer','admin-cost','admin-notes','admin-other-text']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('admin-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      document.querySelectorAll('.admin-cat-btn').forEach(btn => {
+        btn.style.boxShadow = '';
+        const chk = btn.querySelector('.admin-chk');
+        if(chk) chk.remove();
+      });
+      const otherWrap = document.getElementById('admin-other-wrap');
+      if(otherWrap) otherWrap.style.display = 'none';
+
+      document.querySelectorAll('.admin-cat-btn').forEach(btn => {
+        btn.onclick = () => {
+          const val = btn.dataset.admin;
+          if(window._adminSelected.has(val)) {
+            window._adminSelected.delete(val);
+            btn.style.boxShadow = '';
+            btn.querySelector('.admin-chk')?.remove();
+          } else {
+            window._adminSelected.add(val);
+            btn.style.boxShadow = '0 0 0 2px #34C759';
+            btn.style.borderRadius = '14px';
+            if(!btn.querySelector('.admin-chk'))
+              btn.insertAdjacentHTML('beforeend', '<div class="admin-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+          }
+          if(otherWrap) otherWrap.style.display = window._adminSelected.has('other') ? '' : 'none';
+        };
+      });
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function saveAdminEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Выберите автомобиль'); return; }
+
+      const date = document.getElementById('admin-date')?.value;
+      if(!date) { showToast('Укажите дату'); return; }
+      if(window._adminSelected.size === 0) { showToast('Выберите категорию'); return; }
+
+      const odometer = parseFloat(document.getElementById('admin-odometer')?.value || 0);
+      const cost = parseFloat(document.getElementById('admin-cost')?.value || 0);
+      const notes = document.getElementById('admin-notes')?.value?.trim() || '';
+      const otherText = document.getElementById('admin-other-text')?.value?.trim() || '';
+
+      const parts = Array.from(window._adminSelected).map(k =>
+        k === 'other' ? (otherText || 'Прочее') : (ADMIN_CATS[k] || k)
+      );
+
+      if(!state.service) state.service = [];
+      state.service.push({
+        id: Date.now().toString(),
+        carId, date, odometer,
+        type: 'admin',
+        typeLabel: parts.join(', '),
+        categories: Array.from(window._adminSelected),
+        otherText, cost, notes,
+        createdAt: new Date().toISOString(),
+        deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Сохранено');
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     // ── Wheels screen ──────────────────────────────────────────────
     function initWheelsScreen() {
       // Reset state
