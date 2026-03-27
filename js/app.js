@@ -5038,6 +5038,9 @@
     }
 
     function showPlannedDetailSheet(key, btn) {
+      if(!window._plannedDetails) window._plannedDetails = {};
+      if(!window._plannedSelected) window._plannedSelected = new Set();
+
       const label = PLANNED_SUBS[key] || key;
       const fields = PLANNED_FIELDS[key] || [];
       const details = window._plannedDetails[key] || {};
@@ -5045,12 +5048,12 @@
 
       const sheet = document.createElement('div');
       sheet.className = 'ios-sheet-overlay';
-      sheet.style.zIndex = '10001';
+      sheet.style.cssText = 'z-index:10001;display:flex;';
 
       const fieldsHtml = fields.map(f => `
         <div>
           <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">${f.label}</label>
-          <input id="pd-${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
+          <input data-field="${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
             style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
         </div>`).join('');
 
@@ -5062,13 +5065,13 @@
               <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">${escapeHtml(label)}</h2>
               <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Укажите детали</p>
             </div>
-            <button class="ios-sheet-close" id="pd-close"><i data-lucide="x"></i></button>
+            <button class="ios-sheet-close" data-close-planned><i data-lucide="x"></i></button>
           </div>
           <div class="ios-sheet-content">
             <div style="display:flex;flex-direction:column;gap:var(--space-md);">${fieldsHtml}</div>
             <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);">
-              ${isSelected ? `<button class="ios-button" id="pd-remove">Снять</button>` : ''}
-              <button class="ios-button ios-button-primary" id="pd-confirm" style="flex:1;">Готово</button>
+              ${isSelected ? `<button class="ios-button" data-remove-planned>Снять</button>` : ''}
+              <button class="ios-button" data-confirm-planned style="flex:1;background:var(--accent);color:#fff;">Готово</button>
             </div>
           </div>
         </div>`;
@@ -5077,14 +5080,14 @@
       if(typeof lucide !== 'undefined') lucide.createIcons();
 
       function closeSheet() {
-        sheet.classList.remove('active');
-        setTimeout(() => sheet.remove(), 300);
+        sheet.style.opacity = '0';
+        setTimeout(() => { if(sheet.parentNode) sheet.remove(); }, 250);
       }
 
-      document.getElementById('pd-close').onclick = closeSheet;
+      sheet.querySelector('[data-close-planned]').onclick = closeSheet;
       sheet.addEventListener('click', e => { if(e.target === sheet) closeSheet(); });
 
-      const removeBtn = document.getElementById('pd-remove');
+      const removeBtn = sheet.querySelector('[data-remove-planned]');
       if(removeBtn) {
         removeBtn.onclick = () => {
           window._plannedSelected.delete(key);
@@ -5096,11 +5099,10 @@
         };
       }
 
-      document.getElementById('pd-confirm').onclick = () => {
+      sheet.querySelector('[data-confirm-planned]').onclick = () => {
         const saved = {};
-        fields.forEach(f => {
-          const el = document.getElementById('pd-' + f.id);
-          if(el && el.value.trim()) saved[f.id] = el.value.trim();
+        sheet.querySelectorAll('[data-field]').forEach(el => {
+          if(el.value.trim()) saved[el.dataset.field] = el.value.trim();
         });
         window._plannedDetails[key] = saved;
         window._plannedSelected.add(key);
@@ -5112,7 +5114,12 @@
         closeSheet();
       };
 
-      requestAnimationFrame(() => sheet.classList.add('active'));
+      // animate in
+      sheet.style.opacity = '0';
+      requestAnimationFrame(() => {
+        sheet.style.transition = 'opacity 200ms ease';
+        sheet.style.opacity = '1';
+      });
     }
 
     function renderPlannedCosts() {
