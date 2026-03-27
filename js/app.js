@@ -4831,16 +4831,25 @@
       list.querySelectorAll('[data-scost-key]').forEach(inp => {
         existing[inp.dataset.scostKey] = inp.value;
       });
+      const existingNotes = {};
+      list.querySelectorAll('[data-snote-key]').forEach(inp => {
+        existingNotes[inp.dataset.snoteKey] = inp.value;
+      });
 
       list.innerHTML = Array.from(window._svcSelected).map(key => {
         const label = key === 'other'
           ? (document.getElementById('svc-cat-other-text')?.value?.trim() || 'Прочее')
           : (SVC_CATS[key] || key);
         const val = existing[key] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
-          <input type="number" data-scost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+        const noteVal = existingNotes[key] || '';
+        return `<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
+            <span style="flex:1;font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(label)}</span>
+            <input type="number" data-scost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
+              style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+          </div>
+          <input type="text" data-snote-key="${key}" placeholder="Комментарий (что заменили, марка, артикул…)" value="${escapeHtml(noteVal)}"
+            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-footnote);box-sizing:border-box;">
         </div>`;
       }).join('');
 
@@ -4878,6 +4887,11 @@
       });
       const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
 
+      const noteMap = {};
+      document.querySelectorAll('#svc-costs-list [data-snote-key]').forEach(inp => {
+        if(inp.value.trim()) noteMap[inp.dataset.snoteKey] = inp.value.trim();
+      });
+
       const parts = Array.from(window._svcSelected).map(k =>
         k === 'other' ? (otherText || 'Прочее') : (SVC_CATS[k] || k)
       );
@@ -4890,7 +4904,7 @@
         typeLabel: parts.join(', '),
         categories: Array.from(window._svcSelected),
         costMap, cost: totalCost,
-        otherText, shop, notes,
+        noteMap, otherText, shop, notes,
         createdAt: new Date().toISOString(),
         deletedAt: null
       });
