@@ -726,6 +726,12 @@
             </div>
             <span>Сервис</span>
           </button>
+          <button class="expense-category-item" data-goto="screen-add-planned" data-type="planned">
+            <div class="expense-category-icon" style="background: rgba(52, 199, 89, 0.15); color: #34C759;">
+              <i data-lucide="calendar-check"></i>
+            </div>
+            <span>Плановая замена</span>
+          </button>
           <button class="expense-category-item" data-type="wheels" data-goto="screen-add-wheels">
             <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
               <i data-lucide="circle"></i>
@@ -1428,12 +1434,6 @@
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Подкатегория</p>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
-        <button class="expense-category-item svc-cat-btn" data-svc="planned" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
-            <i data-lucide="calendar-check"></i>
-          </div>
-          <span>Плановая замена</span>
-        </button>
         <button class="expense-category-item svc-cat-btn" data-svc="engine" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
             <i data-lucide="cog"></i>
@@ -1503,64 +1503,6 @@
       </div>
     </div>
 
-    <!-- Блок 2: подкатегории плановой замены (отдельная секция, вне overflow:hidden) -->
-    <div id="svc-planned-sub-wrap" class="section" style="display:none;">
-      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Что заменили</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-sm);">
-        <button class="expense-category-item planned-sub-btn" data-psub="spark" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;"><i data-lucide="zap"></i></div>
-          <span>Свечи зажигания / накаливания</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="timing" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;"><i data-lucide="link"></i></div>
-          <span>Ремень / цепь ГРМ</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="coolant" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;"><i data-lucide="thermometer"></i></div>
-          <span>Замена антифриза</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="brake-fluid" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;"><i data-lucide="disc"></i></div>
-          <span>Тормозная жидкость</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="power-steering" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;"><i data-lucide="circle-dot"></i></div>
-          <span>Жидкость ГУР</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="gearbox-oil" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;"><i data-lucide="settings-2"></i></div>
-          <span>Масло в КПП</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="front-diff" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;"><i data-lucide="chevrons-right"></i></div>
-          <span>Масло переднего редуктора</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="rear-diff" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#30B050;"><i data-lucide="chevrons-left"></i></div>
-          <span>Масло заднего редуктора</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="transfer" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;"><i data-lucide="git-fork"></i></div>
-          <span>Масло раздаточной коробки</span>
-        </button>
-        <button class="expense-category-item planned-sub-btn" data-psub="battery" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;"><i data-lucide="battery-full"></i></div>
-          <span>Новый АКБ</span>
-        </button>
-      </div>
-      <!-- АКБ fields -->
-      <div id="svc-akb-wrap" style="display:none;margin-top:var(--space-sm);padding:var(--space-sm);background:var(--surface-2);border-radius:12px;border:0.5px solid var(--separator);">
-        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);margin:0 0 8px 0;">Данные аккумулятора (сохранятся в паспорт)</p>
-        <div class="field" style="border-bottom:none;padding:0;margin-bottom:8px;">
-          <label>Марка АКБ</label>
-          <input id="svc-akb-brand" type="text" placeholder="Bosch, Varta…">
-        </div>
-        <div class="field" style="border-bottom:none;padding:0;">
-          <label>Ёмкость (Ач)</label>
-          <input id="svc-akb-capacity" type="number" placeholder="60" min="1">
-        </div>
-      </div>
-    </div>
 
     <!-- Блок 3: прочее + стоимость + поля -->
     <div class="section" style="padding-bottom:90px;">
@@ -1600,6 +1542,105 @@
 
     <div class="save-btn">
       <button id="save-svc-cat-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Planned Replacement Screen -->
+  <section id="screen-add-planned" class="view">
+    <div class="ios-navbar">
+      <div><div class="ios-navbar-actions"></div></div>
+    </div>
+
+    <!-- Что заменили -->
+    <div class="section">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Что заменили</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
+        <button class="expense-category-item planned-btn" data-planned="spark" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;"><i data-lucide="zap"></i></div>
+          <span>Свечи зажигания / накаливания</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="timing" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;"><i data-lucide="link"></i></div>
+          <span>Ремень / цепь ГРМ</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="coolant" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;"><i data-lucide="thermometer"></i></div>
+          <span>Замена антифриза</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="brake-fluid" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;"><i data-lucide="disc"></i></div>
+          <span>Тормозная жидкость</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="power-steering" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;"><i data-lucide="circle-dot"></i></div>
+          <span>Жидкость ГУР</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="gearbox-oil" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;"><i data-lucide="settings-2"></i></div>
+          <span>Масло в КПП</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="front-diff" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;"><i data-lucide="chevrons-right"></i></div>
+          <span>Масло переднего редуктора</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="rear-diff" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#30B050;"><i data-lucide="chevrons-left"></i></div>
+          <span>Масло заднего редуктора</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="transfer" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;"><i data-lucide="git-fork"></i></div>
+          <span>Масло раздаточной коробки</span>
+        </button>
+        <button class="expense-category-item planned-btn" data-planned="battery" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;"><i data-lucide="battery-full"></i></div>
+          <span>Новый АКБ</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- АКБ fields (separate section, shown when battery selected) -->
+    <div id="planned-akb-wrap" class="section" style="display:none;">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);margin:0 0 var(--space-sm) 0;">Данные аккумулятора (сохранятся в паспорт)</p>
+      <div class="field">
+        <label>Марка АКБ</label>
+        <input id="planned-akb-brand" type="text" placeholder="Bosch, Varta…">
+      </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Ёмкость (Ач)</label>
+        <input id="planned-akb-capacity" type="number" placeholder="60" min="1">
+      </div>
+    </div>
+
+    <!-- Стоимость + поля -->
+    <div class="section" style="padding-bottom:90px;">
+      <div id="planned-costs-wrap" style="display:none;margin-bottom:var(--space-sm);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость</p>
+        <div id="planned-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
+        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
+          <label style="font-weight:600;">Итого (₴)</label>
+          <span id="planned-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Мастер / СТО</label>
+        <input id="planned-shop" type="text" placeholder="Название мастерской">
+      </div>
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="planned-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="planned-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Заметки</label>
+        <textarea id="planned-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+    </div>
+
+    <div class="save-btn">
+      <button id="save-planned-btn">Сохранить</button>
     </div>
   </section>
 
