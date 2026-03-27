@@ -4960,10 +4960,63 @@
     };
 
     // ── Planned Replacement Screen ──────────────────────────────────
+    const PLANNED_FIELDS = {
+      'spark': [
+        { id: 'brand',   label: 'Марка',          placeholder: 'NGK, Bosch, Denso…', type: 'text' },
+        { id: 'article', label: 'Артикул',         placeholder: '…',                  type: 'text' },
+        { id: 'qty',     label: 'Количество, шт',  placeholder: '4',                  type: 'number' },
+      ],
+      'timing': [
+        { id: 'brand',   label: 'Марка',     placeholder: 'Gates, INA, SKF…', type: 'text' },
+        { id: 'article', label: 'Артикул',   placeholder: '…',                type: 'text' },
+        { id: 'kind',    label: 'Тип',       placeholder: 'ремень / цепь',    type: 'text' },
+      ],
+      'coolant': [
+        { id: 'brand',  label: 'Марка',     placeholder: 'Febi, Wurth…',    type: 'text' },
+        { id: 'type',   label: 'Тип / цвет', placeholder: 'G12+, G13…',     type: 'text' },
+        { id: 'volume', label: 'Объём (л)', placeholder: '5',               type: 'number' },
+      ],
+      'brake-fluid': [
+        { id: 'brand',  label: 'Марка',      placeholder: 'Bosch, Liqui Moly…', type: 'text' },
+        { id: 'dot',    label: 'Стандарт',   placeholder: 'DOT 4',              type: 'text' },
+        { id: 'volume', label: 'Объём (мл)', placeholder: '500',                type: 'number' },
+      ],
+      'power-steering': [
+        { id: 'brand',  label: 'Марка',      placeholder: '…',   type: 'text' },
+        { id: 'volume', label: 'Объём (мл)', placeholder: '500', type: 'number' },
+      ],
+      'gearbox-oil': [
+        { id: 'brand',     label: 'Марка',      placeholder: 'Castrol, Liqui Moly…', type: 'text' },
+        { id: 'viscosity', label: 'Вязкость',   placeholder: '75W-90',               type: 'text' },
+        { id: 'volume',    label: 'Объём (л)',  placeholder: '2',                     type: 'number' },
+      ],
+      'front-diff': [
+        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
+        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
+        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
+      ],
+      'rear-diff': [
+        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
+        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
+        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
+      ],
+      'transfer': [
+        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
+        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
+        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
+      ],
+      'battery': [
+        { id: 'brand',    label: 'Марка',          placeholder: 'Bosch, Varta…', type: 'text' },
+        { id: 'capacity', label: 'Ёмкость (Ач)',   placeholder: '60',            type: 'number' },
+        { id: 'voltage',  label: 'Напряжение (В)', placeholder: '12',            type: 'number' },
+      ],
+    };
+
     function initPlannedScreen() {
       window._plannedSelected = new Set();
+      window._plannedDetails = {};
 
-      ['planned-shop','planned-date','planned-odometer','planned-notes','planned-akb-brand','planned-akb-capacity']
+      ['planned-shop','planned-date','planned-odometer','planned-notes']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('planned-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -4972,33 +5025,94 @@
         btn.style.boxShadow = '';
         btn.querySelector('.pl-chk')?.remove();
       });
-      document.getElementById('planned-akb-wrap').style.display = 'none';
       document.getElementById('planned-costs-wrap').style.display = 'none';
       document.getElementById('planned-costs-list').innerHTML = '';
       document.getElementById('planned-cost-total').textContent = '0.00';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
-        btn.onclick = () => {
-          const val = btn.dataset.planned;
-          if(window._plannedSelected.has(val)) {
-            window._plannedSelected.delete(val);
-            btn.style.boxShadow = '';
-            btn.querySelector('.pl-chk')?.remove();
-          } else {
-            window._plannedSelected.add(val);
-            btn.style.boxShadow = '0 0 0 2px #34C759';
-            btn.style.borderRadius = '14px';
-            if(!btn.querySelector('.pl-chk'))
-              btn.insertAdjacentHTML('beforeend','<div class="pl-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
-          }
-          document.getElementById('planned-akb-wrap').style.display =
-            window._plannedSelected.has('battery') ? 'block' : 'none';
-          renderPlannedCosts();
-        };
+        btn.onclick = () => showPlannedDetailSheet(btn.dataset.planned, btn);
       });
 
       document.getElementById('save-planned-btn').onclick = savePlannedEntry;
       if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function showPlannedDetailSheet(key, btn) {
+      const label = PLANNED_SUBS[key] || key;
+      const fields = PLANNED_FIELDS[key] || [];
+      const details = window._plannedDetails[key] || {};
+      const isSelected = window._plannedSelected.has(key);
+
+      const sheet = document.createElement('div');
+      sheet.className = 'ios-sheet-overlay';
+      sheet.style.zIndex = '10001';
+
+      const fieldsHtml = fields.map(f => `
+        <div>
+          <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">${f.label}</label>
+          <input id="pd-${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
+            style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+        </div>`).join('');
+
+      sheet.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header">
+            <div>
+              <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">${escapeHtml(label)}</h2>
+              <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Укажите детали</p>
+            </div>
+            <button class="ios-sheet-close" id="pd-close"><i data-lucide="x"></i></button>
+          </div>
+          <div class="ios-sheet-content">
+            <div style="display:flex;flex-direction:column;gap:var(--space-md);">${fieldsHtml}</div>
+            <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);">
+              ${isSelected ? `<button class="ios-button" id="pd-remove">Снять</button>` : ''}
+              <button class="ios-button ios-button-primary" id="pd-confirm" style="flex:1;">Готово</button>
+            </div>
+          </div>
+        </div>`;
+
+      document.body.appendChild(sheet);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+
+      function closeSheet() {
+        sheet.classList.remove('active');
+        setTimeout(() => sheet.remove(), 300);
+      }
+
+      document.getElementById('pd-close').onclick = closeSheet;
+      sheet.addEventListener('click', e => { if(e.target === sheet) closeSheet(); });
+
+      const removeBtn = document.getElementById('pd-remove');
+      if(removeBtn) {
+        removeBtn.onclick = () => {
+          window._plannedSelected.delete(key);
+          delete window._plannedDetails[key];
+          btn.style.boxShadow = '';
+          btn.querySelector('.pl-chk')?.remove();
+          renderPlannedCosts();
+          closeSheet();
+        };
+      }
+
+      document.getElementById('pd-confirm').onclick = () => {
+        const saved = {};
+        fields.forEach(f => {
+          const el = document.getElementById('pd-' + f.id);
+          if(el && el.value.trim()) saved[f.id] = el.value.trim();
+        });
+        window._plannedDetails[key] = saved;
+        window._plannedSelected.add(key);
+        btn.style.boxShadow = '0 0 0 2px #34C759';
+        btn.style.borderRadius = '14px';
+        if(!btn.querySelector('.pl-chk'))
+          btn.insertAdjacentHTML('beforeend','<div class="pl-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+        renderPlannedCosts();
+        closeSheet();
+      };
+
+      requestAnimationFrame(() => sheet.classList.add('active'));
     }
 
     function renderPlannedCosts() {
@@ -5009,22 +5123,23 @@
       if(window._plannedSelected.size === 0) { wrap.style.display = 'none'; return; }
       wrap.style.display = 'block';
 
-      const existing = {}, existingNotes = {};
+      const existing = {};
       list.querySelectorAll('[data-pcost-key]').forEach(i => existing[i.dataset.pcostKey] = i.value);
-      list.querySelectorAll('[data-pnote-key]').forEach(i => existingNotes[i.dataset.pnoteKey] = i.value);
 
       list.innerHTML = Array.from(window._plannedSelected).map(key => {
-        const label = PLANNED_SUBS[key] || key;
+        const lbl = PLANNED_SUBS[key] || key;
+        const det = window._plannedDetails[key] || {};
+        const detSummary = Object.values(det).filter(Boolean).join(' · ');
         const val = existing[key] || '';
-        const noteVal = existingNotes[key] || '';
-        return `<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
+        return `<div style="display:flex;flex-direction:column;gap:4px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-            <span style="flex:1;font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(label)}</span>
+            <div style="flex:1;">
+              <span style="font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(lbl)}</span>
+              ${detSummary ? `<div style="font-size:var(--font-size-footnote);color:var(--text-secondary);margin-top:2px;">${escapeHtml(detSummary)}</div>` : ''}
+            </div>
             <input type="number" data-pcost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
               style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
           </div>
-          <input type="text" data-pnote-key="${key}" placeholder="Комментарий (марка, артикул…)" value="${escapeHtml(noteVal)}"
-            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-footnote);box-sizing:border-box;">
         </div>`;
       }).join('');
 
@@ -5050,22 +5165,19 @@
       const odometer = parseFloat(document.getElementById('planned-odometer')?.value || 0);
       const shop = document.getElementById('planned-shop')?.value?.trim() || '';
       const notes = document.getElementById('planned-notes')?.value?.trim() || '';
-      const akbBrand = document.getElementById('planned-akb-brand')?.value?.trim() || '';
-      const akbCapacity = document.getElementById('planned-akb-capacity')?.value?.trim() || '';
 
-      const costMap = {}, noteMap = {};
+      const costMap = {};
       document.querySelectorAll('#planned-costs-list [data-pcost-key]').forEach(inp => {
         costMap[inp.dataset.pcostKey] = parseFloat(inp.value || 0);
-      });
-      document.querySelectorAll('#planned-costs-list [data-pnote-key]').forEach(inp => {
-        if(inp.value.trim()) noteMap[inp.dataset.pnoteKey] = inp.value.trim();
       });
       const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
       const typeLabel = Array.from(window._plannedSelected).map(k => PLANNED_SUBS[k] || k).join(', ');
 
-      if(window._plannedSelected.has('battery') && akbBrand) {
+      // АКБ → паспорт авто
+      const batDetails = window._plannedDetails['battery'];
+      if(window._plannedSelected.has('battery') && batDetails?.brand) {
         const car = state.cars.find(c => c.id === carId);
-        if(car) { car.akbBrand = akbBrand; car.akbCapacity = akbCapacity; car.akbDate = date; car.akbOdometer = odometer; }
+        if(car) { car.akbBrand = batDetails.brand; car.akbCapacity = batDetails.capacity || ''; car.akbDate = date; car.akbOdometer = odometer; }
       }
 
       if(!state.service) state.service = [];
@@ -5073,8 +5185,8 @@
         id: Date.now().toString(), carId, date, odometer,
         type: 'planned', typeLabel,
         items: Array.from(window._plannedSelected),
-        costMap, cost: totalCost, noteMap,
-        akbBrand, akbCapacity, shop, notes,
+        detailsMap: window._plannedDetails,
+        costMap, cost: totalCost, shop, notes,
         createdAt: new Date().toISOString(), deletedAt: null
       });
 
