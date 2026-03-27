@@ -3552,6 +3552,8 @@
           if (litersInput) { litersInput.removeEventListener('input', updateFuelPricePerUnit); litersInput.addEventListener('input', updateFuelPricePerUnit); }
           if (costInput) { costInput.removeEventListener('input', updateFuelPricePerUnit); costInput.addEventListener('input', updateFuelPricePerUnit); }
           updateFuelPricePerUnit();
+        } else if(id === 'screen-add-service-cat') {
+          initServiceCatScreen();
         } else if(id === 'screen-add-admin') {
           initAdminScreen();
         } else if(id === 'screen-add-wheels') {
@@ -4494,7 +4496,14 @@
             return;
           }
           
-          // Quick path for service
+          // Quick path for service subcategory
+          if(categoryItem.dataset.type === 'service-cat' || categoryItem.dataset.goto === 'screen-add-service-cat') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-service-cat');
+            return;
+          }
+
+          // Quick path for service (legacy)
           if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
             expenseCategorySheet.classList.remove('active');
             showView('screen-add-service');
@@ -4755,6 +4764,144 @@
       }
     }
     
+    // ── Service subcategory screen ─────────────────────────────────
+    const SVC_CATS = {
+      'planned':      'Плановая замена',
+      'engine':       'Двигатель',
+      'fuel-sys':     'Топливная система',
+      'cooling':      'Система охлаждения',
+      'exhaust':      'Система выпуска',
+      'transmission': 'Трансмиссия',
+      'suspension':   'Ходовая / Рулевое управление',
+      'brakes':       'Тормозная система',
+      'electrical':   'Электрооборудование',
+      'hvac':         'Отопление / кондиционер',
+      'body':         'Салон и кузов',
+      'other':        'Прочее',
+    };
+
+    function initServiceCatScreen() {
+      window._svcSelected = new Set();
+
+      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-notes','svc-cat-other-text']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('svc-cat-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      document.querySelectorAll('.svc-cat-btn').forEach(btn => {
+        btn.style.boxShadow = '';
+        btn.querySelector('.svc-chk')?.remove();
+      });
+      document.getElementById('svc-cat-other-wrap').style.display = 'none';
+      renderSvcCosts();
+
+      document.querySelectorAll('.svc-cat-btn').forEach(btn => {
+        btn.onclick = () => {
+          const val = btn.dataset.svc;
+          if(window._svcSelected.has(val)) {
+            window._svcSelected.delete(val);
+            btn.style.boxShadow = '';
+            btn.querySelector('.svc-chk')?.remove();
+          } else {
+            window._svcSelected.add(val);
+            btn.style.boxShadow = '0 0 0 2px #34C759';
+            btn.style.borderRadius = '14px';
+            if(!btn.querySelector('.svc-chk'))
+              btn.insertAdjacentHTML('beforeend', '<div class="svc-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+          }
+          document.getElementById('svc-cat-other-wrap').style.display =
+            window._svcSelected.has('other') ? '' : 'none';
+          renderSvcCosts();
+        };
+      });
+
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderSvcCosts() {
+      const wrap = document.getElementById('svc-costs-wrap');
+      const list = document.getElementById('svc-costs-list');
+      const totalEl = document.getElementById('svc-cost-total');
+      if(!wrap || !list || !totalEl) return;
+
+      if(window._svcSelected.size === 0) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+
+      const existing = {};
+      list.querySelectorAll('[data-scost-key]').forEach(inp => {
+        existing[inp.dataset.scostKey] = inp.value;
+      });
+
+      list.innerHTML = Array.from(window._svcSelected).map(key => {
+        const label = key === 'other'
+          ? (document.getElementById('svc-cat-other-text')?.value?.trim() || 'Прочее')
+          : (SVC_CATS[key] || key);
+        const val = existing[key] || '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
+          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
+          <input type="number" data-scost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
+            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-scost-key]').forEach(inp => {
+        inp.addEventListener('input', updateSvcTotal);
+      });
+      updateSvcTotal();
+    }
+
+    function updateSvcTotal() {
+      const totalEl = document.getElementById('svc-cost-total');
+      if(!totalEl) return;
+      let sum = 0;
+      document.querySelectorAll('#svc-costs-list [data-scost-key]').forEach(inp => {
+        sum += parseFloat(inp.value || 0);
+      });
+      totalEl.textContent = sum.toFixed(2);
+    }
+
+    function saveSvcCatEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Виберіть автомобіль'); return; }
+      const date = document.getElementById('svc-cat-date')?.value;
+      if(!date) { showToast('Вкажіть дату'); return; }
+      if(window._svcSelected.size === 0) { showToast('Виберіть підкатегорію'); return; }
+
+      const odometer = parseFloat(document.getElementById('svc-cat-odometer')?.value || 0);
+      const shop = document.getElementById('svc-cat-shop')?.value?.trim() || '';
+      const notes = document.getElementById('svc-cat-notes')?.value?.trim() || '';
+      const otherText = document.getElementById('svc-cat-other-text')?.value?.trim() || '';
+
+      const costMap = {};
+      document.querySelectorAll('#svc-costs-list [data-scost-key]').forEach(inp => {
+        costMap[inp.dataset.scostKey] = parseFloat(inp.value || 0);
+      });
+      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+
+      const parts = Array.from(window._svcSelected).map(k =>
+        k === 'other' ? (otherText || 'Прочее') : (SVC_CATS[k] || k)
+      );
+
+      if(!state.service) state.service = [];
+      state.service.push({
+        id: Date.now().toString(),
+        carId, date, odometer,
+        type: 'service-cat',
+        typeLabel: parts.join(', '),
+        categories: Array.from(window._svcSelected),
+        costMap, cost: totalCost,
+        otherText, shop, notes,
+        createdAt: new Date().toISOString(),
+        deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Збережено');
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     // ── Admin screen ───────────────────────────────────────────────
     const ADMIN_CATS = {
       'parking':      'Парковка',

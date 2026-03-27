@@ -720,7 +720,7 @@
             </div>
             <span>ТО</span>
           </button>
-          <button class="expense-category-item" data-goto="screen-add-service" data-type="service">
+          <button class="expense-category-item" data-goto="screen-add-service-cat" data-type="service-cat">
             <div class="expense-category-icon" style="background: rgba(0, 122, 255, 0.15); color: #007AFF;">
               <i data-lucide="wrench"></i>
             </div>
@@ -1415,6 +1415,126 @@
     </div>
     <div class="save-btn">
       <button id="save-fuel-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Service (subcategory) Entry View -->
+  <section id="screen-add-service-cat" class="view">
+    <div class="ios-navbar">
+      <div><div class="ios-navbar-actions"></div></div>
+    </div>
+    <div class="section">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Подкатегория</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+        <button class="expense-category-item svc-cat-btn" data-svc="planned" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
+            <i data-lucide="calendar-check"></i>
+          </div>
+          <span>Плановая замена</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="engine" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+            <i data-lucide="cog"></i>
+          </div>
+          <span>Двигатель</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="fuel-sys" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;">
+            <i data-lucide="fuel"></i>
+          </div>
+          <span>Топливная система</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="cooling" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;">
+            <i data-lucide="thermometer"></i>
+          </div>
+          <span>Система охлаждения</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="exhaust" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="wind"></i>
+          </div>
+          <span>Система выпуска</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="transmission" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+            <i data-lucide="settings-2"></i>
+          </div>
+          <span>Трансмиссия</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="suspension" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF6B35;">
+            <i data-lucide="circle-dashed"></i>
+          </div>
+          <span>Ходовая / Рулевое</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="brakes" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;">
+            <i data-lucide="disc"></i>
+          </div>
+          <span>Тормозная система</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="electrical" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FF9500;">
+            <i data-lucide="zap"></i>
+          </div>
+          <span>Электрооборудование</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="hvac" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#5AC8FA;">
+            <i data-lucide="air-vent"></i>
+          </div>
+          <span>Отопление / кондиционер</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="body" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+            <i data-lucide="layout-panel-left"></i>
+          </div>
+          <span>Салон и кузов</span>
+        </button>
+        <button class="expense-category-item svc-cat-btn" data-svc="other" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="more-horizontal"></i>
+          </div>
+          <span>Прочее</span>
+        </button>
+      </div>
+
+      <!-- Прочее text input -->
+      <div id="svc-cat-other-wrap" style="display:none;margin-bottom:var(--space-md);">
+        <input id="svc-cat-other-text" type="text" placeholder="Опишите работу…"
+          style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+      </div>
+
+      <!-- Per-category cost inputs -->
+      <div id="svc-costs-wrap" style="display:none;margin-bottom:var(--space-sm);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость услуг</p>
+        <div id="svc-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
+        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
+          <label style="font-weight:600;">Итого (₴)</label>
+          <span id="svc-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Мастер / СТО</label>
+        <input id="svc-cat-shop" type="text" placeholder="Название мастерской">
+      </div>
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="svc-cat-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="svc-cat-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="svc-cat-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-svc-cat-btn">Сохранить</button>
     </div>
   </section>
 
