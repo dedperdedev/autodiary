@@ -726,12 +726,6 @@
             </div>
             <span>Сервис</span>
           </button>
-          <button class="expense-category-item" data-goto="screen-add-planned" data-type="planned">
-            <div class="expense-category-icon" style="background: rgba(52, 199, 89, 0.15); color: #34C759;">
-              <i data-lucide="calendar-check"></i>
-            </div>
-            <span>Плановая замена</span>
-          </button>
           <button class="expense-category-item" data-type="wheels" data-goto="screen-add-wheels">
             <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
               <i data-lucide="circle"></i>
@@ -1434,6 +1428,12 @@
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Подкатегория</p>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
+        <button class="expense-category-item" id="svc-goto-planned" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
+            <i data-lucide="calendar-check"></i>
+          </div>
+          <span>Плановая замена</span>
+        </button>
         <button class="expense-category-item svc-cat-btn" data-svc="engine" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
             <i data-lucide="cog"></i>

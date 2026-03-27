@@ -4838,6 +4838,9 @@
         };
       });
 
+      const gotoPlanned = document.getElementById('svc-goto-planned');
+      if(gotoPlanned) gotoPlanned.onclick = () => showView('screen-add-planned');
+
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
