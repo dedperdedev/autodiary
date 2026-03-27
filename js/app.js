@@ -4765,6 +4765,19 @@
     }
     
     // ── Service subcategory screen ─────────────────────────────────
+    const PLANNED_SUBS = {
+      'spark':          'Свечи зажигания / накаливания',
+      'timing':         'Ремень / цепь ГРМ',
+      'coolant':        'Замена антифриза',
+      'brake-fluid':    'Замена тормозной жидкости',
+      'power-steering': 'Замена жидкости ГУР',
+      'gearbox-oil':    'Масло в КПП',
+      'front-diff':     'Масло переднего редуктора',
+      'rear-diff':      'Масло заднего редуктора',
+      'transfer':       'Масло раздаточной коробки',
+      'battery':        'Новый АКБ',
+    };
+
     const SVC_CATS = {
       'planned':      'Плановая замена',
       'engine':       'Двигатель',
@@ -4782,35 +4795,72 @@
 
     function initServiceCatScreen() {
       window._svcSelected = new Set();
+      window._plannedSubSelected = new Set();
 
-      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-notes','svc-cat-other-text']
+      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-notes','svc-cat-other-text','svc-akb-brand','svc-akb-capacity']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('svc-cat-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
-      document.querySelectorAll('.svc-cat-btn').forEach(btn => {
+      document.querySelectorAll('.svc-cat-btn, .planned-sub-btn').forEach(btn => {
         btn.style.boxShadow = '';
         btn.querySelector('.svc-chk')?.remove();
       });
       document.getElementById('svc-cat-other-wrap').style.display = 'none';
+      document.getElementById('svc-planned-sub-wrap').style.display = 'none';
+      document.getElementById('svc-akb-wrap').style.display = 'none';
       renderSvcCosts();
+
+      function toggleBtn(btn, active) {
+        if(active) {
+          btn.style.boxShadow = '0 0 0 2px #34C759';
+          btn.style.borderRadius = '14px';
+          if(!btn.querySelector('.svc-chk'))
+            btn.insertAdjacentHTML('beforeend', '<div class="svc-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+        } else {
+          btn.style.boxShadow = '';
+          btn.querySelector('.svc-chk')?.remove();
+        }
+      }
 
       document.querySelectorAll('.svc-cat-btn').forEach(btn => {
         btn.onclick = () => {
           const val = btn.dataset.svc;
           if(window._svcSelected.has(val)) {
             window._svcSelected.delete(val);
-            btn.style.boxShadow = '';
-            btn.querySelector('.svc-chk')?.remove();
+            toggleBtn(btn, false);
+            if(val === 'planned') {
+              window._plannedSubSelected.clear();
+              document.querySelectorAll('.planned-sub-btn').forEach(b => toggleBtn(b, false));
+              document.getElementById('svc-planned-sub-wrap').style.display = 'none';
+              document.getElementById('svc-akb-wrap').style.display = 'none';
+            }
           } else {
             window._svcSelected.add(val);
-            btn.style.boxShadow = '0 0 0 2px #34C759';
-            btn.style.borderRadius = '14px';
-            if(!btn.querySelector('.svc-chk'))
-              btn.insertAdjacentHTML('beforeend', '<div class="svc-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+            toggleBtn(btn, true);
+            if(val === 'planned') {
+              document.getElementById('svc-planned-sub-wrap').style.display = '';
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+            }
           }
           document.getElementById('svc-cat-other-wrap').style.display =
             window._svcSelected.has('other') ? '' : 'none';
+          renderSvcCosts();
+        };
+      });
+
+      document.querySelectorAll('.planned-sub-btn').forEach(btn => {
+        btn.onclick = () => {
+          const val = btn.dataset.psub;
+          if(window._plannedSubSelected.has(val)) {
+            window._plannedSubSelected.delete(val);
+            toggleBtn(btn, false);
+          } else {
+            window._plannedSubSelected.add(val);
+            toggleBtn(btn, true);
+          }
+          document.getElementById('svc-akb-wrap').style.display =
+            window._plannedSubSelected.has('battery') ? '' : 'none';
           renderSvcCosts();
         };
       });
@@ -4836,10 +4886,21 @@
         existingNotes[inp.dataset.snoteKey] = inp.value;
       });
 
-      list.innerHTML = Array.from(window._svcSelected).map(key => {
-        const label = key === 'other'
-          ? (document.getElementById('svc-cat-other-text')?.value?.trim() || 'Прочее')
-          : (SVC_CATS[key] || key);
+      const rows = [];
+      Array.from(window._svcSelected).forEach(key => {
+        if(key === 'planned' && window._plannedSubSelected && window._plannedSubSelected.size > 0) {
+          Array.from(window._plannedSubSelected).forEach(psub => {
+            rows.push({ key: 'planned__' + psub, label: PLANNED_SUBS[psub] || psub });
+          });
+        } else {
+          const label = key === 'other'
+            ? (document.getElementById('svc-cat-other-text')?.value?.trim() || 'Прочее')
+            : (SVC_CATS[key] || key);
+          rows.push({ key, label });
+        }
+      });
+
+      list.innerHTML = rows.map(({ key, label }) => {
         const val = existing[key] || '';
         const noteVal = existingNotes[key] || '';
         return `<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
@@ -4848,7 +4909,7 @@
             <input type="number" data-scost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
               style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
           </div>
-          <input type="text" data-snote-key="${key}" placeholder="Комментарий (что заменили, марка, артикул…)" value="${escapeHtml(noteVal)}"
+          <input type="text" data-snote-key="${key}" placeholder="Комментарий (марка, артикул…)" value="${escapeHtml(noteVal)}"
             style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-footnote);box-sizing:border-box;">
         </div>`;
       }).join('');
@@ -4871,10 +4932,10 @@
 
     function saveSvcCatEntry() {
       const carId = currentCarId || state.cars[0]?.id;
-      if(!carId) { showToast('Виберіть автомобіль'); return; }
+      if(!carId) { showToast('Выберите автомобиль'); return; }
       const date = document.getElementById('svc-cat-date')?.value;
-      if(!date) { showToast('Вкажіть дату'); return; }
-      if(window._svcSelected.size === 0) { showToast('Виберіть підкатегорію'); return; }
+      if(!date) { showToast('Укажите дату'); return; }
+      if(window._svcSelected.size === 0) { showToast('Выберите подкатегорию'); return; }
 
       const odometer = parseFloat(document.getElementById('svc-cat-odometer')?.value || 0);
       const shop = document.getElementById('svc-cat-shop')?.value?.trim() || '';
@@ -4892,9 +4953,36 @@
         if(inp.value.trim()) noteMap[inp.dataset.snoteKey] = inp.value.trim();
       });
 
-      const parts = Array.from(window._svcSelected).map(k =>
-        k === 'other' ? (otherText || 'Прочее') : (SVC_CATS[k] || k)
-      );
+      const plannedSubs = Array.from(window._plannedSubSelected || []);
+
+      // Build human-readable label
+      const parts = [];
+      Array.from(window._svcSelected).forEach(k => {
+        if(k === 'planned') {
+          if(plannedSubs.length > 0) {
+            plannedSubs.forEach(ps => parts.push(PLANNED_SUBS[ps] || ps));
+          } else {
+            parts.push('Плановая замена');
+          }
+        } else if(k === 'other') {
+          parts.push(otherText || 'Прочее');
+        } else {
+          parts.push(SVC_CATS[k] || k);
+        }
+      });
+
+      // АКБ → save to car passport
+      const akbBrand = document.getElementById('svc-akb-brand')?.value?.trim() || '';
+      const akbCapacity = document.getElementById('svc-akb-capacity')?.value?.trim() || '';
+      if(plannedSubs.includes('battery') && akbBrand) {
+        const car = state.cars.find(c => c.id === carId);
+        if(car) {
+          car.akbBrand = akbBrand;
+          car.akbCapacity = akbCapacity;
+          car.akbDate = date;
+          car.akbOdometer = odometer;
+        }
+      }
 
       if(!state.service) state.service = [];
       state.service.push({
@@ -4903,14 +4991,15 @@
         type: 'service-cat',
         typeLabel: parts.join(', '),
         categories: Array.from(window._svcSelected),
-        costMap, cost: totalCost,
+        plannedSubs, costMap, cost: totalCost,
         noteMap, otherText, shop, notes,
+        akbBrand, akbCapacity,
         createdAt: new Date().toISOString(),
         deletedAt: null
       });
 
       if(saveAppState()) {
-        showToast('Збережено');
+        showToast('Сохранено');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
