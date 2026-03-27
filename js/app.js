@@ -4839,7 +4839,7 @@
             window._svcSelected.add(val);
             toggleBtn(btn, true);
             if(val === 'planned') {
-              document.getElementById('svc-planned-sub-wrap').style.display = '';
+              document.getElementById('svc-planned-sub-wrap').style.display = 'block';
               if(typeof lucide !== 'undefined') lucide.createIcons();
             }
           }
@@ -4860,7 +4860,7 @@
             toggleBtn(btn, true);
           }
           document.getElementById('svc-akb-wrap').style.display =
-            window._plannedSubSelected.has('battery') ? '' : 'none';
+            window._plannedSubSelected.has('battery') ? 'block' : 'none';
           renderSvcCosts();
         };
       });
