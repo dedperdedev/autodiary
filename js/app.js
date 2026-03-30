@@ -5047,8 +5047,8 @@
       const isSelected = window._plannedSelected.has(key);
 
       const sheet = document.createElement('div');
-      sheet.className = 'ios-sheet-overlay';
-      sheet.style.cssText = 'z-index:10001;display:flex;';
+      sheet.className = 'ios-sheet-overlay active';
+      sheet.style.zIndex = '10001';
 
       const fieldsHtml = fields.map(f => `
         <div>
@@ -5080,7 +5080,7 @@
       if(typeof lucide !== 'undefined') lucide.createIcons();
 
       function closeSheet() {
-        sheet.style.opacity = '0';
+        sheet.classList.remove('active');
         setTimeout(() => { if(sheet.parentNode) sheet.remove(); }, 250);
       }
 
@@ -5114,12 +5114,6 @@
         closeSheet();
       };
 
-      // animate in
-      sheet.style.opacity = '0';
-      requestAnimationFrame(() => {
-        sheet.style.transition = 'opacity 200ms ease';
-        sheet.style.opacity = '1';
-      });
     }
 
     function renderPlannedCosts() {
