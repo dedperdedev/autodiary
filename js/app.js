@@ -2084,6 +2084,93 @@
       requestAnimationFrame(() => modal.classList.add('active'));
     }
 
+    function showUpdateOdometerSheet() {
+      const carId = currentCarId || state.cars[0]?.id;
+      const car = state.cars.find(c => c.id === carId);
+      if(!car) { showToast('Сначала выберите автомобиль'); return; }
+
+      const allEntries = [
+        ...(state.expenses || []).filter(e => e.carId === carId && e.odometer && !e.deletedAt),
+        ...(state.fuel || []).filter(f => f.carId === carId && f.odometer && !f.deletedAt),
+        ...(state.service || []).filter(s => s.carId === carId && s.odometer && !s.deletedAt),
+      ];
+      const knownOdometer = allEntries.length
+        ? Math.max(...allEntries.map(e => parseFloat(e.odometer) || 0))
+        : (car.currentOdometer || 0);
+
+      let modal = document.getElementById('odometer-update-modal');
+      if(modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'odometer-update-modal';
+      modal.className = 'ios-sheet-overlay';
+      document.body.appendChild(modal);
+
+      function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => { if(modal.parentNode) modal.remove(); }, 300);
+      }
+
+      modal.innerHTML = `
+        <div class="ios-sheet">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header">
+            <div>
+              <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">Обновить пробег</h2>
+              <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">${escapeHtml(car.brand + ' ' + car.model)}</p>
+            </div>
+            <button class="ios-sheet-close" id="odo-close"><i data-lucide="x"></i></button>
+          </div>
+          <div class="ios-sheet-content">
+            <div style="margin-bottom:var(--space-md);">
+              <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">Текущий пробег (км)</label>
+              <input id="odo-value" type="number" inputmode="numeric" placeholder="Например: 85000" value="${knownOdometer || ''}"
+                style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+            </div>
+            <div style="margin-bottom:var(--space-lg);">
+              <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">Дата</label>
+              <input id="odo-date" type="date" value="${new Date().toISOString().split('T')[0]}"
+                style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
+            </div>
+            <button class="ios-button ios-button-primary" id="odo-confirm" style="width:100%;">Сохранить</button>
+          </div>
+        </div>`;
+
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+      setTimeout(() => document.getElementById('odo-value')?.focus(), 350);
+
+      document.getElementById('odo-close').addEventListener('click', closeModal);
+      modal.addEventListener('click', e => { if(e.target === modal) closeModal(); });
+
+      document.getElementById('odo-confirm').addEventListener('click', () => {
+        const val = parseFloat(document.getElementById('odo-value')?.value || 0);
+        const date = document.getElementById('odo-date')?.value || new Date().toISOString().split('T')[0];
+        if(!val || val <= 0) { showToast('Введите корректный пробег'); return; }
+
+        if(!state.fuel) state.fuel = [];
+        state.fuel.push({
+          id: 'odo_' + Date.now(),
+          carId,
+          odometer: val,
+          date,
+          type: 'odometer-update',
+          liters: 0,
+          cost: 0,
+          deletedAt: null
+        });
+
+        const idx = state.cars.findIndex(c => c.id === carId);
+        if(idx !== -1) state.cars[idx].currentOdometer = val;
+
+        if(saveAppState()) {
+          showToast('Пробег обновлён: ' + val.toLocaleString('ru') + ' км');
+          renderGarage();
+        }
+        closeModal();
+      });
+
+      requestAnimationFrame(() => modal.classList.add('active'));
+    }
+
     // Care subcategory picker (мойка / химчистка / полировка / прочее)
     const CARE_TYPES = [
       { type: 'wash',     label: 'Мойка',             icon: 'droplets',    color: '#007AFF', bg: 'rgba(0,122,255,0.15)' },
@@ -4509,6 +4596,13 @@
           if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
             expenseCategorySheet.classList.remove('active');
             showView('screen-add-service');
+            return;
+          }
+
+          // Quick path for Обновить пробег
+          if(categoryItem.id === 'btn-update-odometer') {
+            expenseCategorySheet.classList.remove('active');
+            showUpdateOdometerSheet();
             return;
           }
 
