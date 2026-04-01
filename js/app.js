@@ -858,51 +858,11 @@
         return db - da;
       });
       
-      // Calculate and render statistics using filtered list
-      const statsContainer = document.getElementById('diary-stats');
-      if(statsContainer) {
-        // Use Diary module for stats calculation if available
-        let stats;
-        if (typeof Diary !== 'undefined' && Diary.calculateStats) {
-          stats = Diary.calculateStats(sorted);
-        } else {
-          // Fallback calculation
-          const totalAmount = sorted.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-          let avgPerDay = 0;
-          if(sorted.length > 0) {
-            const dates = sorted.map(e => e.date).filter(Boolean);
-            if(dates.length > 0) {
-              const firstDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
-              const lastDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())));
-              const daysDiff = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1);
-              avgPerDay = totalAmount / daysDiff;
-            }
-          }
-          stats = { totalAmount, avgPerDay };
-        }
-        
-        // Show stats container
-        statsContainer.style.display = 'flex';
-        
-        statsContainer.innerHTML = `
-          <div class="diary-stat-item">
-            <div class="diary-stat-value">${stats.totalAmount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₴</div>
-            <div class="diary-stat-label">Всего</div>
-          </div>
-          <div class="diary-stat-item">
-            <div class="diary-stat-value">${Math.round(stats.avgPerDay).toLocaleString('ru-RU')} ₴</div>
-            <div class="diary-stat-label">В день</div>
-          </div>
-        `;
-      }
-      
       if(sorted.length === 0 && sortedReminders.length === 0) {
         const emptyMsg = document.createElement('div');
         emptyMsg.className = 'empty-wrap';
         emptyMsg.innerHTML = '<div class="empty-text">Нет расходов и напоминаний</div>';
         container.appendChild(emptyMsg);
-        // Hide stats when empty
-        if(statsContainer) statsContainer.style.display = 'none';
         return;
       }
       
