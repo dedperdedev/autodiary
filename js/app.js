@@ -3225,19 +3225,20 @@
         </div>`;
 
       // ── 2. Maintenance plan (ТО) ──────────────────────────────
-      const planItems = typeof MaintenancePlan !== 'undefined'
-        ? MaintenancePlan.computePlanStatus(car, new Date(), currentOdo, state)
-        : [];
-
-      if (planItems.length > 0) {
+      // Ensure plan exists (auto-apply basic template if needed)
+      if (typeof MaintenancePlan !== 'undefined') {
+        if (!car.servicePlan || car.servicePlan.length === 0) {
+          MaintenancePlan.applyTemplate(car, 'basic', state);
+          saveAppState();
+        }
+        const planItems = MaintenancePlan.computePlanStatus(car, new Date(), currentOdo, state);
         const rows = planItems.map(item => {
           let status = item.status || 'ok';
-          // calc status detail for next labels
           let nextOdo = '—', nextDate = '—';
           if (item.nextDueOdometer) {
             const rem = item.nextDueOdometer - currentOdo;
             nextOdo = fmtOdo(item.nextDueOdometer);
-            if (status === 'overdue') nextOdo = `<span style="color:#FF3B30;">просрочено ${Math.abs(rem).toLocaleString('ru-RU')} км</span>`;
+            if (status === 'overdue') nextOdo = `<span style="color:#FF3B30;">${rem < 0 ? 'просрочено ' + Math.abs(rem).toLocaleString('ru-RU') + ' км' : fmtOdo(item.nextDueOdometer)}</span>`;
             else if (status === 'soon') nextOdo = `<span style="color:#FF9500;">через ${rem.toLocaleString('ru-RU')} км</span>`;
           }
           if (item.nextDueDate) {
@@ -3265,89 +3266,85 @@
         const carIntervals = state.intervals[carId] || {};
         const intervals = { ...defaultIntervals, ...carIntervals };
 
-        const svcRows = [];
-        Object.keys(intervals).forEach(svcType => {
-          const interval = intervals[svcType];
-          if (!interval || (!interval.intervalKm && !interval.intervalMonths)) return;
-          const lastRec = serviceRecords.filter(s => s.type === svcType)
-            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-          if (!lastRec) return; // only show if there's data
+        const svcRows = Object.keys(Service.TYPES)
+          .filter(svcType => svcType !== 'other')
+          .map(svcType => {
+            const interval = intervals[svcType];
+            const lastRec = serviceRecords.filter(s => s.type === svcType)
+              .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
-          const dueCheck = Service.checkDue(svcType, lastRec, { [svcType]: interval }, currentOdo, new Date());
-          const nextOdo = lastRec.odometer && interval.intervalKm
-            ? fmtOdo(parseFloat(lastRec.odometer) + interval.intervalKm)
-            : '—';
-          const nextDateVal = lastRec.date && interval.intervalMonths
-            ? (() => { const d = new Date(lastRec.date); d.setMonth(d.getMonth() + interval.intervalMonths); return d; })()
-            : null;
+            if (!lastRec) {
+              return {
+                name: Service.TYPES[svcType],
+                status: null,
+                lastOdo: '—',
+                lastDate: '—',
+                nextOdo: '—',
+                nextDate: '—'
+              };
+            }
 
-          let status = dueCheck.status || 'ok';
-          let nextOdoHtml = nextOdo;
-          let nextDateHtml = fmtDate(nextDateVal);
+            const dueCheck = Service.checkDue(svcType, lastRec, { [svcType]: interval || {} }, currentOdo, new Date());
+            const nextOdoVal = lastRec.odometer && interval?.intervalKm
+              ? parseFloat(lastRec.odometer) + interval.intervalKm : null;
+            const nextDateVal = lastRec.date && interval?.intervalMonths
+              ? (() => { const d = new Date(lastRec.date); d.setMonth(d.getMonth() + interval.intervalMonths); return d; })()
+              : null;
 
-          if (status === 'overdue') {
-            nextOdoHtml = `<span style="color:#FF3B30;">${nextOdo}</span>`;
-            nextDateHtml = `<span style="color:#FF3B30;">${fmtDate(nextDateVal)}</span>`;
-          } else if (status === 'soon') {
-            nextOdoHtml = `<span style="color:#FF9500;">${nextOdo}</span>`;
-            nextDateHtml = `<span style="color:#FF9500;">${fmtDate(nextDateVal)}</span>`;
-          }
+            let status = dueCheck.status || 'ok';
+            let nextOdoHtml = fmtOdo(nextOdoVal);
+            let nextDateHtml = fmtDate(nextDateVal);
+            if (status === 'overdue') {
+              nextOdoHtml = `<span style="color:#FF3B30;">${fmtOdo(nextOdoVal)}</span>`;
+              nextDateHtml = `<span style="color:#FF3B30;">${fmtDate(nextDateVal)}</span>`;
+            } else if (status === 'soon') {
+              nextOdoHtml = `<span style="color:#FF9500;">${fmtOdo(nextOdoVal)}</span>`;
+              nextDateHtml = `<span style="color:#FF9500;">${fmtDate(nextDateVal)}</span>`;
+            }
 
-          svcRows.push({
-            name: Service.TYPES[svcType] || svcType,
-            status,
-            lastOdo: fmtOdo(lastRec.odometer),
-            lastDate: fmtDate(lastRec.date),
-            nextOdo: nextOdoHtml,
-            nextDate: nextDateHtml
+            return {
+              name: Service.TYPES[svcType],
+              status,
+              lastOdo: fmtOdo(lastRec.odometer),
+              lastDate: fmtDate(lastRec.date),
+              nextOdo: nextOdoHtml,
+              nextDate: nextDateHtml
+            };
           });
-        });
 
-        if (svcRows.length > 0) {
-          html += section('Сервис — Плановые замены', 'wrench', svcRows);
-        }
+        html += section('Сервис — Плановые замены', 'wrench', svcRows);
       }
 
       // ── 4. Tires (летняя / зимняя резина) ────────────────────
-      const wheelRecords = (state.service || [])
-        .filter(s => s.carId === carId && s.type === 'wheels' && !s.deletedAt)
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+      {
+        const wheelRecords = (state.service || [])
+          .filter(s => s.carId === carId && s.type === 'wheels' && !s.deletedAt)
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      const lastSummer = wheelRecords.find(s => s.installType === 'summer');
-      const lastWinter = wheelRecords.find(s => s.installType === 'winter');
+        const lastSummer = wheelRecords.find(s => s.installType === 'summer');
+        const lastWinter = wheelRecords.find(s => s.installType === 'winter');
 
-      if (lastSummer || lastWinter) {
-        const tireRows = [];
-        if (lastSummer) {
-          const summerOdo = parseFloat(lastSummer.odometer) || 0;
-          const summerKm = currentOdo > summerOdo ? currentOdo - summerOdo : 0;
-          const brand = lastSummer.newTire?.brand || '';
-          const size  = lastSummer.newTire?.size  || '';
-          const label = 'Летняя' + (brand ? ` • ${brand}` : '') + (size ? ` • ${size}` : '');
-          tireRows.push({
-            name: label,
+        const tireRows = ['summer', 'winter'].map(season => {
+          const rec = season === 'summer' ? lastSummer : lastWinter;
+          const label = season === 'summer' ? 'Летняя' : 'Зимняя';
+          if (!rec) {
+            return { name: label, status: null, lastOdo: '—', lastDate: '—', nextOdo: '—', nextDate: '—' };
+          }
+          const recOdo = parseFloat(rec.odometer) || 0;
+          const kmOnTire = currentOdo > recOdo ? currentOdo - recOdo : 0;
+          const brand = rec.newTire?.brand || '';
+          const size  = rec.newTire?.size  || '';
+          const fullLabel = label + (brand ? ` • ${brand}` : '') + (size ? ` • ${size}` : '');
+          return {
+            name: fullLabel,
             status: 'ok',
-            lastOdo: fmtOdo(lastSummer.odometer),
-            lastDate: fmtDate(lastSummer.date),
-            nextOdo: `пробег: ${summerKm.toLocaleString('ru-RU')} км`,
+            lastOdo: fmtOdo(rec.odometer),
+            lastDate: fmtDate(rec.date),
+            nextOdo: `пробег: ${kmOnTire.toLocaleString('ru-RU')} км`,
             nextDate: '—'
-          });
-        }
-        if (lastWinter) {
-          const winterOdo = parseFloat(lastWinter.odometer) || 0;
-          const winterKm = currentOdo > winterOdo ? currentOdo - winterOdo : 0;
-          const brand = lastWinter.newTire?.brand || '';
-          const size  = lastWinter.newTire?.size  || '';
-          const label = 'Зимняя' + (brand ? ` • ${brand}` : '') + (size ? ` • ${size}` : '');
-          tireRows.push({
-            name: label,
-            status: 'ok',
-            lastOdo: fmtOdo(lastWinter.odometer),
-            lastDate: fmtDate(lastWinter.date),
-            nextOdo: `пробег: ${winterKm.toLocaleString('ru-RU')} км`,
-            nextDate: '—'
-          });
-        }
+          };
+        });
+
         html += section('Резина', 'circle', tireRows);
       }
 
