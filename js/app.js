@@ -478,6 +478,8 @@
       } else if(id==='screen-maintenance-plan'){
         renderMaintenancePlan();
         initializeMaintenancePlanHandlers();
+      } else if(id==='screen-car-passport'){
+        if(currentCarId) renderCarPassport(currentCarId);
       }
     }
 
@@ -609,16 +611,22 @@
         
         // Trailing metrics
         const trailingDiv = document.createElement('div');
+        // Calculate current odometer for display
+        const allOdoEntries = [
+          ...(state.expenses || []).filter(e => e.carId === car.id && e.odometer && !e.deletedAt),
+          ...(state.fuel || []).filter(f => f.carId === car.id && f.odometer && !f.deletedAt),
+          ...(state.service || []).filter(s => s.carId === car.id && s.odometer && !s.deletedAt)
+        ];
+        const carOdometer = allOdoEntries.length > 0
+          ? Math.max(...allOdoEntries.map(e => parseFloat(e.odometer) || 0))
+          : (car.currentOdometer || 0);
+
         trailingDiv.className = 'ios-cell-trailing';
         trailingDiv.innerHTML = `
-          <div class="car-metrics-compact">
-            <div class="car-metric-item">
-              <span class="car-metric-value">${fuelConsumption}</span>
-              <span class="car-metric-unit">л/100км</span>
-            </div>
-            <div class="car-metric-item">
-              <span class="car-metric-value">${costPerKm}</span>
-              <span class="car-metric-unit">₴/км</span>
+          <div class="car-metrics-compact" style="align-items:flex-end;">
+            <div class="car-metric-item" style="flex-direction:column;align-items:flex-end;gap:2px;">
+              <span class="car-metric-value" style="font-size:var(--font-size-title-3);font-weight:700;">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
+              <span class="car-metric-unit">км</span>
             </div>
           </div>
         `;
@@ -701,13 +709,13 @@
         quickActions.className = 'car-quick-actions';
         quickActions.dataset.ignoreClick = 'true';
         quickActions.innerHTML = `
-          <button class="ios-button-compact ios-button-primary" data-goto="screen-expense-form" data-car-id="${car.id}" title="Добавить расход">
-            <i data-lucide="plus"></i>
-            <span>Расход</span>
+          <button class="ios-button-compact ios-button-primary" data-goto="screen-car-passport" data-car-id="${car.id}" title="Паспорт авто">
+            <i data-lucide="book-open"></i>
+            <span>Паспорт</span>
           </button>
-          <button class="ios-button-compact ios-button-accent" data-goto="screen-expense-form" data-car-id="${car.id}" data-scroll="#section-fuel" title="Добавить заправку">
-            <i data-lucide="fuel"></i>
-            <span>Заправка</span>
+          <button class="ios-button-compact ios-button-accent" data-goto="screen-car-analytics" data-car-id="${car.id}" title="Аналитика">
+            <i data-lucide="bar-chart-2"></i>
+            <span>Аналитика</span>
           </button>
         `;
         
@@ -3134,6 +3142,274 @@
       
       serviceList.appendChild(group);
       if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // ── Car Passport ─────────────────────────────────────────────
+    function renderCarPassport(carId) {
+      const car = state.cars.find(c => c.id === carId);
+      if (!car) return;
+
+      const nameEl = document.getElementById('passport-car-name');
+      if (nameEl) nameEl.textContent = car.name || 'Паспорт';
+
+      const content = document.getElementById('passport-content');
+      if (!content) return;
+
+      // Current odometer
+      const allOdoEntries = [
+        ...(state.expenses || []).filter(e => e.carId === carId && e.odometer && !e.deletedAt),
+        ...(state.fuel    || []).filter(f => f.carId === carId && f.odometer && !f.deletedAt),
+        ...(state.service || []).filter(s => s.carId === carId && s.odometer && !s.deletedAt)
+      ];
+      const currentOdo = allOdoEntries.length > 0
+        ? Math.max(...allOdoEntries.map(e => parseFloat(e.odometer) || 0))
+        : (car.currentOdometer || 0);
+
+      function fmtDate(d) {
+        if (!d) return '—';
+        try {
+          const dt = new Date(d);
+          return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch { return '—'; }
+      }
+      function fmtOdo(v) {
+        const n = parseFloat(v);
+        return (n && n > 0) ? n.toLocaleString('ru-RU') + ' км' : '—';
+      }
+      function daysUntil(dateStr) {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        return Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+      }
+      function statusDot(status) {
+        const colors = { overdue: '#FF3B30', soon: '#FF9500', ok: '#34C759' };
+        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors[status]||colors.ok};margin-right:6px;flex-shrink:0;"></span>`;
+      }
+
+      // ── Section helper ────────────────────────────────────────
+      function section(title, icon, rows) {
+        const rowsHtml = rows.map(r => {
+          const dotHtml = r.status ? statusDot(r.status) : '';
+          return `
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:var(--space-sm);align-items:start;padding:var(--space-sm) 0;border-bottom:0.5px solid var(--separator);">
+              <div style="font-size:var(--font-size-footnote);color:var(--text);display:flex;align-items:center;">${dotHtml}${r.name}</div>
+              <div style="text-align:right;min-width:90px;">
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-bottom:2px;">Последняя</div>
+                <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);">${r.lastOdo}</div>
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">${r.lastDate}</div>
+              </div>
+              <div style="text-align:right;min-width:90px;">
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-bottom:2px;">Следующая</div>
+                <div style="font-size:var(--font-size-footnote);font-weight:600;color:${r.status==='overdue'?'#FF3B30':r.status==='soon'?'#FF9500':'var(--text)'};">${r.nextOdo}</div>
+                <div style="font-size:var(--font-size-caption-1);color:${r.status==='overdue'?'#FF3B30':r.status==='soon'?'#FF9500':'var(--text-tertiary)'};">${r.nextDate}</div>
+              </div>
+            </div>`;
+        }).join('');
+        return `
+          <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-md);margin-bottom:var(--space-md);">
+            <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+              <i data-lucide="${icon}" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
+              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);">${title}</span>
+            </div>
+            ${rowsHtml || '<div style="color:var(--text-tertiary);font-size:var(--font-size-footnote);padding:var(--space-sm) 0;">Нет данных</div>'}
+          </div>`;
+      }
+
+      let html = '';
+
+      // ── 1. Current odometer header ────────────────────────────
+      html += `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) 0 var(--space-sm);">
+          <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Общий пробег</div>
+          <div style="font-size:var(--font-size-title-2);font-weight:700;color:var(--text);">${currentOdo > 0 ? currentOdo.toLocaleString('ru-RU') + ' км' : '—'}</div>
+        </div>`;
+
+      // ── 2. Maintenance plan (ТО) ──────────────────────────────
+      const planItems = typeof MaintenancePlan !== 'undefined'
+        ? MaintenancePlan.computePlanStatus(car, new Date(), currentOdo, state)
+        : [];
+
+      if (planItems.length > 0) {
+        const rows = planItems.map(item => {
+          let status = item.status || 'ok';
+          // calc status detail for next labels
+          let nextOdo = '—', nextDate = '—';
+          if (item.nextDueOdometer) {
+            const rem = item.nextDueOdometer - currentOdo;
+            nextOdo = fmtOdo(item.nextDueOdometer);
+            if (status === 'overdue') nextOdo = `<span style="color:#FF3B30;">просрочено ${Math.abs(rem).toLocaleString('ru-RU')} км</span>`;
+            else if (status === 'soon') nextOdo = `<span style="color:#FF9500;">через ${rem.toLocaleString('ru-RU')} км</span>`;
+          }
+          if (item.nextDueDate) {
+            const days = daysUntil(item.nextDueDate);
+            nextDate = fmtDate(item.nextDueDate);
+            if (status === 'overdue' && days !== null && days < 0) nextDate = `<span style="color:#FF3B30;">${Math.abs(days)} дн. назад</span>`;
+            else if (status === 'soon' && days !== null) nextDate = `<span style="color:#FF9500;">через ${days} дн.</span>`;
+          }
+          return {
+            name: item.title,
+            status,
+            lastOdo: fmtOdo(item.lastServiceOdometer),
+            lastDate: fmtDate(item.lastServiceDate),
+            nextOdo,
+            nextDate
+          };
+        });
+        html += section('ТО — Регламент обслуживания', 'calendar-check', rows);
+      }
+
+      // ── 3. Service schedule (Сервис-плановые замены) ──────────
+      if (typeof Service !== 'undefined' && Service.getDefaultIntervals && Service.checkDue) {
+        const serviceRecords = (state.service || []).filter(s => s.carId === carId && s.type !== 'wheels' && !s.deletedAt);
+        const defaultIntervals = Service.getDefaultIntervals();
+        const carIntervals = state.intervals[carId] || {};
+        const intervals = { ...defaultIntervals, ...carIntervals };
+
+        const svcRows = [];
+        Object.keys(intervals).forEach(svcType => {
+          const interval = intervals[svcType];
+          if (!interval || (!interval.intervalKm && !interval.intervalMonths)) return;
+          const lastRec = serviceRecords.filter(s => s.type === svcType)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          if (!lastRec) return; // only show if there's data
+
+          const dueCheck = Service.checkDue(svcType, lastRec, { [svcType]: interval }, currentOdo, new Date());
+          const nextOdo = lastRec.odometer && interval.intervalKm
+            ? fmtOdo(parseFloat(lastRec.odometer) + interval.intervalKm)
+            : '—';
+          const nextDateVal = lastRec.date && interval.intervalMonths
+            ? (() => { const d = new Date(lastRec.date); d.setMonth(d.getMonth() + interval.intervalMonths); return d; })()
+            : null;
+
+          let status = dueCheck.status || 'ok';
+          let nextOdoHtml = nextOdo;
+          let nextDateHtml = fmtDate(nextDateVal);
+
+          if (status === 'overdue') {
+            nextOdoHtml = `<span style="color:#FF3B30;">${nextOdo}</span>`;
+            nextDateHtml = `<span style="color:#FF3B30;">${fmtDate(nextDateVal)}</span>`;
+          } else if (status === 'soon') {
+            nextOdoHtml = `<span style="color:#FF9500;">${nextOdo}</span>`;
+            nextDateHtml = `<span style="color:#FF9500;">${fmtDate(nextDateVal)}</span>`;
+          }
+
+          svcRows.push({
+            name: Service.TYPES[svcType] || svcType,
+            status,
+            lastOdo: fmtOdo(lastRec.odometer),
+            lastDate: fmtDate(lastRec.date),
+            nextOdo: nextOdoHtml,
+            nextDate: nextDateHtml
+          });
+        });
+
+        if (svcRows.length > 0) {
+          html += section('Сервис — Плановые замены', 'wrench', svcRows);
+        }
+      }
+
+      // ── 4. Tires (летняя / зимняя резина) ────────────────────
+      const wheelRecords = (state.service || [])
+        .filter(s => s.carId === carId && s.type === 'wheels' && !s.deletedAt)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const lastSummer = wheelRecords.find(s => s.installType === 'summer');
+      const lastWinter = wheelRecords.find(s => s.installType === 'winter');
+
+      if (lastSummer || lastWinter) {
+        const tireRows = [];
+        if (lastSummer) {
+          const summerOdo = parseFloat(lastSummer.odometer) || 0;
+          const summerKm = currentOdo > summerOdo ? currentOdo - summerOdo : 0;
+          const brand = lastSummer.newTire?.brand || '';
+          const size  = lastSummer.newTire?.size  || '';
+          const label = 'Летняя' + (brand ? ` • ${brand}` : '') + (size ? ` • ${size}` : '');
+          tireRows.push({
+            name: label,
+            status: 'ok',
+            lastOdo: fmtOdo(lastSummer.odometer),
+            lastDate: fmtDate(lastSummer.date),
+            nextOdo: `пробег: ${summerKm.toLocaleString('ru-RU')} км`,
+            nextDate: '—'
+          });
+        }
+        if (lastWinter) {
+          const winterOdo = parseFloat(lastWinter.odometer) || 0;
+          const winterKm = currentOdo > winterOdo ? currentOdo - winterOdo : 0;
+          const brand = lastWinter.newTire?.brand || '';
+          const size  = lastWinter.newTire?.size  || '';
+          const label = 'Зимняя' + (brand ? ` • ${brand}` : '') + (size ? ` • ${size}` : '');
+          tireRows.push({
+            name: label,
+            status: 'ok',
+            lastOdo: fmtOdo(lastWinter.odometer),
+            lastDate: fmtDate(lastWinter.date),
+            nextOdo: `пробег: ${winterKm.toLocaleString('ru-RU')} км`,
+            nextDate: '—'
+          });
+        }
+        html += section('Резина', 'circle', tireRows);
+      }
+
+      // ── 5. Insurance ─────────────────────────────────────────
+      const insuranceExpenses = (state.expenses || [])
+        .filter(e => e.carId === carId && !e.deletedAt && (
+          e.categoryId === 'cat-insurance' ||
+          e.category === 'insurance' ||
+          e.category === 'ОСАГО / КАСКО'
+        ))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      {
+        const insRows = insuranceExpenses.slice(0, 3).map(exp => {
+          const subName = exp.subcategory || exp.subCategory || '';
+          const label = subName || 'Страховка';
+          // expiry: if stored on expense use it, else +12 months from purchase date
+          const expiryDate = exp.validUntil
+            ? exp.validUntil
+            : (() => { const d = new Date(exp.date); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
+          const days = daysUntil(expiryDate);
+          let status = 'ok';
+          if (days !== null && days < 0) status = 'overdue';
+          else if (days !== null && days <= 30) status = 'soon';
+          let expiryHtml = fmtDate(expiryDate);
+          if (status === 'overdue') expiryHtml = `<span style="color:#FF3B30;">истекла ${Math.abs(days)} дн. назад</span>`;
+          else if (status === 'soon') expiryHtml = `<span style="color:#FF9500;">через ${days} дн.</span>`;
+          return {
+            name: label,
+            status,
+            lastOdo: '—',
+            lastDate: fmtDate(exp.date),
+            nextOdo: '—',
+            nextDate: expiryHtml
+          };
+        });
+
+        const insSection = `
+          <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+            <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+              <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
+              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);">Страховка</span>
+            </div>
+            ${insRows.length > 0
+              ? insRows.map(r => `
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--space-sm);align-items:center;padding:var(--space-sm) 0;border-bottom:0.5px solid var(--separator);">
+                  <div style="font-size:var(--font-size-footnote);color:var(--text);display:flex;align-items:center;">${statusDot(r.status)}${r.name}</div>
+                  <div style="text-align:right;">
+                    <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">оформлена</div>
+                    <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);">${r.lastDate}</div>
+                    <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-top:2px;">истекает</div>
+                    <div style="font-size:var(--font-size-footnote);font-weight:600;">${r.nextDate}</div>
+                  </div>
+                </div>`).join('')
+              : '<div style="color:var(--text-tertiary);font-size:var(--font-size-footnote);padding:var(--space-sm) 0;">Нет записей о страховке</div>'
+            }
+          </div>`;
+        html += insSection;
+      }
+
+      content.innerHTML = html;
+      if (typeof lucide !== 'undefined') lucide.createIcons({ attrs: { 'stroke-width': 2 } });
     }
 
     // Reminders functions

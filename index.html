@@ -56,6 +56,40 @@
     <!-- Records rendered dynamically -->
   </section>
 
+  <!-- Car Passport Screen -->
+  <section id="screen-car-passport" class="view">
+    <div class="ios-navbar">
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-garage" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title" id="passport-car-name">Паспорт</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div id="passport-content" style="padding: 0 var(--space-lg) var(--space-xl);">
+      <!-- Rendered dynamically -->
+    </div>
+  </section>
+
+  <!-- Car Analytics Screen (stub) -->
+  <section id="screen-car-analytics" class="view">
+    <div class="ios-navbar">
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-garage" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Аналитика</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-xl);gap:var(--space-md);min-height:60vh;text-align:center;">
+      <i data-lucide="bar-chart-2" style="width:56px;height:56px;color:var(--text-tertiary);"></i>
+      <div style="font-size:var(--font-size-title-2);font-weight:600;color:var(--text);">Аналитика</div>
+      <div style="color:var(--text-secondary);font-size:var(--font-size-body);">Раздел в разработке</div>
+    </div>
+  </section>
+
   <!-- Garage View -->
   <section id="screen-garage" class="view">
     <div class="ios-navbar">
