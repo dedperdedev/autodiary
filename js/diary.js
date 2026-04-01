@@ -13,7 +13,7 @@ const Diary = {
   initFilters() {
     const saved = localStorage.getItem('diaryCarFilter');
     const filters = {
-      timePeriod: 'week', // week, month, year, all
+      timePeriod: 'month', // month, quarter, year, all
       category: 'all',
       carId: saved || '__all__'
     };
@@ -65,12 +65,12 @@ const Diary = {
       const now = new Date();
       filtered = filtered.filter(e => {
         const expDate = new Date(e.date);
-        if (filters.timePeriod === 'week') {
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return expDate >= weekAgo;
-        } else if (filters.timePeriod === 'month') {
+        if (filters.timePeriod === 'month') {
           const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           return expDate >= monthAgo;
+        } else if (filters.timePeriod === 'quarter') {
+          const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          return expDate >= quarterAgo;
         } else if (filters.timePeriod === 'year') {
           const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
           return expDate >= yearAgo;
@@ -97,12 +97,12 @@ const Diary = {
       filtered = filtered.filter(r => {
         if (!r.dueDate) return true;
         const due = new Date(r.dueDate);
-        if (filters.timePeriod === 'week') {
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return due >= weekAgo;
-        } else if (filters.timePeriod === 'month') {
+        if (filters.timePeriod === 'month') {
           const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           return due >= monthAgo;
+        } else if (filters.timePeriod === 'quarter') {
+          const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          return due >= quarterAgo;
         } else if (filters.timePeriod === 'year') {
           const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
           return due >= yearAgo;

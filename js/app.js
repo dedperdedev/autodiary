@@ -68,14 +68,14 @@
           <div class="ios-sheet-content">
             <div class="ios-grouped-list">
               <div class="ios-group">
-                <div class="ios-cell" data-select-period="week">
-                  <div class="ios-cell-content">
-                    <div class="ios-cell-title">Неделя</div>
-                  </div>
-                </div>
                 <div class="ios-cell" data-select-period="month">
                   <div class="ios-cell-content">
                     <div class="ios-cell-title">Месяц</div>
+                  </div>
+                </div>
+                <div class="ios-cell" data-select-period="quarter">
+                  <div class="ios-cell-content">
+                    <div class="ios-cell-title">Квартал</div>
                   </div>
                 </div>
                 <div class="ios-cell" data-select-period="year">
@@ -165,7 +165,7 @@
     // Initialize diary filters using Diary module
     let diaryFilters = typeof Diary !== 'undefined' && Diary.initFilters ? 
       Diary.initFilters() : {
-        timePeriod: 'week',
+        timePeriod: 'month',
         category: 'all',
         carId: '__all__'
       };
@@ -812,8 +812,8 @@
       const timeFilterBtns = container.querySelectorAll('.time-filter button');
       timeFilterBtns.forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim() === 
-          (diaryFilters.timePeriod === 'week' ? 'Неделя' : 
-           diaryFilters.timePeriod === 'month' ? 'Месяц' : 
+          (diaryFilters.timePeriod === 'month' ? 'Месяц' :
+           diaryFilters.timePeriod === 'quarter' ? 'Квартал' :
            diaryFilters.timePeriod === 'year' ? 'Год' : 'Все'));
       });
       
@@ -3764,7 +3764,7 @@
       if(timeBtn) {
         e.stopPropagation();
         const text = timeBtn.textContent.trim();
-        diaryFilters.timePeriod = text === 'Неделя' ? 'week' : text === 'Месяц' ? 'month' : text === 'Год' ? 'year' : 'all';
+        diaryFilters.timePeriod = text === 'Месяц' ? 'month' : text === 'Квартал' ? 'quarter' : text === 'Год' ? 'year' : 'all';
         renderDiary();
         return;
       }
