@@ -623,40 +623,24 @@
 
         trailingDiv.className = 'ios-cell-trailing';
         trailingDiv.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-              <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
-              <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
-            </div>
-            <button data-edit-car-details="${car.id}" title="Редактировать авто" style="background:var(--fill-tertiary,#f2f2f7);border:none;border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:5px;font-size:var(--font-size-caption-1);font-weight:500;">
-              <i data-lucide="pencil" style="width:13px;height:13px;"></i>
-              <span>Изменить</span>
-            </button>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
+            <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
           </div>
         `;
-        
+
+        carCell.style.cursor = 'pointer';
+        carCell.addEventListener('click', () => {
+          currentCarId = car.id;
+          renderCarPassport(car.id);
+          showView('screen-car-passport');
+        });
+
         carCell.appendChild(iconDiv);
         carCell.appendChild(contentDiv);
         carCell.appendChild(trailingDiv);
-        
+
         group.appendChild(carCell);
-        
-        // Quick action buttons (iOS style compact buttons)
-        const quickActions = document.createElement('div');
-        quickActions.className = 'car-quick-actions';
-        quickActions.dataset.ignoreClick = 'true';
-        quickActions.innerHTML = `
-          <button class="ios-button-compact ios-button-primary" data-goto="screen-car-passport" data-car-id="${car.id}" title="Паспорт авто">
-            <i data-lucide="book-open"></i>
-            <span>Паспорт</span>
-          </button>
-          <button class="ios-button-compact ios-button-accent" data-goto="screen-car-analytics" data-car-id="${car.id}" title="Аналитика">
-            <i data-lucide="bar-chart-2"></i>
-            <span>Аналитика</span>
-          </button>
-        `;
-        
-        group.appendChild(quickActions);
         groupedList.appendChild(group);
       });
       
