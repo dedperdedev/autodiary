@@ -1124,33 +1124,40 @@
     // Save car
     function saveCar(form){
       const inputs = form.querySelectorAll('input');
-      const brand = inputs[0]?.value?.trim();
-      const model = inputs[1]?.value?.trim();
-      const year = inputs[2]?.value?.trim();
-      
+      // input order: nickname(0), brand(1), model(2), year(3), engineVolume(4), plate(5), vin(6), notes(7), purchasePrice(8), purchaseDate(9)
+      const nickname = (form.querySelector('#car-nickname') || inputs[0])?.value?.trim() || '';
+      const brand = inputs[1]?.value?.trim();
+      const model = inputs[2]?.value?.trim();
+      const year = inputs[3]?.value?.trim();
+
       const selects = form.querySelectorAll('select');
       const fuelSelect = selects[0];
       const fuel = fuelSelect?.value?.trim() || '';
       const fuelValue = fuelSelect?.options[fuelSelect.selectedIndex]?.textContent || fuel;
-      
+
       if(!brand || !model || !year || !fuel){
         showToast('Заполните все обязательные поля');
         return false;
       }
-      
-      const allInputs = form.querySelectorAll('input');
-      const plate = allInputs[3]?.value?.trim() || '';
-      const vin = allInputs[4]?.value?.trim() || '';
-      const notes = allInputs[5]?.value?.trim() || '';
-      const purchasePrice = parseFloat(allInputs[6]?.value || 0);
+
+      const engineVolume = parseFloat((form.querySelector('#car-engine-volume') || inputs[4])?.value || 0) || null;
+      const driveTypeSelect = form.querySelector('#car-drive-type') || selects[1];
+      const driveType = driveTypeSelect?.value || '';
+      const plate = inputs[5]?.value?.trim() || '';
+      const vin = inputs[6]?.value?.trim() || '';
+      const notes = inputs[7]?.value?.trim() || '';
+      const purchasePrice = parseFloat(inputs[8]?.value || 0);
       const purchaseDate = form.querySelector('input[type="date"]')?.value || '';
-      
+
       const car = {
         id: editingCarId || Date.now().toString(),
+        nickname,
         brand,
         model,
         year: parseInt(year),
         fuel: fuelValue,
+        engineVolume,
+        driveType,
         plate,
         vin,
         notes,
@@ -1397,19 +1404,25 @@
       const form = document.querySelector('#screen-add-car');
       if(form) {
         const inputs = form.querySelectorAll('input');
-        if(inputs[0]) inputs[0].value = car.brand || '';
-        if(inputs[1]) inputs[1].value = car.model || '';
-        if(inputs[2]) inputs[2].value = car.year || '';
+        // input order: nickname(0), brand(1), model(2), year(3), engineVolume(4), plate(5), vin(6), notes(7), purchasePrice(8)
+        if(inputs[0]) inputs[0].value = car.nickname || '';
+        if(inputs[1]) inputs[1].value = car.brand || '';
+        if(inputs[2]) inputs[2].value = car.model || '';
+        if(inputs[3]) inputs[3].value = car.year || '';
         const fuelSelect = form.querySelector('select');
         if(fuelSelect) {
           const options = Array.from(fuelSelect.options);
           const fuelIndex = options.findIndex(opt => opt.textContent === car.fuel);
           if(fuelIndex >= 0) fuelSelect.selectedIndex = fuelIndex;
         }
-        if(inputs[3]) inputs[3].value = car.plate || '';
-        if(inputs[4]) inputs[4].value = car.vin || '';
-        if(inputs[5]) inputs[5].value = car.notes || '';
-        if(inputs[6]) inputs[6].value = car.purchasePrice || '';
+        const engineVolumeInput = form.querySelector('#car-engine-volume');
+        if(engineVolumeInput) engineVolumeInput.value = car.engineVolume || '';
+        const driveTypeSelect = form.querySelector('#car-drive-type');
+        if(driveTypeSelect) driveTypeSelect.value = car.driveType || '';
+        if(inputs[5]) inputs[5].value = car.plate || '';
+        if(inputs[6]) inputs[6].value = car.vin || '';
+        if(inputs[7]) inputs[7].value = car.notes || '';
+        if(inputs[8]) inputs[8].value = car.purchasePrice || '';
         const dateInput = form.querySelector('input[type="date"]');
         if(dateInput) dateInput.value = car.purchaseDate || '';
         

@@ -590,6 +590,10 @@
     </div>
     <div class="section">
       <div class="field">
+        <label>Название авто</label>
+        <input type="text" id="car-nickname" placeholder="Например: Моя машина">
+      </div>
+      <div class="field">
         <label>Марка *</label>
         <input type="text" placeholder="Введите марку">
       </div>
@@ -608,6 +612,23 @@
           <option>Дизель</option>
           <option>Газ-бензин</option>
           <option>Электричество</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Объём двигателя</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="car-engine-volume" placeholder="1.6" step="0.1" min="0" style="flex:1;">
+          <span style="color:var(--text-secondary);font-size:var(--font-size-footnote);">л</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Тип привода</label>
+        <select id="car-drive-type">
+          <option value="">Не указан</option>
+          <option value="FWD">FWD — Передний</option>
+          <option value="RWD">RWD — Задний</option>
+          <option value="AWD">AWD — Полный</option>
+          <option value="4WD">4WD — Подключаемый полный</option>
         </select>
       </div>
     </div>
