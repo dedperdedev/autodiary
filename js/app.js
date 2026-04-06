@@ -3131,7 +3131,8 @@
           <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-md);margin-bottom:var(--space-md);">
             <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
               <i data-lucide="${icon}" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
-              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);">${title}</span>
+              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);flex:1;">${title}</span>
+              ${arguments[3] || ''}
             </div>
             ${rowsHtml || '<div style="color:var(--text-tertiary);font-size:var(--font-size-footnote);padding:var(--space-sm) 0;">Нет данных</div>'}
           </div>`;
@@ -3283,7 +3284,8 @@
           };
         });
 
-        html += section('Обслуживание', 'wrench', unifiedRows);
+        const editMaintBtn = `<button data-goto="screen-car-details" data-car-id="${carId}" style="background:var(--fill-tertiary,#f2f2f7);border:none;border-radius:8px;padding:4px 10px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:4px;font-size:var(--font-size-caption-1);font-weight:500;"><i data-lucide="pencil" style="width:13px;height:13px;"></i><span>Изменить</span></button>`;
+        html += section('Обслуживание', 'wrench', unifiedRows, editMaintBtn);
       }
 
       // ── 3. Battery ────────────────────────────────────────────
