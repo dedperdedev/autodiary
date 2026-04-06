@@ -56,6 +56,172 @@
     <!-- Records rendered dynamically -->
   </section>
 
+  <!-- Emergency Guide Screen -->
+  <section id="screen-emergency-guide" class="view">
+    <div class="ios-navbar">
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-garage" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Гайд по экстренным ситуациям</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div style="padding: var(--space-md) var(--space-lg) var(--space-xl);">
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+          <i data-lucide="alert-triangle" style="width:18px;height:18px;color:#FF9500;flex-shrink:0;"></i>
+          <span style="font-size:var(--font-size-subheadline);font-weight:600;">Прокол колеса</span>
+        </div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.7;">
+          <li>Не тормозите резко — плавно сбросьте скорость</li>
+          <li>Держите руль двумя руками, не давайте увести авто в сторону</li>
+          <li>Включите аварийку и съедьте на обочину</li>
+          <li>Установите знак аварийной остановки (15 м в городе, 30 м на трассе)</li>
+          <li>Замените колесо или вызовите помощь</li>
+        </ol>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+          <i data-lucide="thermometer" style="width:18px;height:18px;color:#FF3B30;flex-shrink:0;"></i>
+          <span style="font-size:var(--font-size-subheadline);font-weight:600;">Перегрев двигателя</span>
+        </div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.7;">
+          <li>Выключите кондиционер, включите печку на максимум</li>
+          <li>Остановитесь в безопасном месте, заглушите двигатель</li>
+          <li>Не открывайте капот сразу — подождите 15–20 минут</li>
+          <li>Проверьте уровень охлаждающей жидкости когда остынет</li>
+          <li>Не заводите до устранения причины</li>
+        </ol>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+          <i data-lucide="zap-off" style="width:18px;height:18px;color:#FF9500;flex-shrink:0;"></i>
+          <span style="font-size:var(--font-size-subheadline);font-weight:600;">Разряженный аккумулятор</span>
+        </div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.7;">
+          <li>Найдите донора — авто с рабочим аккумулятором</li>
+          <li>Подключите красный провод: + донора → + вашего</li>
+          <li>Подключите чёрный провод: − донора → металл кузова вашего (не −АКБ)</li>
+          <li>Заведите донора, через 2–3 мин заводите своё авто</li>
+          <li>Снимайте провода в обратном порядке</li>
+        </ol>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+          <i data-lucide="flame" style="width:18px;height:18px;color:#FF3B30;flex-shrink:0;"></i>
+          <span style="font-size:var(--font-size-subheadline);font-weight:600;">Загорелся автомобиль</span>
+        </div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.7;">
+          <li>Немедленно остановитесь и выключите двигатель</li>
+          <li>Все пассажиры — покинуть авто, отойти на 50+ метров</li>
+          <li>Вызовите 101 (пожарная) и 102 (полиция)</li>
+          <li>Если возгорание небольшое — огнетушитель под капот снизу</li>
+          <li>Никогда не открывайте капот при сильном огне</li>
+        </ol>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+          <i data-lucide="droplets" style="width:18px;height:18px;color:#0A84FF;flex-shrink:0;"></i>
+          <span style="font-size:var(--font-size-subheadline);font-weight:600;">Отказали тормоза</span>
+        </div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.7;">
+          <li>Несколько раз быстро нажмите педаль тормоза (прокачка)</li>
+          <li>Переключитесь на пониженную передачу (торможение двигателем)</li>
+          <li>Используйте ручник плавно, без рывка</li>
+          <li>Ищите естественное препятствие для остановки (бордюр, кусты)</li>
+          <li>Включите аварийку, сигналите</li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SOS Screen -->
+  <section id="screen-sos" class="view">
+    <div class="ios-navbar">
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-garage" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title" style="color:#FF3B30;">SOS</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
+    </div>
+    <div style="padding: var(--space-md) var(--space-lg) var(--space-xl);">
+
+      <div style="text-align:center;padding:var(--space-lg) 0 var(--space-md);">
+        <div style="width:80px;height:80px;border-radius:50%;background:#FF3B30;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);">
+          <i data-lucide="alert-octagon" style="width:40px;height:40px;color:#fff;"></i>
+        </div>
+        <div style="font-size:var(--font-size-title-1);font-weight:700;color:#FF3B30;">Экстренная помощь</div>
+        <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);margin-top:var(--space-xs);">Быстрый доступ к службам помощи</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md);">
+        <a href="tel:101" style="text-decoration:none;">
+          <div style="background:#FF3B30;border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;">
+            <i data-lucide="flame" style="width:28px;height:28px;color:#fff;margin-bottom:var(--space-xs);"></i>
+            <div style="font-size:var(--font-size-title-2);font-weight:700;color:#fff;">101</div>
+            <div style="font-size:var(--font-size-caption-1);color:rgba(255,255,255,0.8);">Пожарная</div>
+          </div>
+        </a>
+        <a href="tel:102" style="text-decoration:none;">
+          <div style="background:#0A84FF;border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;">
+            <i data-lucide="shield" style="width:28px;height:28px;color:#fff;margin-bottom:var(--space-xs);"></i>
+            <div style="font-size:var(--font-size-title-2);font-weight:700;color:#fff;">102</div>
+            <div style="font-size:var(--font-size-caption-1);color:rgba(255,255,255,0.8);">Полиция</div>
+          </div>
+        </a>
+        <a href="tel:103" style="text-decoration:none;">
+          <div style="background:#34C759;border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;">
+            <i data-lucide="heart-pulse" style="width:28px;height:28px;color:#fff;margin-bottom:var(--space-xs);"></i>
+            <div style="font-size:var(--font-size-title-2);font-weight:700;color:#fff;">103</div>
+            <div style="font-size:var(--font-size-caption-1);color:rgba(255,255,255,0.8);">Скорая</div>
+          </div>
+        </a>
+        <a href="tel:112" style="text-decoration:none;">
+          <div style="background:#FF9500;border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;">
+            <i data-lucide="phone-call" style="width:28px;height:28px;color:#fff;margin-bottom:var(--space-xs);"></i>
+            <div style="font-size:var(--font-size-title-2);font-weight:700;color:#fff;">112</div>
+            <div style="font-size:var(--font-size-caption-1);color:rgba(255,255,255,0.8);">Единый</div>
+          </div>
+        </a>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="font-size:var(--font-size-subheadline);font-weight:600;margin-bottom:var(--space-sm);">Эвакуатор</div>
+        <a href="tel:0800300900" style="display:flex;align-items:center;gap:var(--space-md);text-decoration:none;padding:var(--space-sm) 0;">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--fill-secondary,#f2f2f7);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i data-lucide="truck" style="width:20px;height:20px;color:var(--primary);"></i>
+          </div>
+          <div>
+            <div style="font-size:var(--font-size-body);font-weight:600;color:var(--primary);">0800 300 900</div>
+            <div style="font-size:var(--font-size-caption-1);color:var(--text-secondary);">Дорожная помощь (бесплатно)</div>
+          </div>
+        </a>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);">
+        <div style="font-size:var(--font-size-subheadline);font-weight:600;margin-bottom:var(--space-sm);">Что делать при ДТП</div>
+        <ol style="margin:0;padding-left:var(--space-lg);font-size:var(--font-size-footnote);color:var(--text-secondary);line-height:1.8;">
+          <li>Остановитесь, включите аварийку</li>
+          <li>Установите знак (15 м / 30 м на трассе)</li>
+          <li>Вызовите полицию 102 и скорую 103 если есть пострадавшие</li>
+          <li>Не перемещайте авто до приезда полиции</li>
+          <li>Сфотографируйте место ДТП, повреждения, номера</li>
+          <li>Обменяйтесь данными с другим участником</li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
   <!-- Car Passport Screen -->
   <section id="screen-car-passport" class="view">
     <div class="ios-navbar">

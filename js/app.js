@@ -711,9 +711,24 @@
         <span>Добавить авто</span>
       `;
       
+      // Extra action buttons
+      const extraBtns = document.createElement('div');
+      extraBtns.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-md);';
+      extraBtns.innerHTML = `
+        <button class="ios-button" data-goto="screen-emergency-guide" style="background:var(--surface);color:var(--text);border:none;border-radius:var(--radius-lg);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-xs);font-size:var(--font-size-footnote);font-weight:500;cursor:pointer;">
+          <i data-lucide="book-open" style="width:22px;height:22px;color:#FF9500;"></i>
+          <span>Экстренный гайд</span>
+        </button>
+        <button class="ios-button" data-goto="screen-sos" style="background:#FF3B30;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--space-md);display:flex;flex-direction:column;align-items:center;gap:var(--space-xs);font-size:var(--font-size-footnote);font-weight:700;cursor:pointer;letter-spacing:1px;">
+          <i data-lucide="alert-octagon" style="width:22px;height:22px;color:#fff;"></i>
+          <span>SOS</span>
+        </button>
+      `;
+
       // Clear container and add content
       container.innerHTML = '';
       container.appendChild(groupedList);
+      container.appendChild(extraBtns);
       container.appendChild(addCarBtn);
 
       if (typeof lucide !== 'undefined') lucide.createIcons();
