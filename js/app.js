@@ -3339,8 +3339,8 @@
             ? (() => { const d = new Date(lastDateVal); d.setMonth(d.getMonth() + intervalMonths); return d; })()
             : null;
 
-          // Status
-          let status = hasData ? 'ok' : null;
+          // Status — no data = red (user needs to fill)
+          let status = hasData ? 'ok' : 'overdue';
           if (hasData) {
             const overdueKm = nextOdoVal !== null && currentOdo >= nextOdoVal;
             const overdueDate = nextDateVal !== null && new Date() >= nextDateVal;
