@@ -600,6 +600,7 @@
         const iconDiv = document.createElement('div');
         iconDiv.className = 'ios-cell-icon ios-cell-icon-car';
         iconDiv.innerHTML = '<i data-lucide="car"></i>';
+        if (car.color) iconDiv.style.background = car.color;
         
         // Car content
         const contentDiv = document.createElement('div');
@@ -1121,6 +1122,32 @@
       });
     }
 
+    // Initialize car color palette picker
+    const CAR_COLORS = [
+      '#0A84FF', '#30D158', '#FF9F0A', '#FF453A', '#BF5AF2',
+      '#FF375F', '#5E5CE6', '#AC8E68', '#636366', '#1C1C1E',
+      '#FFFFFF', '#F5F5F0'
+    ];
+    function initCarColorPalette(selectedColor) {
+      const palette = document.getElementById('car-color-palette');
+      const hidden = document.getElementById('car-color');
+      if (!palette || !hidden) return;
+      const current = selectedColor || hidden.value || '#0A84FF';
+      hidden.value = current;
+      palette.innerHTML = '';
+      CAR_COLORS.forEach(c => {
+        const swatch = document.createElement('div');
+        const isSelected = c.toLowerCase() === current.toLowerCase();
+        swatch.style.cssText = `width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${isSelected ? 'var(--accent)' : (c === '#FFFFFF' || c === '#F5F5F0' ? '#ccc' : 'transparent')};box-shadow:${isSelected ? '0 0 0 2px var(--accent)' : 'none'};flex-shrink:0;transition:transform 0.15s;`;
+        swatch.title = c;
+        swatch.addEventListener('click', () => {
+          hidden.value = c;
+          initCarColorPalette(c);
+        });
+        palette.appendChild(swatch);
+      });
+    }
+
     // Save car
     function saveCar(form){
       const inputs = form.querySelectorAll('input');
@@ -1143,6 +1170,8 @@
       const engineVolume = parseFloat((form.querySelector('#car-engine-volume') || inputs[4])?.value || 0) || null;
       const driveTypeSelect = form.querySelector('#car-drive-type') || selects[1];
       const driveType = driveTypeSelect?.value || '';
+      const colorInput = form.querySelector('#car-color');
+      const color = colorInput?.value || '#0A84FF';
       const plate = inputs[5]?.value?.trim() || '';
       const vin = inputs[6]?.value?.trim() || '';
       const notes = inputs[7]?.value?.trim() || '';
@@ -1158,6 +1187,7 @@
         fuel: fuelValue,
         engineVolume,
         driveType,
+        color,
         plate,
         vin,
         notes,
@@ -1419,6 +1449,7 @@
         if(engineVolumeInput) engineVolumeInput.value = car.engineVolume || '';
         const driveTypeSelect = form.querySelector('#car-drive-type');
         if(driveTypeSelect) driveTypeSelect.value = car.driveType || '';
+        initCarColorPalette(car.color || '#0A84FF');
         if(inputs[5]) inputs[5].value = car.plate || '';
         if(inputs[6]) inputs[6].value = car.vin || '';
         if(inputs[7]) inputs[7].value = car.notes || '';
@@ -3895,12 +3926,12 @@
           if(form) {
             const inputs = form.querySelectorAll('input');
             inputs.forEach(input => {
-              if(input.type !== 'date') input.value = '';
+              if(input.type !== 'date' && input.type !== 'hidden') input.value = '';
             });
             const dateInput = form.querySelector('input[type="date"]');
             if(dateInput) dateInput.value = '';
-            const fuelSelect = form.querySelector('select');
-            if(fuelSelect) fuelSelect.selectedIndex = 0;
+            form.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+            if(!editingCarId) initCarColorPalette('#0A84FF');
           }
         } else if(id === 'screen-add-reminder') {
           const titleEl = document.getElementById('reminder-title');
