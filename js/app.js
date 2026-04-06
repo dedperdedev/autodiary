@@ -621,11 +621,66 @@
           ? Math.max(...allOdoEntries.map(e => parseFloat(e.odometer) || 0))
           : (car.currentOdometer || 0);
 
+        // Compute overall maintenance status for this car
+        const MAINT_KEYS = [
+          { key: 'oil', intervalKm: 10000, intervalMonths: 12 },
+          { key: 'oilFilter', intervalKm: 10000, intervalMonths: 12 },
+          { key: 'airFilter', intervalKm: 30000, intervalMonths: 24 },
+          { key: 'cabinFilter', intervalKm: 20000, intervalMonths: 12 },
+          { key: 'fuelFilter', intervalKm: 60000, intervalMonths: 36 },
+          { key: 'brakePadsFront', intervalKm: 40000, intervalMonths: 36 },
+          { key: 'brakePadsRear', intervalKm: 60000, intervalMonths: 48 },
+          { key: 'brakeDiscsFront', intervalKm: 80000, intervalMonths: 60 },
+          { key: 'brakeDiscsRear', intervalKm: 100000, intervalMonths: 72 },
+          { key: 'brakeFluid', intervalKm: 60000, intervalMonths: 24 },
+          { key: 'transmissionOil', intervalKm: 60000, intervalMonths: 60 },
+          { key: 'sparkPlugs', intervalKm: 60000, intervalMonths: 60 },
+          { key: 'coolant', intervalKm: 60000, intervalMonths: 24 },
+          { key: 'powerSteeringOil', intervalKm: 60000, intervalMonths: 36 },
+          { key: 'timingBelt', intervalKm: 100000, intervalMonths: 60 },
+        ];
+        const carSvcRecs = (state.service || []).filter(s => s.carId === car.id && s.type !== 'wheels' && !s.deletedAt);
+        const carMaint = state.maintenance[car.id] || {};
+        const now = new Date();
+        let overallStatus = 'ok'; // ok, soon, overdue
+        for (const item of MAINT_KEYS) {
+          const lastRec = carSvcRecs.filter(s => s.type === item.key)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          let lastOdo = 0, lastDate = null;
+          if (lastRec) { lastOdo = parseFloat(lastRec.odometer) || 0; lastDate = lastRec.date; }
+          else if (carMaint[item.key]) { lastOdo = carMaint[item.key].odometer || 0; lastDate = carMaint[item.key].date; }
+          else if (car.servicePlan) {
+            const pi = car.servicePlan.find(p => p.typeKey === item.key);
+            if (pi) { lastOdo = parseFloat(pi.lastServiceOdometer) || 0; lastDate = pi.lastServiceDate; }
+          }
+          if (!lastDate && !lastOdo) continue;
+          const nextOdo = lastOdo > 0 && item.intervalKm ? lastOdo + item.intervalKm : null;
+          const nextDate = lastDate && item.intervalMonths ? (() => { const d = new Date(lastDate); d.setMonth(d.getMonth() + item.intervalMonths); return d; })() : null;
+          const soonKmThresh = item.intervalKm ? Math.round(item.intervalKm * 0.1) : 0;
+          const soonDaysThresh = 14;
+          if ((nextOdo && carOdometer >= nextOdo) || (nextDate && now >= nextDate)) {
+            overallStatus = 'overdue'; break;
+          }
+          if (overallStatus !== 'soon') {
+            if ((nextOdo && carOdometer >= nextOdo - soonKmThresh) || (nextDate && now >= new Date(nextDate.getTime() - soonDaysThresh * 86400000))) {
+              overallStatus = 'soon';
+            }
+          }
+        }
+        const statusDotColor = overallStatus === 'overdue' ? '#FF3B30' : overallStatus === 'soon' ? '#FF9500' : '#34C759';
+        const statusDotTitle = overallStatus === 'overdue' ? 'Есть просроченные работы' : overallStatus === 'soon' ? 'Скоро потребуется обслуживание' : 'Всё в порядке';
+
         trailingDiv.className = 'ios-cell-trailing';
         trailingDiv.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-            <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
-            <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+              <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
+              <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
+            </div>
+            <span title="${statusDotTitle}" style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-caption-1);color:var(--text-tertiary);">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>
+              <span style="color:${statusDotColor};font-weight:500;">${overallStatus === 'overdue' ? 'Просрочено' : overallStatus === 'soon' ? 'Скоро' : 'ТО ок'}</span>
+            </span>
           </div>
         `;
 
