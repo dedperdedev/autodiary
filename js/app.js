@@ -3215,13 +3215,44 @@
           </div>`;
       }
 
+      // ── Compute insurance info early (needed for header) ────────
+      const insuranceExpenses = (state.expenses || [])
+        .filter(e => e.carId === carId && !e.deletedAt && (
+          e.categoryId === 'cat-insurance' ||
+          e.category === 'insurance' ||
+          e.category === 'ОСАГО / КАСКО'
+        ))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      let insLabel = '—', insStatus = null, insColor = 'var(--text-secondary)';
+      if (insuranceExpenses.length > 0) {
+        const lastIns = insuranceExpenses[0];
+        const expiryDate = lastIns.validUntil
+          ? lastIns.validUntil
+          : (() => { const d = new Date(lastIns.date); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
+        const days = daysUntil(expiryDate);
+        insLabel = fmtDate(expiryDate);
+        if (days !== null && days < 0) { insStatus = 'overdue'; insColor = '#FF3B30'; insLabel = `истекла ${Math.abs(days)} дн. назад`; }
+        else if (days !== null && days <= 30) { insStatus = 'soon'; insColor = '#FF9500'; insLabel = `через ${days} дн. (${fmtDate(expiryDate)})`; }
+        else { insStatus = 'ok'; insColor = '#34C759'; }
+      }
+
       let html = '';
 
-      // ── 1. Current odometer header ────────────────────────────
+      // ── 1. Current odometer + insurance header ────────────────
       html += `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) 0 var(--space-sm);">
-          <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Общий пробег</div>
-          <div style="font-size:var(--font-size-title-2);font-weight:700;color:var(--text);">${currentOdo > 0 ? currentOdo.toLocaleString('ru-RU') + ' км' : '—'}</div>
+        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xs);">
+          <div>
+            <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Пробег</div>
+            <div style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${currentOdo > 0 ? currentOdo.toLocaleString('ru-RU') + ' км' : '—'}</div>
+          </div>
+          <div style="border-left:0.5px solid var(--separator);padding-left:var(--space-md);">
+            <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Страховка</div>
+            <div style="font-size:var(--font-size-footnote);font-weight:600;color:${insColor};display:flex;align-items:center;gap:4px;">
+              ${insStatus ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${insColor};flex-shrink:0;"></span>` : ''}
+              ${insLabel}
+            </div>
+          </div>
         </div>`;
 
       // ── 2. Maintenance plan (ТО) ──────────────────────────────
@@ -3348,62 +3379,6 @@
         html += section('Резина', 'circle', tireRows);
       }
 
-      // ── 5. Insurance ─────────────────────────────────────────
-      const insuranceExpenses = (state.expenses || [])
-        .filter(e => e.carId === carId && !e.deletedAt && (
-          e.categoryId === 'cat-insurance' ||
-          e.category === 'insurance' ||
-          e.category === 'ОСАГО / КАСКО'
-        ))
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      {
-        const insRows = insuranceExpenses.slice(0, 3).map(exp => {
-          const subName = exp.subcategory || exp.subCategory || '';
-          const label = subName || 'Страховка';
-          // expiry: if stored on expense use it, else +12 months from purchase date
-          const expiryDate = exp.validUntil
-            ? exp.validUntil
-            : (() => { const d = new Date(exp.date); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
-          const days = daysUntil(expiryDate);
-          let status = 'ok';
-          if (days !== null && days < 0) status = 'overdue';
-          else if (days !== null && days <= 30) status = 'soon';
-          let expiryHtml = fmtDate(expiryDate);
-          if (status === 'overdue') expiryHtml = `<span style="color:#FF3B30;">истекла ${Math.abs(days)} дн. назад</span>`;
-          else if (status === 'soon') expiryHtml = `<span style="color:#FF9500;">через ${days} дн.</span>`;
-          return {
-            name: label,
-            status,
-            lastOdo: '—',
-            lastDate: fmtDate(exp.date),
-            nextOdo: '—',
-            nextDate: expiryHtml
-          };
-        });
-
-        const insSection = `
-          <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
-            <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
-              <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
-              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);">Страховка</span>
-            </div>
-            ${insRows.length > 0
-              ? insRows.map(r => `
-                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--space-sm);align-items:center;padding:var(--space-sm) 0;border-bottom:0.5px solid var(--separator);">
-                  <div style="font-size:var(--font-size-footnote);color:var(--text);display:flex;align-items:center;">${statusDot(r.status)}${r.name}</div>
-                  <div style="text-align:right;">
-                    <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">оформлена</div>
-                    <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);">${r.lastDate}</div>
-                    <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-top:2px;">истекает</div>
-                    <div style="font-size:var(--font-size-footnote);font-weight:600;">${r.nextDate}</div>
-                  </div>
-                </div>`).join('')
-              : '<div style="color:var(--text-tertiary);font-size:var(--font-size-footnote);padding:var(--space-sm) 0;">Нет записей о страховке</div>'
-            }
-          </div>`;
-        html += insSection;
-      }
 
       content.innerHTML = html;
       if (typeof lucide !== 'undefined') lucide.createIcons({ attrs: { 'stroke-width': 2 } });
