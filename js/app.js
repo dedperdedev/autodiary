@@ -673,7 +673,8 @@
       container.innerHTML = '';
       container.appendChild(groupedList);
       container.appendChild(addCarBtn);
-      
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
       console.log('Garage rendered, cars:', state.cars.length, 'button added:', !!addCarBtn);
     }
 
