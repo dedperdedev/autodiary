@@ -1172,10 +1172,12 @@
       const driveType = driveTypeSelect?.value || '';
       const colorInput = form.querySelector('#car-color');
       const color = colorInput?.value || '#0A84FF';
-      const plate = inputs[5]?.value?.trim() || '';
-      const vin = inputs[6]?.value?.trim() || '';
-      const notes = inputs[7]?.value?.trim() || '';
-      const purchasePrice = parseFloat(inputs[8]?.value || 0);
+      const currentOdometer = parseFloat(form.querySelector('#car-odometer')?.value || 0) || 0;
+      // input order after new fields: nickname(0), brand(1), model(2), year(3), engineVolume(4), odometer(5), plate(6), vin(7), notes(8), purchasePrice(9)
+      const plate = inputs[6]?.value?.trim() || '';
+      const vin = inputs[7]?.value?.trim() || '';
+      const notes = inputs[8]?.value?.trim() || '';
+      const purchasePrice = parseFloat(inputs[9]?.value || 0);
       const purchaseDate = form.querySelector('input[type="date"]')?.value || '';
 
       const car = {
@@ -1188,6 +1190,7 @@
         engineVolume,
         driveType,
         color,
+        currentOdometer,
         plate,
         vin,
         notes,
@@ -1450,10 +1453,12 @@
         const driveTypeSelect = form.querySelector('#car-drive-type');
         if(driveTypeSelect) driveTypeSelect.value = car.driveType || '';
         initCarColorPalette(car.color || '#0A84FF');
-        if(inputs[5]) inputs[5].value = car.plate || '';
-        if(inputs[6]) inputs[6].value = car.vin || '';
-        if(inputs[7]) inputs[7].value = car.notes || '';
-        if(inputs[8]) inputs[8].value = car.purchasePrice || '';
+        const odoInput = form.querySelector('#car-odometer');
+        if(odoInput) odoInput.value = car.currentOdometer || '';
+        if(inputs[6]) inputs[6].value = car.plate || '';
+        if(inputs[7]) inputs[7].value = car.vin || '';
+        if(inputs[8]) inputs[8].value = car.notes || '';
+        if(inputs[9]) inputs[9].value = car.purchasePrice || '';
         const dateInput = form.querySelector('input[type="date"]');
         if(dateInput) dateInput.value = car.purchaseDate || '';
         
