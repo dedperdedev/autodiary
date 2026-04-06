@@ -623,84 +623,20 @@
 
         trailingDiv.className = 'ios-cell-trailing';
         trailingDiv.innerHTML = `
-          <div class="car-metrics-compact" style="align-items:flex-end;">
-            <div class="car-metric-item" style="flex-direction:column;align-items:flex-end;gap:2px;">
-              <span class="car-metric-value" style="font-size:var(--font-size-title-3);font-weight:700;">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
-              <span class="car-metric-unit">км</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+              <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
+              <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
             </div>
+            <button data-edit-car-details="${car.id}" title="Редактировать авто" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+            </button>
           </div>
         `;
-        
-        // Swipe actions (hidden by default)
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'ios-cell-actions';
-        actionsDiv.style.display = 'none';
-        actionsDiv.innerHTML = `
-          <button data-edit-car="${car.id}" title="Редактировать" class="ios-cell-action-btn">
-            <i data-lucide="pencil"></i>
-          </button>
-          <button data-delete-car="${car.id}" title="Удалить" class="ios-cell-action-btn ios-cell-action-btn-danger">
-            <i data-lucide="trash-2"></i>
-          </button>
-        `;
-        
-        trailingDiv.appendChild(actionsDiv);
         
         carCell.appendChild(iconDiv);
         carCell.appendChild(contentDiv);
         carCell.appendChild(trailingDiv);
-        
-        // Add swipe handler for edit/delete
-        let startX = 0;
-        let currentX = 0;
-        let isSwiping = false;
-        
-        carCell.addEventListener('touchstart', (e) => {
-          startX = e.touches[0].clientX;
-          isSwiping = true;
-        });
-        
-        carCell.addEventListener('touchmove', (e) => {
-          if (!isSwiping) return;
-          currentX = e.touches[0].clientX - startX;
-          if (currentX < -50) {
-            carCell.style.transform = `translateX(${currentX}px)`;
-            actionsDiv.style.display = 'flex';
-          } else if (currentX > 0) {
-            carCell.style.transform = 'translateX(0)';
-            actionsDiv.style.display = 'none';
-          }
-        });
-        
-        carCell.addEventListener('touchend', () => {
-          if (currentX < -100) {
-            carCell.style.transform = 'translateX(-80px)';
-            actionsDiv.style.display = 'flex';
-          } else {
-            carCell.style.transform = 'translateX(0)';
-            actionsDiv.style.display = 'none';
-          }
-          isSwiping = false;
-        });
-        
-        // Click handler - open car details
-        carCell.addEventListener('click', (e) => {
-          const isActionBtn = e.target.closest('.ios-cell-action-btn');
-          if (isActionBtn) {
-            e.stopPropagation();
-            return;
-          }
-          if (actionsDiv.style.display === 'flex') {
-            carCell.style.transform = 'translateX(0)';
-            actionsDiv.style.display = 'none';
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-          }
-          // Open car details
-          loadCarDetails(car.id);
-          showView('screen-car-details');
-        });
         
         group.appendChild(carCell);
         
@@ -4096,6 +4032,16 @@
         return;
       }
       
+      const editCarDetailsBtn = e.target.closest('[data-edit-car-details]');
+      if(editCarDetailsBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const cid = editCarDetailsBtn.dataset.editCarDetails;
+        loadCarDetails(cid);
+        showView('screen-car-details');
+        return;
+      }
+
       const editCarBtn = e.target.closest('[data-edit-car]');
       if(editCarBtn) {
         e.preventDefault();
