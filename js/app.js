@@ -643,6 +643,7 @@
         const carMaint = state.maintenance[car.id] || {};
         const now = new Date();
         let overallStatus = 'ok'; // ok, soon, overdue
+        let filledCount = 0;
         for (const item of MAINT_KEYS) {
           const lastRec = carSvcRecs.filter(s => s.type === item.key)
             .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -654,21 +655,22 @@
             if (pi) { lastOdo = parseFloat(pi.lastServiceOdometer) || 0; lastDate = pi.lastServiceDate; }
           }
           if (!lastDate && !lastOdo) continue;
+          filledCount++;
           const nextOdo = lastOdo > 0 && item.intervalKm ? lastOdo + item.intervalKm : null;
           const nextDate = lastDate && item.intervalMonths ? (() => { const d = new Date(lastDate); d.setMonth(d.getMonth() + item.intervalMonths); return d; })() : null;
           const soonKmThresh = item.intervalKm ? Math.round(item.intervalKm * 0.1) : 0;
-          const soonDaysThresh = 14;
           if ((nextOdo && carOdometer >= nextOdo) || (nextDate && now >= nextDate)) {
             overallStatus = 'overdue'; break;
           }
           if (overallStatus !== 'soon') {
-            if ((nextOdo && carOdometer >= nextOdo - soonKmThresh) || (nextDate && now >= new Date(nextDate.getTime() - soonDaysThresh * 86400000))) {
+            if ((nextOdo && carOdometer >= nextOdo - soonKmThresh) || (nextDate && now >= new Date(nextDate.getTime() - 14 * 86400000))) {
               overallStatus = 'soon';
             }
           }
         }
+        if (filledCount === 0) overallStatus = 'overdue';
         const statusDotColor = overallStatus === 'overdue' ? '#FF3B30' : overallStatus === 'soon' ? '#FF9500' : '#34C759';
-        const statusDotTitle = overallStatus === 'overdue' ? 'Есть просроченные работы' : overallStatus === 'soon' ? 'Скоро потребуется обслуживание' : 'Всё в порядке';
+        const statusDotTitle = overallStatus === 'overdue' ? (filledCount === 0 ? 'Регламент не заполнен' : 'Есть просроченные работы') : overallStatus === 'soon' ? 'Скоро потребуется обслуживание' : 'Всё в порядке';
 
         trailingDiv.className = 'ios-cell-trailing';
         trailingDiv.innerHTML = `
@@ -677,9 +679,9 @@
               <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
               <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
             </div>
-            <span title="${statusDotTitle}" style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-caption-1);color:var(--text-tertiary);">
+            <span title="${statusDotTitle}" style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-caption-1);">
               <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>
-              <span style="color:${statusDotColor};font-weight:500;">${overallStatus === 'overdue' ? 'Просрочено' : overallStatus === 'soon' ? 'Скоро' : 'ТО ок'}</span>
+              <span style="color:${statusDotColor};font-weight:500;">${overallStatus === 'overdue' ? 'Просрочено' : overallStatus === 'soon' ? 'Скоро' : ''}</span>
             </span>
           </div>
         `;
