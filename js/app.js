@@ -3255,95 +3255,163 @@
           </div>
         </div>`;
 
-      // ── 2. Maintenance plan (ТО) ──────────────────────────────
-      // Ensure plan exists (auto-apply basic template if needed)
-      if (typeof MaintenancePlan !== 'undefined') {
-        if (!car.servicePlan || car.servicePlan.length === 0) {
-          MaintenancePlan.applyTemplate(car, 'basic', state);
-          saveAppState();
-        }
-        const planItems = MaintenancePlan.computePlanStatus(car, new Date(), currentOdo, state);
-        const rows = planItems.map(item => {
-          let status = item.status || 'ok';
-          let nextOdo = '—', nextDate = '—';
-          if (item.nextDueOdometer) {
-            const rem = item.nextDueOdometer - currentOdo;
-            nextOdo = fmtOdo(item.nextDueOdometer);
-            if (status === 'overdue') nextOdo = `<span style="color:#FF3B30;">${rem < 0 ? 'просрочено ' + Math.abs(rem).toLocaleString('ru-RU') + ' км' : fmtOdo(item.nextDueOdometer)}</span>`;
-            else if (status === 'soon') nextOdo = `<span style="color:#FF9500;">через ${rem.toLocaleString('ru-RU')} км</span>`;
+      // ── 2. Unified maintenance list ───────────────────────────
+      {
+        // Master ordered list with default intervals
+        const MAINT_LIST = [
+          { key: 'oil',              label: 'Замена масла',                      planKey: 'engineOil',      intervalKm: 10000, intervalMonths: 12 },
+          { key: 'oilFilter',        label: 'Замена масляного фильтра',           planKey: 'oilFilter',      intervalKm: 10000, intervalMonths: 12 },
+          { key: 'airFilter',        label: 'Замена воздушного фильтра',          planKey: 'airFilter',      intervalKm: 30000, intervalMonths: 24 },
+          { key: 'cabinFilter',      label: 'Замена салонного фильтра',           planKey: 'cabinFilter',    intervalKm: 20000, intervalMonths: 12 },
+          { key: 'fuelFilter',       label: 'Замена топливного фильтра',          planKey: 'fuelFilter',     intervalKm: 60000, intervalMonths: 36 },
+          { key: 'brakePadsFront',   label: 'Замена передних тормозных колодок',  planKey: 'brakePadsFront', intervalKm: 40000, intervalMonths: 36 },
+          { key: 'brakePadsRear',    label: 'Замена задних тормозных колодок',    planKey: 'brakePadsRear',  intervalKm: 60000, intervalMonths: 48 },
+          { key: 'brakeDiscsFront',  label: 'Замена передних тормозных дисков',   planKey: 'brakeDiscsFront',intervalKm: 80000, intervalMonths: 60 },
+          { key: 'brakeDiscsRear',   label: 'Замена задних тормозных дисков',     planKey: 'brakeDiscsRear', intervalKm:100000, intervalMonths: 72 },
+          { key: 'brakeFluid',       label: 'Тормозная жидкость',                 planKey: 'brakeFluid',     intervalKm: 60000, intervalMonths: 24 },
+          { key: 'transmissionOil',  label: 'Масло АКПП',                         planKey: 'transmissionOil',intervalKm: 60000, intervalMonths: 60 },
+          { key: 'sparkPlugs',       label: 'Свечи зажигания/Накаливания',        planKey: 'sparkPlugs',     intervalKm: 60000, intervalMonths: 60 },
+          { key: 'coolant',          label: 'Охлаждающая жидкость',               planKey: 'coolant',        intervalKm: 60000, intervalMonths: 24 },
+          { key: 'powerSteeringOil', label: 'Замена жидкости ГУР',                planKey: 'powerSteeringOil',intervalKm:60000, intervalMonths: 36 },
+          { key: 'timingBelt',       label: 'Ремень/Цепь ГРМ',                   planKey: 'timingBelt',     intervalKm:100000, intervalMonths: 60 },
+          { key: 'frontDiffOil',     label: 'Масло переднего редуктора',           planKey: null,             intervalKm: 80000, intervalMonths: 48 },
+          { key: 'rearDiffOil',      label: 'Масло заднего редуктора',             planKey: null,             intervalKm: 80000, intervalMonths: 48 },
+          { key: 'transferCaseOil',  label: 'Масло раздаточной коробки',           planKey: null,             intervalKm: 80000, intervalMonths: 48 },
+        ];
+
+        const svcRecords = (state.service || []).filter(s => s.carId === carId && s.type !== 'wheels' && !s.deletedAt);
+        const carIntervals = state.intervals[carId] || {};
+
+        const unifiedRows = MAINT_LIST.map(item => {
+          // Get interval: prefer car's custom interval, then plan item, then default
+          let intervalKm = item.intervalKm;
+          let intervalMonths = item.intervalMonths;
+          if (carIntervals[item.key]) {
+            intervalKm = carIntervals[item.key].intervalKm || intervalKm;
+            intervalMonths = carIntervals[item.key].intervalMonths || intervalMonths;
           }
-          if (item.nextDueDate) {
-            const days = daysUntil(item.nextDueDate);
-            nextDate = fmtDate(item.nextDueDate);
-            if (status === 'overdue' && days !== null && days < 0) nextDate = `<span style="color:#FF3B30;">${Math.abs(days)} дн. назад</span>`;
-            else if (status === 'soon' && days !== null) nextDate = `<span style="color:#FF9500;">через ${days} дн.</span>`;
+          if (item.planKey && car.servicePlan) {
+            const planItem = car.servicePlan.find(p => p.typeKey === item.planKey);
+            if (planItem) {
+              if (planItem.intervalKm) intervalKm = planItem.intervalKm;
+              if (planItem.intervalMonths) intervalMonths = planItem.intervalMonths;
+            }
           }
+
+          // Last service record
+          const lastRec = svcRecords.filter(s => s.type === item.key)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+          // Also check servicePlan for last service info (may have been recorded via plan UI)
+          let lastOdoVal = lastRec ? parseFloat(lastRec.odometer) || 0 : 0;
+          let lastDateVal = lastRec ? lastRec.date : null;
+          if (item.planKey && car.servicePlan) {
+            const planItem = car.servicePlan.find(p => p.typeKey === item.planKey);
+            if (planItem && planItem.lastServiceDate) {
+              // Use the more recent of the two
+              const planDate = new Date(planItem.lastServiceDate);
+              const recDate = lastRec ? new Date(lastRec.date) : new Date(0);
+              if (planDate >= recDate) {
+                lastOdoVal = parseFloat(planItem.lastServiceOdometer) || lastOdoVal;
+                lastDateVal = planItem.lastServiceDate;
+              }
+            }
+          }
+
+          const hasData = lastDateVal !== null || lastOdoVal > 0;
+
+          // Compute next due
+          const nextOdoVal = hasData && lastOdoVal > 0 && intervalKm ? lastOdoVal + intervalKm : null;
+          const nextDateVal = hasData && lastDateVal && intervalMonths
+            ? (() => { const d = new Date(lastDateVal); d.setMonth(d.getMonth() + intervalMonths); return d; })()
+            : null;
+
+          // Status
+          let status = hasData ? 'ok' : null;
+          if (hasData) {
+            const overdueKm = nextOdoVal !== null && currentOdo >= nextOdoVal;
+            const overdueDate = nextDateVal !== null && new Date() >= nextDateVal;
+            const soonKm = nextOdoVal !== null && !overdueKm && currentOdo >= nextOdoVal - Math.round(intervalKm * 0.1);
+            const soonDate = nextDateVal !== null && !overdueDate && (new Date() >= new Date(nextDateVal.getTime() - 14 * 86400000));
+            if (overdueKm || overdueDate) status = 'overdue';
+            else if (soonKm || soonDate) status = 'soon';
+          }
+
+          function coloredVal(val, st) {
+            if (st === 'overdue') return `<span style="color:#FF3B30;">${val}</span>`;
+            if (st === 'soon')    return `<span style="color:#FF9500;">${val}</span>`;
+            return val;
+          }
+
+          let nextOdoHtml = nextOdoVal ? coloredVal(fmtOdo(nextOdoVal), status) : '—';
+          let nextDateHtml = nextDateVal ? coloredVal(fmtDate(nextDateVal), status) : '—';
+
+          if (status === 'overdue' && nextOdoVal && currentOdo >= nextOdoVal) {
+            const over = currentOdo - nextOdoVal;
+            nextOdoHtml = `<span style="color:#FF3B30;">+${over.toLocaleString('ru-RU')} км</span>`;
+          }
+
           return {
-            name: item.title,
+            name: item.label,
             status,
-            lastOdo: fmtOdo(item.lastServiceOdometer),
-            lastDate: fmtDate(item.lastServiceDate),
-            nextOdo,
-            nextDate
+            lastOdo: lastOdoVal > 0 ? fmtOdo(lastOdoVal) : '—',
+            lastDate: fmtDate(lastDateVal),
+            nextOdo: nextOdoHtml,
+            nextDate: nextDateHtml
           };
         });
-        html += section('ТО — Регламент обслуживания', 'calendar-check', rows);
+
+        html += section('Обслуживание', 'wrench', unifiedRows);
       }
 
-      // ── 3. Service schedule (Сервис-плановые замены) ──────────
-      if (typeof Service !== 'undefined' && Service.getDefaultIntervals && Service.checkDue) {
-        const serviceRecords = (state.service || []).filter(s => s.carId === carId && s.type !== 'wheels' && !s.deletedAt);
-        const defaultIntervals = Service.getDefaultIntervals();
-        const carIntervals = state.intervals[carId] || {};
-        const intervals = { ...defaultIntervals, ...carIntervals };
-
-        const svcRows = Object.keys(Service.TYPES)
-          .filter(svcType => svcType !== 'other')
-          .map(svcType => {
-            const interval = intervals[svcType];
-            const lastRec = serviceRecords.filter(s => s.type === svcType)
-              .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-            if (!lastRec) {
-              return {
-                name: Service.TYPES[svcType],
-                status: null,
-                lastOdo: '—',
-                lastDate: '—',
-                nextOdo: '—',
-                nextDate: '—'
-              };
-            }
-
-            const dueCheck = Service.checkDue(svcType, lastRec, { [svcType]: interval || {} }, currentOdo, new Date());
-            const nextOdoVal = lastRec.odometer && interval?.intervalKm
-              ? parseFloat(lastRec.odometer) + interval.intervalKm : null;
-            const nextDateVal = lastRec.date && interval?.intervalMonths
-              ? (() => { const d = new Date(lastRec.date); d.setMonth(d.getMonth() + interval.intervalMonths); return d; })()
-              : null;
-
-            let status = dueCheck.status || 'ok';
-            let nextOdoHtml = fmtOdo(nextOdoVal);
-            let nextDateHtml = fmtDate(nextDateVal);
-            if (status === 'overdue') {
-              nextOdoHtml = `<span style="color:#FF3B30;">${fmtOdo(nextOdoVal)}</span>`;
-              nextDateHtml = `<span style="color:#FF3B30;">${fmtDate(nextDateVal)}</span>`;
-            } else if (status === 'soon') {
-              nextOdoHtml = `<span style="color:#FF9500;">${fmtOdo(nextOdoVal)}</span>`;
-              nextDateHtml = `<span style="color:#FF9500;">${fmtDate(nextDateVal)}</span>`;
-            }
-
-            return {
-              name: Service.TYPES[svcType],
-              status,
-              lastOdo: fmtOdo(lastRec.odometer),
-              lastDate: fmtDate(lastRec.date),
-              nextOdo: nextOdoHtml,
-              nextDate: nextDateHtml
-            };
-          });
-
-        html += section('Сервис — Плановые замены', 'wrench', svcRows);
+      // ── 3. Battery ────────────────────────────────────────────
+      {
+        const batteryRecords = (state.service || [])
+          .filter(s => s.carId === carId && s.type === 'battery' && !s.deletedAt)
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
+        const lastBat = batteryRecords[0] || null;
+        const batIntervalMonths = 36;
+        const nextBatDate = lastBat
+          ? (() => { const d = new Date(lastBat.date); d.setMonth(d.getMonth() + batIntervalMonths); return d; })()
+          : null;
+        const batDays = nextBatDate ? daysUntil(nextBatDate) : null;
+        let batStatus = lastBat ? 'ok' : null;
+        if (lastBat && batDays !== null) {
+          if (batDays < 0) batStatus = 'overdue';
+          else if (batDays <= 30) batStatus = 'soon';
+        }
+        function batColor(st) {
+          if (st === 'overdue') return '#FF3B30';
+          if (st === 'soon') return '#FF9500';
+          return 'var(--text)';
+        }
+        const batLabel = lastBat
+          ? (lastBat.notes || lastBat.shop || 'Аккумулятор')
+          : 'Аккумулятор';
+        const batHtml = `
+          <div style="background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md);">
+            <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--separator);">
+              <i data-lucide="battery-charging" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
+              <span style="font-size:var(--font-size-subheadline);font-weight:600;color:var(--text);">Аккумулятор</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:var(--space-sm);align-items:start;padding:var(--space-xs) 0;">
+              <div style="font-size:var(--font-size-footnote);color:var(--text);display:flex;align-items:center;">
+                ${batStatus ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${batColor(batStatus)};margin-right:6px;flex-shrink:0;"></span>` : ''}
+                ${batLabel}
+              </div>
+              <div style="text-align:right;min-width:90px;">
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-bottom:2px;">Установлен</div>
+                <div style="font-size:var(--font-size-footnote);color:var(--text-secondary);">${fmtOdo(lastBat?.odometer)}</div>
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">${fmtDate(lastBat?.date)}</div>
+              </div>
+              <div style="text-align:right;min-width:90px;">
+                <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);margin-bottom:2px;">Замена рекоменд.</div>
+                <div style="font-size:var(--font-size-footnote);font-weight:600;color:${batColor(batStatus)};">${nextBatDate ? fmtDate(nextBatDate) : '—'}</div>
+                <div style="font-size:var(--font-size-caption-1);color:${batColor(batStatus)};">${batDays !== null ? (batDays < 0 ? `${Math.abs(batDays)} дн. назад` : `через ${batDays} дн.`) : '—'}</div>
+              </div>
+            </div>
+          </div>`;
+        html += batHtml;
       }
 
       // ── 4. Tires (летняя / зимняя резина) ────────────────────
