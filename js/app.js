@@ -679,9 +679,9 @@
               <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
               <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
             </div>
-            <span title="${statusDotTitle}" style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-caption-1);">
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>
-              <span style="color:${statusDotColor};font-weight:500;">${overallStatus === 'overdue' ? 'Просрочено' : overallStatus === 'soon' ? 'Скоро' : 'ТО'}</span>
+            <span title="${statusDotTitle}" style="display:inline-flex;align-items:center;gap:5px;background:${statusDotColor}1a;border-radius:20px;padding:2px 8px 2px 5px;">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>
+              <span style="color:${statusDotColor};font-weight:600;font-size:var(--font-size-caption-1);">ТО</span>
             </span>
           </div>
         `;
