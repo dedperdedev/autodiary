@@ -628,8 +628,9 @@
               <span style="font-size:var(--font-size-title-3);font-weight:700;color:var(--text);">${carOdometer > 0 ? carOdometer.toLocaleString('ru-RU') : '—'}</span>
               <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);">км</span>
             </div>
-            <button data-edit-car-details="${car.id}" title="Редактировать авто" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;">
-              <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+            <button data-edit-car-details="${car.id}" title="Редактировать авто" style="background:var(--fill-tertiary,#f2f2f7);border:none;border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:5px;font-size:var(--font-size-caption-1);font-weight:500;">
+              <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              <span>Изменить</span>
             </button>
           </div>
         `;
