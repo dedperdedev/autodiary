@@ -1431,6 +1431,26 @@
       return true;
     }
 
+    // Save a single maintenance field (odometer + date) by key
+    function saveMaintField(carId, key) {
+      const field = document.querySelector(`#screen-car-details [data-maint-key="${key}"]`);
+      if (!field) return;
+      const odo = parseFloat(field.querySelector('.maint-odo')?.value) || null;
+      const date = field.querySelector('.maint-date')?.value || null;
+      if (!state.maintenance[carId]) state.maintenance[carId] = {};
+      state.maintenance[carId][key] = { odometer: odo, date };
+      // Also update servicePlan if item exists
+      const car = state.cars.find(c => c.id === carId);
+      if (car && car.servicePlan) {
+        const planItem = car.servicePlan.find(p => p.typeKey === key);
+        if (planItem) {
+          if (odo) planItem.lastServiceOdometer = odo;
+          if (date) planItem.lastServiceDate = date;
+        }
+      }
+      saveAppState();
+    }
+
     // Load car details
     function loadCarDetails(carId){
       const car = state.cars.find(c => c.id === carId);
@@ -1451,40 +1471,39 @@
       if (planNameEl) planNameEl.textContent = 'Регламент (ТО) — ' + name;
       if (planSubEl) planSubEl.textContent = sub;
       
-      // Load maintenance data
+      // Load maintenance data by data-maint-key
       const maint = state.maintenance[carId] || {};
-      const section = document.querySelector('#screen-car-details');
-      if(section){
-        section.querySelectorAll('.field').forEach(field => {
-          const label = field.querySelector('label')?.textContent?.trim();
-          if(maint[label]){
-            const inputs = field.querySelectorAll('input');
-            if(inputs[0] && maint[label].odometer) inputs[0].value = maint[label].odometer;
-            if(inputs[1] && maint[label].date) inputs[1].value = maint[label].date;
+      const detailsSection = document.querySelector('#screen-car-details');
+      if (detailsSection) {
+        detailsSection.querySelectorAll('[data-maint-key]').forEach(field => {
+          const key = field.dataset.maintKey;
+          const odoInput = field.querySelector('.maint-odo');
+          const dateInput = field.querySelector('.maint-date');
+          // Try service records first (newest)
+          const svcRecs = (state.service || []).filter(s => s.carId === carId && s.type === key && !s.deletedAt)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+          if (svcRecs.length > 0) {
+            if (odoInput) odoInput.value = svcRecs[0].odometer || '';
+            if (dateInput) dateInput.value = svcRecs[0].date || '';
+          } else if (maint[key]) {
+            if (odoInput && maint[key].odometer) odoInput.value = maint[key].odometer;
+            if (dateInput && maint[key].date) dateInput.value = maint[key].date;
+          } else {
+            // Also check servicePlan
+            if (car.servicePlan) {
+              const planItem = car.servicePlan.find(p => p.typeKey === key);
+              if (planItem) {
+                if (odoInput && planItem.lastServiceOdometer) odoInput.value = planItem.lastServiceOdometer;
+                if (dateInput && planItem.lastServiceDate) dateInput.value = planItem.lastServiceDate;
+              }
+            }
           }
+          // Save on change
+          if (odoInput) odoInput.onchange = () => saveMaintField(carId, key);
+          if (dateInput) dateInput.onchange = () => saveMaintField(carId, key);
         });
       }
-      
-      // Load intervals
-      const intervals = state.intervals[carId] || {};
-      const intervalSection = document.querySelector('#screen-car-settings');
-      if(intervalSection){
-        intervalSection.querySelectorAll('.field').forEach(field => {
-          const label = field.querySelector('label')?.textContent?.trim();
-          if(intervals[label]){
-            const inputs = field.querySelectorAll('input');
-            if(inputs[0] && intervals[label].km) inputs[0].value = intervals[label].km;
-            if(inputs[1] && intervals[label].months) inputs[1].value = intervals[label].months;
-          }
-        });
-      }
-      
-      // Update metrics
-      const metrics = calculateCarMetrics(carId);
-      document.getElementById('md1').textContent = metrics.fuelConsumption || '0';
-      document.getElementById('md2').textContent = metrics.costPerKm || '0';
-      document.getElementById('md3').textContent = metrics.avgDay || '0';
-      
+
       // Render fuel and service tabs
       renderFuelTab(carId);
       renderServiceTab(carId);

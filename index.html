@@ -132,13 +132,6 @@
         <div class="car-sub" id="car-sub-line">—</div>
       </div>
     </div>
-    <div class="mini-dash" id="mini-dash-detail">
-      <div class="mini-metric"><strong id="md1">0</strong>L/100km</div>
-      <div class="mini-metric"><strong id="md2">0</strong>UAH/km</div>
-      <div class="mini-metric"><strong id="md3">0</strong>UAH/день</div>
-    </div>
-    <p class="note">Пробег и даты сохраняются локально в рамках прототипа.</p>
-
     <!-- Tab Navigation -->
     <div class="car-tabs" style="display: flex; border-bottom: 0.5px solid var(--separator); margin: 0 var(--space-lg);">
       <button class="car-tab active" data-tab="expenses" style="flex: 1; padding: var(--space-md); background: none; border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-weight: 600;">
@@ -154,103 +147,58 @@
     
     <!-- Expenses Tab -->
     <div class="car-tab-content active" id="tab-expenses">
-    <div class="section">
-      <h3>ТО и замены</h3>
-      <div class="field">
-        <label>Замены масла ДВС</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
+      <div style="padding: var(--space-md) var(--space-lg);">
+
+        <!-- Section label helper macro via repeated pattern -->
+        <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin:var(--space-md) 0 var(--space-xs) 4px;">Двигатель и трансмиссия</div>
+        <div class="ios-grouped-list" style="margin:0 0 var(--space-md);">
+          <div class="ios-group">
+            <div class="ios-cell field" data-maint-key="oil"><div class="ios-cell-content"><div class="ios-cell-title">Замена масла</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="oilFilter"><div class="ios-cell-content"><div class="ios-cell-title">Замена масляного фильтра</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="transmissionOil"><div class="ios-cell-content"><div class="ios-cell-title">Масло АКПП</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="sparkPlugs"><div class="ios-cell-content"><div class="ios-cell-title">Свечи зажигания / накаливания</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="timingBelt"><div class="ios-cell-content"><div class="ios-cell-title">Ремень / Цепь ГРМ</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Замены масляного фильтра</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
+
+        <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-xs) 4px;">Фильтры</div>
+        <div class="ios-grouped-list" style="margin:0 0 var(--space-md);">
+          <div class="ios-group">
+            <div class="ios-cell field" data-maint-key="airFilter"><div class="ios-cell-content"><div class="ios-cell-title">Воздушный фильтр</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="cabinFilter"><div class="ios-cell-content"><div class="ios-cell-title">Салонный фильтр</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="fuelFilter"><div class="ios-cell-content"><div class="ios-cell-title">Топливный фильтр</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Замены воздушного фильтра</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
+
+        <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-xs) 4px;">Тормоза и жидкости</div>
+        <div class="ios-grouped-list" style="margin:0 0 var(--space-md);">
+          <div class="ios-group">
+            <div class="ios-cell field" data-maint-key="brakePadsFront"><div class="ios-cell-content"><div class="ios-cell-title">Передние тормозные колодки</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="brakePadsRear"><div class="ios-cell-content"><div class="ios-cell-title">Задние тормозные колодки</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="brakeDiscsFront"><div class="ios-cell-content"><div class="ios-cell-title">Передние тормозные диски</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="brakeDiscsRear"><div class="ios-cell-content"><div class="ios-cell-title">Задние тормозные диски</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="brakeFluid"><div class="ios-cell-content"><div class="ios-cell-title">Тормозная жидкость</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="coolant"><div class="ios-cell-content"><div class="ios-cell-title">Охлаждающая жидкость</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="powerSteeringOil"><div class="ios-cell-content"><div class="ios-cell-title">Жидкость ГУР</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Замены фильтра салона</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
+
+        <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-xs) 4px;">Редукторы и раздатка</div>
+        <div class="ios-grouped-list" style="margin:0 0 var(--space-md);">
+          <div class="ios-group">
+            <div class="ios-cell field" data-maint-key="frontDiffOil"><div class="ios-cell-content"><div class="ios-cell-title">Масло переднего редуктора</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="rearDiffOil"><div class="ios-cell-content"><div class="ios-cell-title">Масло заднего редуктора</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+            <div class="ios-cell field" data-maint-key="transferCaseOil"><div class="ios-cell-content"><div class="ios-cell-title">Масло раздаточной коробки</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Замены топливного фильтра</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
+
+        <div style="font-size:var(--font-size-caption-1);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-xs) 4px;">Прочее</div>
+        <div class="ios-grouped-list" style="margin:0 0 var(--space-xl);">
+          <div class="ios-group">
+            <div class="ios-cell field" data-maint-key="battery"><div class="ios-cell-content"><div class="ios-cell-title">Аккумулятор</div></div><div class="ios-cell-trailing maint-inputs"><input type="number" placeholder="Пробег" class="maint-odo" style="width:90px;text-align:right;border:none;background:none;font-size:var(--font-size-footnote);color:var(--text);"><input type="date" class="maint-date" style="border:none;background:none;font-size:var(--font-size-footnote);color:var(--text-secondary);"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Замены масла в КПП</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Замены свечей зажигания</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Замены ремня-цепи-роликов ГРМ</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Замены тормозной жидкости</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Замены антифриза</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-    </div>
-    <div class="section">
-      <h3>Прочее</h3>
-      <div class="field">
-        <label>АКБ: последний пробег + дата установки</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date" title="Дата установки"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Последний пробег замены фреона</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Последний пробег замены шин</label>
-        <div class="two-col">
-          <div class="col"><input type="number" placeholder="Пробег"></div>
-          <div class="col"><input type="date"></div>
-        </div>
-      </div>
-        </div>
+
       </div>
     </div>
 
