@@ -1479,6 +1479,20 @@
           const key = field.dataset.maintKey;
           const odoInput = field.querySelector('.maint-odo');
           const dateInput = field.querySelector('.maint-date');
+          // Special handling for tire keys (stored as wheels with installType)
+          if (key === 'tiresSummer' || key === 'tiresWinter') {
+            const installType = key === 'tiresSummer' ? 'summer' : 'winter';
+            const tireRec = (state.service || []).filter(s => s.carId === carId && s.type === 'wheels' && s.installType === installType && !s.deletedAt)
+              .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            if (tireRec) {
+              if (odoInput) odoInput.value = tireRec.odometer || '';
+              if (dateInput) dateInput.value = tireRec.date || '';
+            }
+            if (odoInput) odoInput.onchange = () => saveMaintField(carId, key);
+            if (dateInput) dateInput.onchange = () => saveMaintField(carId, key);
+            return;
+          }
+
           // Try service records first (newest)
           const svcRecs = (state.service || []).filter(s => s.carId === carId && s.type === key && !s.deletedAt)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
