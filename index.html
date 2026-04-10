@@ -782,7 +782,7 @@
           <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;"><i data-lucide="file-text"></i></div>
           <span>Админ</span>
         </button>
-        <button class="expense-category-item" data-type="other">
+        <button class="expense-category-item" data-type="other" data-goto="screen-add-other">
           <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;"><i data-lucide="more-horizontal"></i></div>
           <span>Прочее</span>
         </button>
@@ -899,7 +899,7 @@
             </div>
             <span>Админ</span>
           </button>
-          <button class="expense-category-item" data-type="other">
+          <button class="expense-category-item" data-type="other" data-goto="screen-add-other">
             <div class="expense-category-icon" style="background: rgba(142, 142, 147, 0.15); color: #8E8E93;">
               <i data-lucide="more-horizontal"></i>
             </div>
@@ -2010,6 +2010,47 @@
     </div>
     <div class="save-btn">
       <button id="save-care-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Other Expense View -->
+  <section id="screen-add-other" class="view">
+    <div class="ios-navbar">
+      <div><div class="ios-navbar-actions"></div></div>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Описание *</label>
+        <input type="text" id="other-desc" placeholder="Например: замена дворников, наклейки…">
+      </div>
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="other-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="other-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Стоимость (₴)</label>
+        <input type="number" id="other-cost" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="other-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
+        <label>Фото / чеки</label>
+        <div id="other-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="other-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="other-receipt-input" accept="image/*" multiple style="display:none;">
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-other-btn">Сохранить</button>
     </div>
   </section>
 

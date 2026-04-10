@@ -480,6 +480,8 @@
         initializeMaintenancePlanHandlers();
       } else if(id==='screen-car-passport'){
         if(currentCarId) renderCarPassport(currentCarId);
+      } else if(id==='screen-add-other'){
+        initOtherScreen();
       }
     }
 
@@ -4009,6 +4011,8 @@
           initSvcPlannedScreen();
         } else if(id === 'screen-add-care') {
           initCareScreen();
+        } else if(id === 'screen-add-other') {
+          initOtherScreen();
         } else if(id === 'screen-add-admin') {
           initAdminScreen();
         } else if(id === 'screen-add-wheels') {
@@ -4937,17 +4941,7 @@
         }
 
         if(categoryItem.dataset.type === 'other') {
-          showOtherExpensePicker((text) => {
-            setTimeout(() => {
-              const categoryValue = document.getElementById('expense-category-value');
-              if(categoryValue) categoryValue.textContent = text ? 'Прочее — ' + text : 'Прочее';
-              showView('screen-expense-form');
-              const notesEl = document.getElementById('notes');
-              if(notesEl) notesEl.value = text;
-              const notesField = notesEl?.closest('.field');
-              if(notesField) notesField.style.display = 'none';
-            }, 320);
-          });
+          showView('screen-add-other');
           return;
         }
 
@@ -5765,6 +5759,46 @@
       }
     }
 
+    function initOtherScreen() {
+      ['other-desc','other-date','other-odometer','other-cost','other-notes']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('other-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+      document.getElementById('save-other-btn').onclick = saveOtherEntry;
+      wirePhotoBlock('other');
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function saveOtherEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Выберите автомобиль'); return; }
+      const date = document.getElementById('other-date')?.value;
+      if(!date) { showToast('Укажите дату'); return; }
+      const desc = document.getElementById('other-desc')?.value?.trim() || '';
+      if(!desc) { showToast('Укажите описание'); return; }
+
+      const odometer = parseFloat(document.getElementById('other-odometer')?.value || 0);
+      const cost = parseFloat(document.getElementById('other-cost')?.value || 0);
+      const notes = document.getElementById('other-notes')?.value?.trim() || '';
+      const receipts = window.temp_other_receipts || [];
+
+      if(!state.expenses) state.expenses = [];
+      state.expenses.push({
+        id: Date.now().toString(), carId, date, odometer,
+        category: 'Прочее', categoryDetail: desc,
+        amount: cost, notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
+        createdAt: new Date().toISOString(), deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Сохранено');
+        clearReceiptTemp('other');
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     function initAdminScreen() {
       window._adminSelected = new Set();
 
@@ -6409,7 +6443,7 @@
     }
     
     // Receipts handling functions
-    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care'];
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care','other'];
     RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
     // Legacy aliases
     Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });
