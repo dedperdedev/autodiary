@@ -5834,11 +5834,7 @@
           const t = document.getElementById('wheels-other-text')?.value?.trim();
           if(t) label = t;
         }
-        if(WORKS_NO_COST.has(key)) {
-          return `<div style="display:flex;align-items:center;gap:var(--space-md);">
-            <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
-          </div>`;
-        }
+        if(WORKS_NO_COST.has(key)) return '';
         const val = existing[key] || '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
           <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
