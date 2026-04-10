@@ -5410,97 +5410,118 @@
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
         btn.style.boxShadow = '';
+        btn.classList.remove('planned-active');
         btn.querySelector('.pl-chk')?.remove();
       });
+      document.getElementById('planned-inline-detail')?.remove();
       document.getElementById('planned-costs-wrap').style.display = 'none';
       document.getElementById('planned-costs-list').innerHTML = '';
       document.getElementById('planned-cost-total').textContent = '0.00';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
-        btn.onclick = () => showPlannedDetailSheet(btn.dataset.planned, btn);
+        btn.onclick = () => togglePlannedInline(btn.dataset.planned, btn);
       });
 
       document.getElementById('save-planned-btn').onclick = savePlannedEntry;
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function showPlannedDetailSheet(key, btn) {
+    function togglePlannedInline(key, btn) {
       if(!window._plannedDetails) window._plannedDetails = {};
       if(!window._plannedSelected) window._plannedSelected = new Set();
 
-      const label = PLANNED_SUBS[key] || key;
       const fields = PLANNED_FIELDS[key] || [];
       const details = window._plannedDetails[key] || {};
-      const isSelected = window._plannedSelected.has(key);
+      const INLINE_ID = 'planned-inline-detail';
 
-      const sheet = document.createElement('div');
-      sheet.className = 'ios-sheet-overlay active';
-      sheet.style.zIndex = '10001';
-
-      const fieldsHtml = fields.map(f => `
-        <div>
-          <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:6px;">${f.label}</label>
-          <input data-field="${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
-            style="width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;outline:none;">
-        </div>`).join('');
-
-      sheet.innerHTML = `
-        <div class="ios-sheet">
-          <div class="ios-sheet-handle"></div>
-          <div class="ios-sheet-header">
-            <div>
-              <h2 style="font-size:var(--font-size-title-3);font-weight:600;color:var(--text);margin:0;">${escapeHtml(label)}</h2>
-              <p style="font-size:var(--font-size-subheadline);color:var(--text-secondary);margin:var(--space-xs) 0 0 0;">Укажите детали</p>
-            </div>
-            <button class="ios-sheet-close" data-close-planned><i data-lucide="x"></i></button>
-          </div>
-          <div class="ios-sheet-content">
-            <div style="display:flex;flex-direction:column;gap:var(--space-md);">${fieldsHtml}</div>
-            <div style="margin-top:var(--space-lg);display:flex;gap:var(--space-sm);">
-              ${isSelected ? `<button class="ios-button" data-remove-planned>Снять</button>` : ''}
-              <button class="ios-button" data-confirm-planned style="flex:1;background:var(--accent);color:#fff;">Готово</button>
-            </div>
-          </div>
-        </div>`;
-
-      document.body.appendChild(sheet);
-      if(typeof lucide !== 'undefined') lucide.createIcons();
-
-      function closeSheet() {
-        sheet.classList.remove('active');
-        setTimeout(() => { if(sheet.parentNode) sheet.remove(); }, 250);
+      // If already open for this key — just toggle off (deselect)
+      const existing = document.getElementById(INLINE_ID);
+      if(existing) {
+        if(existing.dataset.key === key) {
+          existing.remove();
+          return;
+        }
+        existing.remove();
       }
 
-      sheet.querySelector('[data-close-planned]').onclick = closeSheet;
-      sheet.addEventListener('click', e => { if(e.target === sheet) closeSheet(); });
+      // Mark button active
+      document.querySelectorAll('.planned-btn').forEach(b => b.classList.remove('planned-active'));
+      btn.classList.add('planned-active');
 
-      const removeBtn = sheet.querySelector('[data-remove-planned]');
-      if(removeBtn) {
-        removeBtn.onclick = () => {
+      // If no fields — toggle selection directly (no inputs needed)
+      if(fields.length === 0) {
+        if(window._plannedSelected.has(key)) {
           window._plannedSelected.delete(key);
           delete window._plannedDetails[key];
-          btn.style.boxShadow = '';
-          btn.querySelector('.pl-chk')?.remove();
-          renderPlannedCosts();
-          closeSheet();
-        };
+          btn.classList.remove('planned-active');
+          updatePlannedBtnState(btn, false);
+        } else {
+          window._plannedSelected.add(key);
+          window._plannedDetails[key] = {};
+          updatePlannedBtnState(btn, true);
+        }
+        renderPlannedCosts();
+        return;
       }
 
-      sheet.querySelector('[data-confirm-planned]').onclick = () => {
+      // Build inline detail block, insert after the grid
+      const grid = btn.closest('[style*="grid"]') || btn.parentElement;
+      const block = document.createElement('div');
+      block.id = INLINE_ID;
+      block.dataset.key = key;
+      block.style.cssText = 'background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-md);margin-top:var(--space-sm);display:flex;flex-direction:column;gap:var(--space-sm);border:0.5px solid var(--separator);';
+
+      block.innerHTML = fields.map(f => `
+        <div>
+          <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">${f.label}</label>
+          <input data-field="${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
+            style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+        </div>`).join('') + `
+        <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-xs);">
+          ${window._plannedSelected.has(key) ? `<button class="ios-button" id="pl-remove-btn" style="background:var(--destructive-tint);color:var(--destructive);">Снять</button>` : ''}
+          <button class="ios-button" id="pl-confirm-btn" style="flex:1;background:var(--accent);color:#fff;">Готово</button>
+        </div>`;
+
+      grid.after(block);
+
+      block.querySelector('#pl-confirm-btn').onclick = () => {
         const saved = {};
-        sheet.querySelectorAll('[data-field]').forEach(el => {
+        block.querySelectorAll('[data-field]').forEach(el => {
           if(el.value.trim()) saved[el.dataset.field] = el.value.trim();
         });
         window._plannedDetails[key] = saved;
         window._plannedSelected.add(key);
-        btn.style.boxShadow = '0 0 0 2px #34C759';
-        btn.style.borderRadius = '14px';
-        if(!btn.querySelector('.pl-chk'))
-          btn.insertAdjacentHTML('beforeend','<div class="pl-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+        updatePlannedBtnState(btn, true);
         renderPlannedCosts();
-        closeSheet();
+        block.remove();
+        btn.classList.remove('planned-active');
       };
 
+      const removeBtn = block.querySelector('#pl-remove-btn');
+      if(removeBtn) {
+        removeBtn.onclick = () => {
+          window._plannedSelected.delete(key);
+          delete window._plannedDetails[key];
+          updatePlannedBtnState(btn, false);
+          renderPlannedCosts();
+          block.remove();
+          btn.classList.remove('planned-active');
+        };
+      }
+
+      // Focus first field
+      block.querySelector('input')?.focus();
+    }
+
+    function updatePlannedBtnState(btn, selected) {
+      btn.querySelector('.pl-chk')?.remove();
+      if(selected) {
+        btn.style.boxShadow = '0 0 0 2px #34C759';
+        btn.style.borderRadius = '14px';
+        btn.insertAdjacentHTML('beforeend','<div class="pl-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+      } else {
+        btn.style.boxShadow = '';
+      }
     }
 
     function renderPlannedCosts() {
