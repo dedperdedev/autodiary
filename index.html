@@ -1562,7 +1562,7 @@
         <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--space-md);">
           <input type="number" id="fuel-liters" placeholder="0.00" step="0.01" min="0" required style="flex:1;text-align:right;min-width:80px;">
           <div style="display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;" onclick="document.getElementById('fuel-full-tank').click()">
-            <input type="checkbox" id="fuel-full-tank" onclick="event.stopPropagation()">
+            <input type="checkbox" id="fuel-full-tank" onclick="event.stopPropagation()" style="min-width:auto;width:18px;height:18px;flex:none;">
             <span style="font-size:var(--font-size-subheadline);color:var(--text);">Полный бак</span>
           </div>
         </div>
