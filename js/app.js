@@ -4023,6 +4023,15 @@
           if(chargeCostEl) chargeCostEl.value = '';
           if(chargeStationEl) chargeStationEl.value = '';
           if(chargeNotesEl) chargeNotesEl.value = '';
+          const chargeFullEl = document.getElementById('charge-full-charge');
+          if(chargeFullEl) chargeFullEl.checked = false;
+          // Wire full-charge confetti
+          if(chargeFullEl && !chargeFullEl._confettiBound) {
+            chargeFullEl._confettiBound = true;
+            chargeFullEl.addEventListener('change', () => {
+              if(chargeFullEl.checked) launchConfetti();
+            });
+          }
           // Wire up price-per-kwh auto-calculation
           function updateChargePricePerKwh() {
             const kwh = parseFloat(document.getElementById('charge-kwh')?.value || 0);
@@ -6027,6 +6036,7 @@
       const totalCost = parseFloat(document.getElementById('charge-cost')?.value || 0);
       const station = document.getElementById('charge-station')?.value?.trim() || '';
       const notes = document.getElementById('charge-notes')?.value?.trim() || '';
+      const fullCharge = document.getElementById('charge-full-charge')?.checked || false;
 
       if(!date || !odometer || !kwh || !totalCost) {
         showToast('Заполните все обязательные поля');
@@ -6039,7 +6049,7 @@
         id: Date.now().toString(),
         carId, date, odometer, kwh, totalCost,
         pricePerKwh: kwh > 0 ? (totalCost / kwh).toFixed(2) : 0,
-        station, notes,
+        fullCharge, station, notes,
         receipts: chargeReceipts.length > 0 ? chargeReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
@@ -6054,6 +6064,8 @@
         document.getElementById('charge-notes').value = '';
         const row = document.getElementById('charge-price-per-kwh-row');
         if(row) row.style.display = 'none';
+        const fcEl = document.getElementById('charge-full-charge');
+        if(fcEl) fcEl.checked = false;
         clearReceiptTemp('charge');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
