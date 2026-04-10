@@ -774,7 +774,7 @@
           <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;"><i data-lucide="circle"></i></div>
           <span>Колёса</span>
         </button>
-        <button class="expense-category-item" data-type="care">
+        <button class="expense-category-item" data-type="care" data-goto="screen-add-care">
           <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;"><i data-lucide="sparkles"></i></div>
           <span>Уход</span>
         </button>
@@ -1941,6 +1941,75 @@
 
     <div class="save-btn">
       <button id="save-svcp-btn">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- Add Care Entry View -->
+  <section id="screen-add-care" class="view">
+    <div class="ios-navbar">
+      <div><div class="ios-navbar-actions"></div></div>
+    </div>
+    <div class="section">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Вид ухода</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+        <button class="expense-category-item care-cat-btn" data-care="wash" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+            <i data-lucide="droplets"></i>
+          </div>
+          <span>Мойка</span>
+        </button>
+        <button class="expense-category-item care-cat-btn" data-care="dry" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <span>Химчистка</span>
+        </button>
+        <button class="expense-category-item care-cat-btn" data-care="polish" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+            <i data-lucide="sun"></i>
+          </div>
+          <span>Полировка</span>
+        </button>
+        <button class="expense-category-item care-cat-btn" data-care="other" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="more-horizontal"></i>
+          </div>
+          <span>Прочее</span>
+        </button>
+      </div>
+
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="care-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="care-odometer" placeholder="0" min="0">
+      </div>
+      <div id="care-costs-wrap" style="display:none;margin-top:var(--space-sm);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость</p>
+        <div id="care-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
+        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
+          <label style="font-weight:600;">Итого (₴)</label>
+          <span id="care-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <textarea id="care-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
+        <label>Фото / чеки</label>
+        <div id="care-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="care-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="care-receipt-input" accept="image/*" multiple style="display:none;">
+      </div>
+    </div>
+    <div class="save-btn">
+      <button id="save-care-btn">Сохранить</button>
     </div>
   </section>
 

@@ -4007,6 +4007,8 @@
           initPlannedScreen();
         } else if(id === 'screen-add-svc-planned') {
           initSvcPlannedScreen();
+        } else if(id === 'screen-add-care') {
+          initCareScreen();
         } else if(id === 'screen-add-admin') {
           initAdminScreen();
         } else if(id === 'screen-add-wheels') {
@@ -4950,13 +4952,7 @@
         }
 
         if(categoryItem.dataset.type === 'care') {
-          showCareTypePicker((ct) => {
-            setTimeout(() => {
-              const categoryValue = document.getElementById('expense-category-value');
-              if(categoryValue) categoryValue.textContent = 'Уход — ' + ct.label;
-              showView('screen-expense-form');
-            }, 320);
-          });
+          showView('screen-add-care');
           return;
         }
 
@@ -5654,6 +5650,121 @@
       }
     }
 
+    // ── Care screen ────────────────────────────────────────────────
+    const CARE_LABELS = {
+      wash:   'Мойка',
+      dry:    'Химчистка салона',
+      polish: 'Полировка',
+      other:  'Прочее',
+    };
+
+    function initCareScreen() {
+      window._careSelected = new Set();
+
+      ['care-date','care-odometer','care-notes']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('care-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      document.querySelectorAll('.care-cat-btn').forEach(btn => {
+        btn.style.boxShadow = '';
+        btn.querySelector('.care-chk')?.remove();
+      });
+      document.getElementById('care-costs-wrap').style.display = 'none';
+      document.getElementById('care-costs-list').innerHTML = '';
+      document.getElementById('care-cost-total').textContent = '0.00';
+
+      document.querySelectorAll('.care-cat-btn').forEach(btn => {
+        btn.onclick = () => {
+          const val = btn.dataset.care;
+          if(window._careSelected.has(val)) {
+            window._careSelected.delete(val);
+            btn.style.boxShadow = '';
+            btn.querySelector('.care-chk')?.remove();
+          } else {
+            window._careSelected.add(val);
+            btn.style.boxShadow = '0 0 0 2px #34C759';
+            btn.style.borderRadius = '14px';
+            if(!btn.querySelector('.care-chk'))
+              btn.insertAdjacentHTML('beforeend','<div class="care-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+          }
+          renderCareCosts();
+        };
+      });
+
+      document.getElementById('save-care-btn').onclick = saveCareEntry;
+      wirePhotoBlock('care');
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderCareCosts() {
+      const wrap = document.getElementById('care-costs-wrap');
+      const list = document.getElementById('care-costs-list');
+      const totalEl = document.getElementById('care-cost-total');
+      if(!wrap || !list || !totalEl) return;
+      if(window._careSelected.size === 0) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+
+      const existing = {};
+      list.querySelectorAll('[data-care-cost]').forEach(i => existing[i.dataset.careCost] = i.value);
+
+      list.innerHTML = Array.from(window._careSelected).map(key => {
+        const lbl = CARE_LABELS[key] || key;
+        const val = existing[key] || '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
+          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(lbl)}</span>
+          <input type="number" data-care-cost="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
+            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-care-cost]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          let sum = 0;
+          list.querySelectorAll('[data-care-cost]').forEach(i => sum += parseFloat(i.value || 0));
+          totalEl.textContent = sum.toFixed(2);
+        });
+      });
+      let sum = 0;
+      list.querySelectorAll('[data-care-cost]').forEach(i => sum += parseFloat(i.value || 0));
+      totalEl.textContent = sum.toFixed(2);
+    }
+
+    function saveCareEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Выберите автомобиль'); return; }
+      const date = document.getElementById('care-date')?.value;
+      if(!date) { showToast('Укажите дату'); return; }
+      if(!window._careSelected || window._careSelected.size === 0) { showToast('Выберите вид ухода'); return; }
+
+      const odometer = parseFloat(document.getElementById('care-odometer')?.value || 0);
+      const notes = document.getElementById('care-notes')?.value?.trim() || '';
+
+      const costMap = {};
+      document.querySelectorAll('#care-costs-list [data-care-cost]').forEach(inp => {
+        costMap[inp.dataset.careCost] = parseFloat(inp.value || 0);
+      });
+      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const typeLabel = Array.from(window._careSelected).map(k => CARE_LABELS[k] || k).join(', ');
+
+      const receipts = window.temp_care_receipts || [];
+      if(!state.expenses) state.expenses = [];
+      state.expenses.push({
+        id: Date.now().toString(), carId, date, odometer,
+        category: 'Уход', categoryDetail: typeLabel,
+        costMap, amount: totalCost, notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
+        createdAt: new Date().toISOString(), deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Сохранено');
+        clearReceiptTemp('care');
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     function initAdminScreen() {
       window._adminSelected = new Set();
 
@@ -6298,7 +6409,7 @@
     }
     
     // Receipts handling functions
-    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp'];
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care'];
     RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
     // Legacy aliases
     Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });
