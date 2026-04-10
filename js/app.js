@@ -5830,10 +5830,6 @@
           const size  = document.getElementById('tire-size')?.value?.trim();
           if(brand || size) label += ' ' + [brand, size].filter(Boolean).join(' ');
         }
-        if(key === 'other') {
-          const t = document.getElementById('wheels-other-text')?.value?.trim();
-          if(t) label = t;
-        }
         if(WORKS_NO_COST.has(key)) return '';
         const val = existing[key] || '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
@@ -5862,11 +5858,11 @@
     function initWheelsScreen() {
       // Reset state
       window._wheelsInstall = null;   // 'summer' | 'winter' | null
-      window._wheelsWorks  = new Set(); // 'balance' | 'bead' | 'inflate' | 'other'
+      window._wheelsWorks  = new Set(); // 'balance' | 'bead' | 'inflate'
       window._wheelsNewTire = false;
 
       // Reset form fields
-      ['wheels-date','wheels-odometer','wheels-shop','tire-brand','tire-size','wheels-other-text']
+      ['wheels-date','wheels-odometer','wheels-shop','wheels-notes','tire-brand','tire-size']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('wheels-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5879,8 +5875,6 @@
       });
       const newTireForm = document.getElementById('new-tire-form');
       if(newTireForm) newTireForm.style.display = 'none';
-      const otherWrap = document.getElementById('wheels-other-wrap');
-      if(otherWrap) otherWrap.style.display = 'none';
       renderWheelsCosts();
 
       // Install buttons — radio (only one)
@@ -5940,8 +5934,6 @@
             if(!btn.querySelector('.wheels-chk'))
               btn.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
           }
-          document.getElementById('wheels-other-wrap').style.display =
-            window._wheelsWorks.has('other') ? '' : 'none';
           renderWheelsCosts();
         };
       });
@@ -5968,7 +5960,7 @@
       const shop = document.getElementById('wheels-shop')?.value?.trim() || '';
       const tireBrand = document.getElementById('tire-brand')?.value?.trim() || '';
       const tireSize = document.getElementById('tire-size')?.value?.trim() || '';
-      const otherText = document.getElementById('wheels-other-text')?.value?.trim() || '';
+      const notes = document.getElementById('wheels-notes')?.value?.trim() || '';
 
       // Collect per-item costs
       const costMap = {};
@@ -5986,8 +5978,6 @@
       if(window._wheelsWorks.has('balance')) parts.push('Балансировка');
       if(window._wheelsWorks.has('bead')) parts.push('Бортировка');
       if(window._wheelsWorks.has('inflate')) parts.push('Подкачка');
-      if(window._wheelsWorks.has('other') && otherText) parts.push(otherText);
-      else if(window._wheelsWorks.has('other')) parts.push('Прочее');
 
       const wheelsReceipts = window.temp_wheels_receipts || [];
       if(!state.service) state.service = [];
@@ -5999,7 +5989,7 @@
         installType: window._wheelsInstall,
         newTire: hasNewTire ? { brand: tireBrand, size: tireSize, cost: tireCost } : null,
         works: Array.from(window._wheelsWorks),
-        costMap, cost, otherText, shop, notes: '',
+        costMap, cost, shop, notes,
         receipts: wheelsReceipts.length > 0 ? wheelsReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
