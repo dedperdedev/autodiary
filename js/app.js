@@ -4906,10 +4906,13 @@
         });
       }
       
-      // diary-add-btn → navigate to category screen (no modal)
+      // diary-add-btn → open expense category sheet
       const diaryAddBtn = document.getElementById('diary-add-btn');
       if(diaryAddBtn) {
-        diaryAddBtn.addEventListener('click', () => showView('screen-add-expense'));
+        diaryAddBtn.addEventListener('click', () => {
+          const expenseCategorySheet = document.getElementById('expense-category-sheet');
+          if(expenseCategorySheet) expenseCategorySheet.classList.add('active');
+        });
       }
 
       // Handle category selection from screen-add-expense
