@@ -5155,16 +5155,16 @@
     
     // ── Service subcategory screen ─────────────────────────────────
     const PLANNED_SUBS = {
-      'spark':          'Свечи зажигания / накаливания',
-      'timing':         'Ремень / цепь ГРМ',
-      'coolant':        'Замена антифриза',
-      'brake-fluid':    'Замена тормозной жидкости',
-      'power-steering': 'Замена жидкости ГУР',
-      'gearbox-oil':    'Масло в КПП',
-      'front-diff':     'Масло переднего редуктора',
-      'rear-diff':      'Масло заднего редуктора',
-      'transfer':       'Масло раздаточной коробки',
-      'battery':        'Новый АКБ',
+      'oil':            'Моторное масло',
+      'oilFilter':      'Фильтр масляный',
+      'cabinFilter':    'Фильтр салона',
+      'airFilter':      'Фильтр двигателя',
+      'fuelFilter':     'Фильтр топливный',
+      'brakeDiscsFront':'Диски передние',
+      'brakeDiscsRear': 'Диски задние',
+      'brakePadsFront': 'Колодки передние',
+      'brakePadsRear':  'Колодки задние',
+      'sparkPlugs':     'Свечи зажигания',
     };
 
     const SVC_CATS = {
@@ -5348,54 +5348,47 @@
 
     // ── Planned Replacement Screen ──────────────────────────────────
     const PLANNED_FIELDS = {
-      'spark': [
+      'oil': [
+        { id: 'brand',     label: 'Марка масла',   placeholder: 'Castrol, Mobil, Shell…', type: 'text' },
+        { id: 'viscosity', label: 'Вязкость',       placeholder: '5W-30',                  type: 'text' },
+        { id: 'volume',    label: 'Объём (л)',      placeholder: '4',                      type: 'number' },
+      ],
+      'oilFilter': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Mann, Bosch, Mahle…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',                   type: 'text' },
+      ],
+      'cabinFilter': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Mann, Bosch…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'airFilter': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Mann, Bosch…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'fuelFilter': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Mann, Bosch…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'brakeDiscsFront': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Brembo, TRW…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'brakeDiscsRear': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Brembo, TRW…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'brakePadsFront': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Brembo, ATE…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'brakePadsRear': [
+        { id: 'brand',   label: 'Марка',    placeholder: 'Brembo, ATE…', type: 'text' },
+        { id: 'article', label: 'Артикул',  placeholder: '…',            type: 'text' },
+      ],
+      'sparkPlugs': [
         { id: 'brand',   label: 'Марка',          placeholder: 'NGK, Bosch, Denso…', type: 'text' },
         { id: 'article', label: 'Артикул',         placeholder: '…',                  type: 'text' },
         { id: 'qty',     label: 'Количество, шт',  placeholder: '4',                  type: 'number' },
-      ],
-      'timing': [
-        { id: 'brand',   label: 'Марка',     placeholder: 'Gates, INA, SKF…', type: 'text' },
-        { id: 'article', label: 'Артикул',   placeholder: '…',                type: 'text' },
-        { id: 'kind',    label: 'Тип',       placeholder: 'ремень / цепь',    type: 'text' },
-      ],
-      'coolant': [
-        { id: 'brand',  label: 'Марка',     placeholder: 'Febi, Wurth…',    type: 'text' },
-        { id: 'type',   label: 'Тип / цвет', placeholder: 'G12+, G13…',     type: 'text' },
-        { id: 'volume', label: 'Объём (л)', placeholder: '5',               type: 'number' },
-      ],
-      'brake-fluid': [
-        { id: 'brand',  label: 'Марка',      placeholder: 'Bosch, Liqui Moly…', type: 'text' },
-        { id: 'dot',    label: 'Стандарт',   placeholder: 'DOT 4',              type: 'text' },
-        { id: 'volume', label: 'Объём (мл)', placeholder: '500',                type: 'number' },
-      ],
-      'power-steering': [
-        { id: 'brand',  label: 'Марка',      placeholder: '…',   type: 'text' },
-        { id: 'volume', label: 'Объём (мл)', placeholder: '500', type: 'number' },
-      ],
-      'gearbox-oil': [
-        { id: 'brand',     label: 'Марка',      placeholder: 'Castrol, Liqui Moly…', type: 'text' },
-        { id: 'viscosity', label: 'Вязкость',   placeholder: '75W-90',               type: 'text' },
-        { id: 'volume',    label: 'Объём (л)',  placeholder: '2',                     type: 'number' },
-      ],
-      'front-diff': [
-        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
-        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
-        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
-      ],
-      'rear-diff': [
-        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
-        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
-        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
-      ],
-      'transfer': [
-        { id: 'brand',     label: 'Марка',     placeholder: '…',      type: 'text' },
-        { id: 'viscosity', label: 'Вязкость',  placeholder: '75W-90', type: 'text' },
-        { id: 'volume',    label: 'Объём (л)', placeholder: '1',      type: 'number' },
-      ],
-      'battery': [
-        { id: 'brand',    label: 'Марка',          placeholder: 'Bosch, Varta…', type: 'text' },
-        { id: 'capacity', label: 'Ёмкость (Ач)',   placeholder: '60',            type: 'number' },
-        { id: 'voltage',  label: 'Напряжение (В)', placeholder: '12',            type: 'number' },
       ],
     };
 
