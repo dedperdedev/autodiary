@@ -1813,12 +1813,15 @@
     </div>
 
     <!-- Блок 2: Стоимость -->
-    <div id="planned-costs-wrap" style="display:none;" class="section">
+    <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость</p>
-      <div id="planned-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
-      <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);border-bottom:none;">
+      <div id="planned-costs-wrap" style="display:none;">
+        <div id="planned-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);margin-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);padding-bottom:var(--space-sm);"></div>
+      </div>
+      <div class="field" style="border-bottom:none;">
         <label style="font-weight:700;font-size:var(--font-size-body);">Итого (₴)</label>
-        <span id="planned-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        <input type="number" id="planned-cost-total" placeholder="0.00" step="0.01" min="0"
+          style="width:130px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);font-weight:700;text-align:right;">
       </div>
     </div>
 

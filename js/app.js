@@ -5399,7 +5399,7 @@
       window._plannedSelected = new Set();
 
       ['planned-shop','planned-master','planned-date','planned-odometer','planned-notes',
-       'planned-oil-brand','planned-oil-viscosity','planned-oil-volume']
+       'planned-oil-brand','planned-oil-viscosity','planned-oil-volume','planned-cost-total']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('planned-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5411,7 +5411,6 @@
       document.getElementById('planned-oil-detail').style.display = 'none';
       document.getElementById('planned-costs-wrap').style.display = 'none';
       document.getElementById('planned-costs-list').innerHTML = '';
-      document.getElementById('planned-cost-total').textContent = '0.00';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
         btn.onclick = () => togglePlannedBtn(btn.dataset.planned, btn);
@@ -5453,28 +5452,21 @@
     function renderPlannedCosts() {
       const wrap = document.getElementById('planned-costs-wrap');
       const list = document.getElementById('planned-costs-list');
-      const totalEl = document.getElementById('planned-cost-total');
-      if(!wrap || !list || !totalEl) return;
+      if(!wrap || !list) return;
+
       if(window._plannedSelected.size === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = 'block';
+      wrap.style.display = '';
 
       const existing = {};
       list.querySelectorAll('[data-pcost-key]').forEach(i => existing[i.dataset.pcostKey] = i.value);
 
       list.innerHTML = Array.from(window._plannedSelected).map(key => {
         const lbl = PLANNED_SUBS[key] || key;
-        const det = window._plannedDetails[key] || {};
-        const detSummary = Object.values(det).filter(Boolean).join(' · ');
         const val = existing[key] || '';
-        return `<div style="display:flex;flex-direction:column;gap:4px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-            <div style="flex:1;">
-              <span style="font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(lbl)}</span>
-              ${detSummary ? `<div style="font-size:var(--font-size-footnote);color:var(--text-secondary);margin-top:2px;">${escapeHtml(detSummary)}</div>` : ''}
-            </div>
-            <input type="number" data-pcost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-              style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
-          </div>
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);padding-bottom:var(--space-sm);">
+          <span style="flex:1;font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(lbl)}</span>
+          <input type="number" data-pcost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
+            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
         </div>`;
       }).join('');
 
@@ -5482,12 +5474,14 @@
         inp.addEventListener('input', () => {
           let sum = 0;
           list.querySelectorAll('[data-pcost-key]').forEach(i => sum += parseFloat(i.value || 0));
-          document.getElementById('planned-cost-total').textContent = sum.toFixed(2);
+          const totalEl = document.getElementById('planned-cost-total');
+          if(totalEl) totalEl.value = sum > 0 ? sum.toFixed(2) : '';
         });
       });
       let sum = 0;
       list.querySelectorAll('[data-pcost-key]').forEach(i => sum += parseFloat(i.value || 0));
-      totalEl.textContent = sum.toFixed(2);
+      const totalEl = document.getElementById('planned-cost-total');
+      if(totalEl && sum > 0) totalEl.value = sum.toFixed(2);
     }
 
     function savePlannedEntry() {
@@ -5506,7 +5500,8 @@
       document.querySelectorAll('#planned-costs-list [data-pcost-key]').forEach(inp => {
         costMap[inp.dataset.pcostKey] = parseFloat(inp.value || 0);
       });
-      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const totalCost = parseFloat(document.getElementById('planned-cost-total')?.value || 0) ||
+        Object.values(costMap).reduce((s, v) => s + v, 0);
       const typeLabel = Array.from(window._plannedSelected).map(k => PLANNED_SUBS[k] || k).join(', ');
 
       // Собрать детали масла из нижних полей
