@@ -1531,6 +1531,8 @@
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
+
+    <!-- Блок 1: Дата, Пробег, АЗС -->
     <div class="section">
       <div class="field">
         <label>Дата *</label>
@@ -1540,6 +1542,14 @@
         <label>Пробег (км) *</label>
         <input type="number" id="fuel-odometer" placeholder="0" min="0" required>
       </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Название АЗС</label>
+        <input type="text" id="fuel-station" placeholder="Название АЗС">
+      </div>
+    </div>
+
+    <!-- Блок 2: Тип топлива, Литры, Стоимость -->
+    <div class="section">
       <div class="field" style="cursor:pointer;" id="fuel-type-picker-field">
         <label>Тип топлива *</label>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-xs) 0;min-height:44px;">
@@ -1552,28 +1562,28 @@
         <input type="number" id="fuel-liters" placeholder="0.00" step="0.01" min="0" required>
       </div>
       <div class="field">
-        <label>Общая стоимость (₴) *</label>
+        <label style="font-weight:600;">Общая стоимость (₴) *</label>
         <input type="number" id="fuel-cost" placeholder="0.00" step="0.01" min="0" required>
       </div>
       <div class="field" id="fuel-price-per-unit-row" style="display:none;">
         <label id="fuel-price-per-unit-label">Цена за литр (₴)</label>
         <span id="fuel-price-per-unit" style="font-weight:600;color:var(--text);"></span>
       </div>
-      <div class="field">
+      <div class="field" style="border-bottom:none;">
         <label>
           <input type="checkbox" id="fuel-full-tank">
           Полный бак
         </label>
       </div>
-      <div class="field">
-        <label>АЗС</label>
-        <input type="text" id="fuel-station" placeholder="Название АЗС">
-      </div>
+    </div>
+
+    <!-- Блок 3: Заметки, Фото -->
+    <div class="section">
       <div class="field">
         <label>Заметки</label>
         <textarea id="fuel-notes" placeholder="Дополнительная информация"></textarea>
       </div>
-      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
         <label>Фото / чеки</label>
         <div id="fuel-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
         <div class="chip" id="fuel-add-receipt-btn" style="cursor:pointer">
@@ -1583,6 +1593,7 @@
         <input type="file" id="fuel-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
+
     <div class="save-btn">
       <button id="save-fuel-btn">Сохранить</button>
     </div>
