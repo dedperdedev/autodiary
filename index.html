@@ -751,44 +751,153 @@
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
-    <div class="section">
-      <h3>🔧 Сервис</h3>
-      <div class="item" data-category="Техническое обслуживание"><label>Техническое обслуживание</label><input type="checkbox"></div>
-      <div class="item" data-category="Ремонт и детали"><label>Ремонт и детали</label><input type="checkbox"></div>
-    </div>
-    <div class="section" id="section-fuel">
-      <h3>⛽ Заправка</h3>
-      <div class="item" data-category="Заправка"><label>Заправка (бензин / дизель / газ)</label><input type="checkbox"></div>
-      <div class="item" data-category="Электрозарядка"><label>Электрозарядка</label><input type="checkbox"></div>
-      <div class="item" data-category="Присадки и добавки"><label>Присадки и добавки</label><input type="checkbox"></div>
-    </div>
-    <div class="section">
-      <h3>🛞 Шиномонтаж</h3>
-      <div class="item" data-category="Покупка шин"><label>Покупка шин</label><input type="checkbox"></div>
-      <div class="item" data-category="Замена шин"><label>Замена шин</label><input type="checkbox"></div>
-      <div class="item" data-category="Балансировка"><label>Балансировка</label><input type="checkbox"></div>
-      <div class="item" data-category="Проверка давления"><label>Проверка давления</label><input type="checkbox"></div>
-    </div>
-    <div class="section">
-      <h3>🧼 Уход</h3>
-      <div class="item" data-category="Мойка"><label>Мойка</label><input type="checkbox"></div>
-      <div class="item" data-category="Полировка и химчистка"><label>Полировка и химчистка</label><input type="checkbox"></div>
-      <div class="item" data-category="Косметика"><label>Косметика</label><input type="checkbox"></div>
-      <div class="item" data-category="Защита кузова"><label>Защита кузова</label><input type="checkbox"></div>
-    </div>
-    <div class="section">
-      <h3>📋 Админ-расходы</h3>
-      <div class="item" data-category="ОСАГО / КАСКО"><label>ОСАГО / КАСКО</label><input type="checkbox"></div>
-      <div class="item" data-category="Техосмотр"><label>Техосмотр</label><input type="checkbox"></div>
-      <div class="item" data-category="Регистрация / оформление"><label>Регистрация / оформление</label><input type="checkbox"></div>
-      <div class="item" data-category="Налоги"><label>Налоги</label><input type="checkbox"></div>
-      <div class="item" data-category="Парковка"><label>Парковка</label><input type="checkbox"></div>
-      <div class="item" data-category="Платные дороги"><label>Платные дороги</label><input type="checkbox"></div>
-      <div class="item" data-category="Штрафы"><label>Штрафы</label><input type="checkbox"></div>
-      <div class="item" data-category="Эвакуация / буксировка"><label>Эвакуация / буксировка</label><input type="checkbox"></div>
-    </div>
-    <div class="save-btn">
-      <button data-goto="screen-expense-form">Готово</button>
+
+    <div class="section" style="padding-bottom:var(--space-xl);">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Сервис</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <button class="expense-category-item item" data-category="Техническое обслуживание">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+            <i data-lucide="wrench"></i>
+          </div>
+          <span>ТО</span>
+        </button>
+        <button class="expense-category-item item" data-category="Ремонт и детали">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;">
+            <i data-lucide="hammer"></i>
+          </div>
+          <span>Ремонт и детали</span>
+        </button>
+      </div>
+
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Заправка</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-lg);" id="section-fuel">
+        <button class="expense-category-item item" data-category="Заправка">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;">
+            <i data-lucide="fuel"></i>
+          </div>
+          <span>Заправка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Электрозарядка">
+          <div class="expense-category-icon" style="background:rgba(48,209,88,0.15);color:#30D158;">
+            <i data-lucide="zap"></i>
+          </div>
+          <span>Зарядка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Присадки и добавки">
+          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;">
+            <i data-lucide="flask-conical"></i>
+          </div>
+          <span>Присадки</span>
+        </button>
+      </div>
+
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Шиномонтаж</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <button class="expense-category-item item" data-category="Покупка шин">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+            <i data-lucide="circle-dashed"></i>
+          </div>
+          <span>Покупка шин</span>
+        </button>
+        <button class="expense-category-item item" data-category="Замена шин">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+            <i data-lucide="rotate-cw"></i>
+          </div>
+          <span>Замена шин</span>
+        </button>
+        <button class="expense-category-item item" data-category="Балансировка">
+          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;">
+            <i data-lucide="circle-dot"></i>
+          </div>
+          <span>Балансировка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Проверка давления">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+            <i data-lucide="gauge"></i>
+          </div>
+          <span>Давление</span>
+        </button>
+      </div>
+
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Уход</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <button class="expense-category-item item" data-category="Мойка">
+          <div class="expense-category-icon" style="background:rgba(90,200,250,0.15);color:#5AC8FA;">
+            <i data-lucide="droplets"></i>
+          </div>
+          <span>Мойка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Полировка и химчистка">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <span>Полировка и химчистка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Косметика">
+          <div class="expense-category-icon" style="background:rgba(255,55,95,0.15);color:#FF375F;">
+            <i data-lucide="paintbrush"></i>
+          </div>
+          <span>Косметика</span>
+        </button>
+        <button class="expense-category-item item" data-category="Защита кузова">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
+            <i data-lucide="shield"></i>
+          </div>
+          <span>Защита кузова</span>
+        </button>
+      </div>
+
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Административные</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
+        <button class="expense-category-item item" data-category="ОСАГО / КАСКО">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
+            <i data-lucide="shield-check"></i>
+          </div>
+          <span>Страховка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Техосмотр">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+            <i data-lucide="clipboard-check"></i>
+          </div>
+          <span>Техосмотр</span>
+        </button>
+        <button class="expense-category-item item" data-category="Регистрация / оформление">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+            <i data-lucide="file-text"></i>
+          </div>
+          <span>Регистрация</span>
+        </button>
+        <button class="expense-category-item item" data-category="Налоги">
+          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;">
+            <i data-lucide="receipt"></i>
+          </div>
+          <span>Налоги</span>
+        </button>
+        <button class="expense-category-item item" data-category="Парковка">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+            <i data-lucide="square-parking"></i>
+          </div>
+          <span>Парковка</span>
+        </button>
+        <button class="expense-category-item item" data-category="Платные дороги">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+            <i data-lucide="milestone"></i>
+          </div>
+          <span>Платные дороги</span>
+        </button>
+        <button class="expense-category-item item" data-category="Штрафы">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;">
+            <i data-lucide="alert-triangle"></i>
+          </div>
+          <span>Штрафы</span>
+        </button>
+        <button class="expense-category-item item" data-category="Эвакуация / буксировка">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="truck"></i>
+          </div>
+          <span>Эвакуатор</span>
+        </button>
+      </div>
     </div>
   </section>
 
