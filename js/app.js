@@ -4966,6 +4966,13 @@
             return;
           }
           
+          // Quick path for ТО (planned maintenance)
+          if(categoryItem.dataset.type === 'planned' || categoryItem.dataset.goto === 'screen-add-planned') {
+            expenseCategorySheet.classList.remove('active');
+            showView('screen-add-planned');
+            return;
+          }
+
           // Quick path for service subcategory
           if(categoryItem.dataset.type === 'service-cat' || categoryItem.dataset.goto === 'screen-add-service-cat') {
             expenseCategorySheet.classList.remove('active');
