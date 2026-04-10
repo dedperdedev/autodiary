@@ -5409,7 +5409,6 @@
         btn.querySelector('.pl-chk')?.remove();
       });
       document.getElementById('planned-oil-detail').style.display = 'none';
-      document.getElementById('planned-costs-wrap').style.display = 'none';
       document.getElementById('planned-costs-list').innerHTML = '';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
@@ -5450,12 +5449,8 @@
     }
 
     function renderPlannedCosts() {
-      const wrap = document.getElementById('planned-costs-wrap');
       const list = document.getElementById('planned-costs-list');
-      if(!wrap || !list) return;
-
-      if(window._plannedSelected.size === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
+      if(!list) return;
 
       const existing = {};
       list.querySelectorAll('[data-pcost-key]').forEach(i => existing[i.dataset.pcostKey] = i.value);
