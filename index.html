@@ -1771,14 +1771,6 @@
 
     <!-- Стоимость + поля -->
     <div class="section" style="padding-bottom:90px;">
-      <div id="planned-costs-wrap" style="display:none;margin-bottom:var(--space-sm);">
-        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость</p>
-        <div id="planned-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
-        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
-          <label style="font-weight:600;">Итого (₴)</label>
-          <span id="planned-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
-        </div>
-      </div>
       <div class="field">
         <label>Мастер / СТО</label>
         <input id="planned-shop" type="text" placeholder="Название мастерской">
@@ -1791,6 +1783,34 @@
         <label>Пробег (км)</label>
         <input type="number" id="planned-odometer" placeholder="0" min="0">
       </div>
+
+      <!-- Моторное масло — детали (только когда выбрано) -->
+      <div id="planned-oil-detail" style="display:none;">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:var(--space-sm) 0;">Детали масла</p>
+        <div class="field">
+          <label>Марка масла</label>
+          <input id="planned-oil-brand" type="text" placeholder="Castrol, Mobil, Shell…">
+        </div>
+        <div class="field">
+          <label>Вязкость</label>
+          <input id="planned-oil-viscosity" type="text" placeholder="5W-30">
+        </div>
+        <div class="field">
+          <label>Объём (л)</label>
+          <input id="planned-oil-volume" type="number" placeholder="4" min="0" step="0.1">
+        </div>
+      </div>
+
+      <!-- Стоимость по позициям -->
+      <div id="planned-costs-wrap" style="display:none;margin-top:var(--space-sm);">
+        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость</p>
+        <div id="planned-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
+        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
+          <label style="font-weight:600;">Итого (₴)</label>
+          <span id="planned-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
+        </div>
+      </div>
+
       <div class="field">
         <label>Заметки</label>
         <textarea id="planned-notes" placeholder="Дополнительная информация"></textarea>

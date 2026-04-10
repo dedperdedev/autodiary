@@ -5394,116 +5394,46 @@
 
     function initPlannedScreen() {
       window._plannedSelected = new Set();
-      window._plannedDetails = {};
 
-      ['planned-shop','planned-date','planned-odometer','planned-notes']
+      ['planned-shop','planned-date','planned-odometer','planned-notes',
+       'planned-oil-brand','planned-oil-viscosity','planned-oil-volume']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('planned-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
         btn.style.boxShadow = '';
-        btn.classList.remove('planned-active');
         btn.querySelector('.pl-chk')?.remove();
       });
-      document.getElementById('planned-inline-detail')?.remove();
+      document.getElementById('planned-oil-detail').style.display = 'none';
       document.getElementById('planned-costs-wrap').style.display = 'none';
       document.getElementById('planned-costs-list').innerHTML = '';
       document.getElementById('planned-cost-total').textContent = '0.00';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
-        btn.onclick = () => togglePlannedInline(btn.dataset.planned, btn);
+        btn.onclick = () => togglePlannedBtn(btn.dataset.planned, btn);
       });
 
       document.getElementById('save-planned-btn').onclick = savePlannedEntry;
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function togglePlannedInline(key, btn) {
-      if(!window._plannedDetails) window._plannedDetails = {};
+    function togglePlannedBtn(key, btn) {
       if(!window._plannedSelected) window._plannedSelected = new Set();
 
-      const fields = PLANNED_FIELDS[key] || [];
-      const details = window._plannedDetails[key] || {};
-      const INLINE_ID = 'planned-inline-detail';
-
-      // If already open for this key — just toggle off (deselect)
-      const existing = document.getElementById(INLINE_ID);
-      if(existing) {
-        if(existing.dataset.key === key) {
-          existing.remove();
-          return;
-        }
-        existing.remove();
-      }
-
-      // Mark button active
-      document.querySelectorAll('.planned-btn').forEach(b => b.classList.remove('planned-active'));
-      btn.classList.add('planned-active');
-
-      // If no fields — toggle selection directly (no inputs needed)
-      if(fields.length === 0) {
-        if(window._plannedSelected.has(key)) {
-          window._plannedSelected.delete(key);
-          delete window._plannedDetails[key];
-          btn.classList.remove('planned-active');
-          updatePlannedBtnState(btn, false);
-        } else {
-          window._plannedSelected.add(key);
-          window._plannedDetails[key] = {};
-          updatePlannedBtnState(btn, true);
-        }
-        renderPlannedCosts();
-        return;
-      }
-
-      // Build inline detail block, insert after the grid
-      const grid = btn.closest('[style*="grid"]') || btn.parentElement;
-      const block = document.createElement('div');
-      block.id = INLINE_ID;
-      block.dataset.key = key;
-      block.style.cssText = 'background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-md);margin-top:var(--space-sm);display:flex;flex-direction:column;gap:var(--space-sm);border:0.5px solid var(--separator);';
-
-      block.innerHTML = fields.map(f => `
-        <div>
-          <label style="font-size:var(--font-size-footnote);font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">${f.label}</label>
-          <input data-field="${f.id}" type="${f.type}" placeholder="${f.placeholder}" value="${escapeHtml(String(details[f.id] || ''))}"
-            style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-        </div>`).join('') + `
-        <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-xs);">
-          ${window._plannedSelected.has(key) ? `<button class="ios-button" id="pl-remove-btn" style="background:var(--destructive-tint);color:var(--destructive);">Снять</button>` : ''}
-          <button class="ios-button" id="pl-confirm-btn" style="flex:1;background:var(--accent);color:#fff;">Готово</button>
-        </div>`;
-
-      grid.after(block);
-
-      block.querySelector('#pl-confirm-btn').onclick = () => {
-        const saved = {};
-        block.querySelectorAll('[data-field]').forEach(el => {
-          if(el.value.trim()) saved[el.dataset.field] = el.value.trim();
-        });
-        window._plannedDetails[key] = saved;
+      if(window._plannedSelected.has(key)) {
+        window._plannedSelected.delete(key);
+        updatePlannedBtnState(btn, false);
+      } else {
         window._plannedSelected.add(key);
         updatePlannedBtnState(btn, true);
-        renderPlannedCosts();
-        block.remove();
-        btn.classList.remove('planned-active');
-      };
-
-      const removeBtn = block.querySelector('#pl-remove-btn');
-      if(removeBtn) {
-        removeBtn.onclick = () => {
-          window._plannedSelected.delete(key);
-          delete window._plannedDetails[key];
-          updatePlannedBtnState(btn, false);
-          renderPlannedCosts();
-          block.remove();
-          btn.classList.remove('planned-active');
-        };
       }
 
-      // Focus first field
-      block.querySelector('input')?.focus();
+      // Show/hide oil detail block
+      document.getElementById('planned-oil-detail').style.display =
+        window._plannedSelected.has('oil') ? '' : 'none';
+
+      renderPlannedCosts();
     }
 
     function updatePlannedBtnState(btn, selected) {
@@ -5575,11 +5505,15 @@
       const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
       const typeLabel = Array.from(window._plannedSelected).map(k => PLANNED_SUBS[k] || k).join(', ');
 
-      // АКБ → паспорт авто
-      const batDetails = window._plannedDetails['battery'];
-      if(window._plannedSelected.has('battery') && batDetails?.brand) {
-        const car = state.cars.find(c => c.id === carId);
-        if(car) { car.akbBrand = batDetails.brand; car.akbCapacity = batDetails.capacity || ''; car.akbDate = date; car.akbOdometer = odometer; }
+      // Собрать детали масла из нижних полей
+      const oilDetails = {};
+      if(window._plannedSelected.has('oil')) {
+        const brand = document.getElementById('planned-oil-brand')?.value?.trim();
+        const viscosity = document.getElementById('planned-oil-viscosity')?.value?.trim();
+        const volume = document.getElementById('planned-oil-volume')?.value?.trim();
+        if(brand) oilDetails.brand = brand;
+        if(viscosity) oilDetails.viscosity = viscosity;
+        if(volume) oilDetails.volume = volume;
       }
 
       const plannedReceipts = window.temp_planned_receipts || [];
@@ -5588,7 +5522,7 @@
         id: Date.now().toString(), carId, date, odometer,
         type: 'planned', typeLabel,
         items: Array.from(window._plannedSelected),
-        detailsMap: window._plannedDetails,
+        oilDetails: Object.keys(oilDetails).length > 0 ? oilDetails : undefined,
         costMap, cost: totalCost, shop, notes,
         receipts: plannedReceipts.length > 0 ? plannedReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
