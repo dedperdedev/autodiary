@@ -4906,163 +4906,78 @@
         });
       }
       
-      // Initialize expense category sheet handlers
-      const expenseCategorySheet = document.getElementById('expense-category-sheet');
+      // diary-add-btn → navigate to category screen (no modal)
       const diaryAddBtn = document.getElementById('diary-add-btn');
-      
       if(diaryAddBtn) {
-        diaryAddBtn.addEventListener('click', () => {
-          if(expenseCategorySheet) {
-            expenseCategorySheet.classList.add('active');
-          }
+        diaryAddBtn.addEventListener('click', () => showView('screen-add-expense'));
+      }
+
+      // Handle category selection from screen-add-expense
+      function handleExpenseCategoryClick(categoryItem) {
+        if(!categoryItem) return;
+
+        if(categoryItem.dataset.reminder === 'true') { showView('screen-add-reminder'); return; }
+        if(categoryItem.dataset.type === 'fuel'        || categoryItem.dataset.goto === 'screen-add-fuel')        { showView('screen-add-fuel');        return; }
+        if(categoryItem.dataset.type === 'charge'      || categoryItem.dataset.goto === 'screen-add-charge')      { showView('screen-add-charge');      return; }
+        if(categoryItem.dataset.type === 'admin'       || categoryItem.dataset.goto === 'screen-add-admin')       { showView('screen-add-admin');       return; }
+        if(categoryItem.dataset.type === 'wheels'      || categoryItem.dataset.goto === 'screen-add-wheels')      { showView('screen-add-wheels');      return; }
+        if(categoryItem.dataset.type === 'planned'     || categoryItem.dataset.goto === 'screen-add-planned')     { showView('screen-add-planned');     return; }
+        if(categoryItem.dataset.type === 'service-cat' || categoryItem.dataset.goto === 'screen-add-service-cat') { showView('screen-add-service-cat'); return; }
+        if(categoryItem.dataset.type === 'service'     || categoryItem.dataset.goto === 'screen-add-service')     { showView('screen-add-service');     return; }
+
+        if(categoryItem.id === 'btn-update-odometer' || categoryItem.id === 'btn-update-odometer-2') {
+          showUpdateOdometerSheet(); return;
+        }
+
+        if(categoryItem.dataset.type === 'other') {
+          showOtherExpensePicker((text) => {
+            setTimeout(() => {
+              const categoryValue = document.getElementById('expense-category-value');
+              if(categoryValue) categoryValue.textContent = text ? 'Прочее — ' + text : 'Прочее';
+              showView('screen-expense-form');
+              const notesEl = document.getElementById('notes');
+              if(notesEl) notesEl.value = text;
+              const notesField = notesEl?.closest('.field');
+              if(notesField) notesField.style.display = 'none';
+            }, 320);
+          });
+          return;
+        }
+
+        if(categoryItem.dataset.type === 'care') {
+          showCareTypePicker((ct) => {
+            setTimeout(() => {
+              const categoryValue = document.getElementById('expense-category-value');
+              if(categoryValue) categoryValue.textContent = 'Уход — ' + ct.label;
+              showView('screen-expense-form');
+            }, 320);
+          });
+          return;
+        }
+
+        const category = categoryItem.dataset.category;
+        if(category) {
+          const categoryValue = document.getElementById('expense-category-value');
+          if(categoryValue) categoryValue.textContent = category;
+          showView('screen-expense-form');
+        }
+      }
+
+      const expenseCategoryScreen = document.getElementById('screen-add-expense');
+      if(expenseCategoryScreen) {
+        expenseCategoryScreen.addEventListener('click', (e) => {
+          const categoryItem = e.target.closest('.expense-category-item');
+          if(categoryItem) handleExpenseCategoryClick(categoryItem);
         });
       }
-      
-      // Close sheet on overlay click
+
+      // Legacy sheet — keep but also wire it for backward compat
+      const expenseCategorySheet = document.getElementById('expense-category-sheet');
       if(expenseCategorySheet) {
         expenseCategorySheet.addEventListener('click', (e) => {
-          if(e.target === expenseCategorySheet) {
-            expenseCategorySheet.classList.remove('active');
-          }
-        });
-        
-        // Handle category selection
-        expenseCategorySheet.addEventListener('click', (e) => {
+          if(e.target === expenseCategorySheet) { expenseCategorySheet.classList.remove('active'); return; }
           const categoryItem = e.target.closest('.expense-category-item');
-          if(!categoryItem) return;
-          
-          // Quick path for reminder
-          if(categoryItem.dataset.reminder === 'true') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-reminder');
-            return;
-          }
-          
-          // Quick path for fuel
-          if(categoryItem.dataset.type === 'fuel' || categoryItem.dataset.goto === 'screen-add-fuel') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-fuel');
-            return;
-          }
-
-          // Quick path for charge
-          if(categoryItem.dataset.type === 'charge' || categoryItem.dataset.goto === 'screen-add-charge') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-charge');
-            return;
-          }
-
-          // Quick path for admin
-          if(categoryItem.dataset.type === 'admin' || categoryItem.dataset.goto === 'screen-add-admin') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-admin');
-            return;
-          }
-
-          // Quick path for wheels
-          if(categoryItem.dataset.type === 'wheels' || categoryItem.dataset.goto === 'screen-add-wheels') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-wheels');
-            return;
-          }
-          
-          // Quick path for ТО (planned maintenance)
-          if(categoryItem.dataset.type === 'planned' || categoryItem.dataset.goto === 'screen-add-planned') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-planned');
-            return;
-          }
-
-          // Quick path for service subcategory
-          if(categoryItem.dataset.type === 'service-cat' || categoryItem.dataset.goto === 'screen-add-service-cat') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-service-cat');
-            return;
-          }
-
-          // Quick path for service (legacy)
-          if(categoryItem.dataset.type === 'service' || categoryItem.dataset.goto === 'screen-add-service') {
-            expenseCategorySheet.classList.remove('active');
-            showView('screen-add-service');
-            return;
-          }
-
-          // Quick path for Обновить пробег
-          if(categoryItem.id === 'btn-update-odometer') {
-            expenseCategorySheet.classList.remove('active');
-            showUpdateOdometerSheet();
-            return;
-          }
-
-          // Quick path for Прочее — show text input sub-sheet
-          if(categoryItem.dataset.type === 'other') {
-            expenseCategorySheet.classList.remove('active');
-            showOtherExpensePicker((text) => {
-              setTimeout(() => {
-                const categoryValue = document.getElementById('expense-category-value');
-                if(categoryValue) categoryValue.textContent = text ? 'Прочее — ' + text : 'Прочее';
-                showView('screen-expense-form'); // restores notes field first
-                // Pre-fill notes with typed text and hide notes field
-                const notesEl = document.getElementById('notes');
-                if(notesEl) notesEl.value = text;
-                const notesField = notesEl?.closest('.field');
-                if(notesField) notesField.style.display = 'none';
-              }, 320);
-            });
-            return;
-          }
-
-          // Quick path for Уход — show subcategory picker
-          if(categoryItem.dataset.type === 'care') {
-            expenseCategorySheet.classList.remove('active');
-            showCareTypePicker((ct) => {
-              setTimeout(() => {
-                const categoryValue = document.getElementById('expense-category-value');
-                if(categoryValue) categoryValue.textContent = 'Уход — ' + ct.label;
-                showView('screen-expense-form');
-              }, 320);
-            });
-            return;
-          }
-
-          // Quick path for ТО — navigate to service form
-          if(categoryItem.dataset.type === 'to') {
-            expenseCategorySheet.classList.remove('active');
-            window.selectedServiceTypes = [];
-            updateServiceTypeDisplay();
-            showView('screen-add-service');
-            const svcPickerField = document.getElementById('service-type-picker-field');
-            if (svcPickerField && !svcPickerField._pickerBound) {
-              svcPickerField._pickerBound = true;
-              svcPickerField.addEventListener('click', () => showServiceTypePicker());
-            }
-            return;
-          }
-
-          const category = categoryItem.dataset.category;
-          const scrollTo = categoryItem.dataset.scroll;
-          
-          // Set category in form
-          const categoryValue = document.getElementById('expense-category-value');
-          if(categoryValue) {
-            categoryValue.textContent = category;
-          }
-          
-          // Close sheet
-          expenseCategorySheet.classList.remove('active');
-          
-          // Open expense form
-          showView('screen-expense-form');
-          
-          // Scroll to specific section if needed (for fuel)
-          if(scrollTo) {
-            setTimeout(() => {
-              const section = document.querySelector(scrollTo);
-              if(section) {
-                section.scrollIntoView({behavior: 'smooth', block: 'start'});
-              }
-            }, 300);
-          }
+          if(categoryItem) { expenseCategorySheet.classList.remove('active'); handleExpenseCategoryClick(categoryItem); }
         });
       }
     
