@@ -4005,6 +4005,8 @@
           initServiceCatScreen();
         } else if(id === 'screen-add-planned') {
           initPlannedScreen();
+        } else if(id === 'screen-add-svc-planned') {
+          initSvcPlannedScreen();
         } else if(id === 'screen-add-admin') {
           initAdminScreen();
         } else if(id === 'screen-add-wheels') {
@@ -5226,7 +5228,7 @@
       });
 
       const gotoPlanned = document.getElementById('svc-goto-planned');
-      if(gotoPlanned) gotoPlanned.onclick = () => showView('screen-add-planned');
+      if(gotoPlanned) gotoPlanned.onclick = () => showView('screen-add-svc-planned');
 
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -5531,6 +5533,129 @@
       if(saveAppState()) {
         showToast('Сохранено');
         clearReceiptTemp('planned');
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
+    // ── Svc Planned Screen (Сервис → Плановая замена) ─────────────────
+    const SVC_PLANNED_SUBS = {
+      'spark':          'Свечи зажигания / накаливания',
+      'timing':         'Ремень / цепь ГРМ',
+      'coolant':        'Замена антифриза',
+      'brake-fluid':    'Замена тормозной жидкости',
+      'power-steering': 'Замена жидкости ГУР',
+      'gearbox-oil':    'Масло в КПП',
+      'front-diff':     'Масло переднего редуктора',
+      'rear-diff':      'Масло заднего редуктора',
+      'transfer':       'Масло раздаточной коробки',
+      'battery':        'Новый АКБ',
+    };
+
+    function initSvcPlannedScreen() {
+      window._svcpSelected = new Set();
+
+      ['svcp-shop','svcp-date','svcp-odometer','svcp-notes']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('svcp-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+      document.querySelectorAll('.svcp-btn').forEach(btn => {
+        btn.style.boxShadow = '';
+        btn.querySelector('.svcp-chk')?.remove();
+      });
+      document.getElementById('svcp-costs-wrap').style.display = 'none';
+      document.getElementById('svcp-costs-list').innerHTML = '';
+      document.getElementById('svcp-cost-total').textContent = '0.00';
+
+      document.querySelectorAll('.svcp-btn').forEach(btn => {
+        btn.onclick = () => {
+          const key = btn.dataset.svcp;
+          if(window._svcpSelected.has(key)) {
+            window._svcpSelected.delete(key);
+            btn.style.boxShadow = '';
+            btn.querySelector('.svcp-chk')?.remove();
+          } else {
+            window._svcpSelected.add(key);
+            btn.style.boxShadow = '0 0 0 2px #34C759';
+            btn.style.borderRadius = '14px';
+            if(!btn.querySelector('.svcp-chk'))
+              btn.insertAdjacentHTML('beforeend','<div class="svcp-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+          }
+          renderSvcpCosts();
+        };
+      });
+
+      document.getElementById('save-svcp-btn').onclick = saveSvcPlannedEntry;
+      wirePhotoBlock('svcp');
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderSvcpCosts() {
+      const wrap = document.getElementById('svcp-costs-wrap');
+      const list = document.getElementById('svcp-costs-list');
+      const totalEl = document.getElementById('svcp-cost-total');
+      if(!wrap || !list || !totalEl) return;
+      if(window._svcpSelected.size === 0) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+
+      const existing = {};
+      list.querySelectorAll('[data-svcp-cost]').forEach(i => existing[i.dataset.svcpCost] = i.value);
+
+      list.innerHTML = Array.from(window._svcpSelected).map(key => {
+        const lbl = SVC_PLANNED_SUBS[key] || key;
+        const val = existing[key] || '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
+          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(lbl)}</span>
+          <input type="number" data-svcp-cost="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
+            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('[data-svcp-cost]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          let sum = 0;
+          list.querySelectorAll('[data-svcp-cost]').forEach(i => sum += parseFloat(i.value || 0));
+          totalEl.textContent = sum.toFixed(2);
+        });
+      });
+      let sum = 0;
+      list.querySelectorAll('[data-svcp-cost]').forEach(i => sum += parseFloat(i.value || 0));
+      totalEl.textContent = sum.toFixed(2);
+    }
+
+    function saveSvcPlannedEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Выберите автомобиль'); return; }
+      const date = document.getElementById('svcp-date')?.value;
+      if(!date) { showToast('Укажите дату'); return; }
+      if(!window._svcpSelected || window._svcpSelected.size === 0) { showToast('Выберите что заменили'); return; }
+
+      const odometer = parseFloat(document.getElementById('svcp-odometer')?.value || 0);
+      const shop = document.getElementById('svcp-shop')?.value?.trim() || '';
+      const notes = document.getElementById('svcp-notes')?.value?.trim() || '';
+
+      const costMap = {};
+      document.querySelectorAll('#svcp-costs-list [data-svcp-cost]').forEach(inp => {
+        costMap[inp.dataset.svcpCost] = parseFloat(inp.value || 0);
+      });
+      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const typeLabel = Array.from(window._svcpSelected).map(k => SVC_PLANNED_SUBS[k] || k).join(', ');
+
+      const receipts = window.temp_svcp_receipts || [];
+      if(!state.service) state.service = [];
+      state.service.push({
+        id: Date.now().toString(), carId, date, odometer,
+        type: 'svc-planned', typeLabel,
+        items: Array.from(window._svcpSelected),
+        costMap, cost: totalCost, shop, notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
+        createdAt: new Date().toISOString(), deletedAt: null
+      });
+
+      if(saveAppState()) {
+        showToast('Сохранено');
+        clearReceiptTemp('svcp');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -6178,7 +6303,7 @@
     }
     
     // Receipts handling functions
-    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge'];
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp'];
     RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
     // Legacy aliases
     Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });
