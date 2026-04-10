@@ -5169,32 +5169,18 @@
         }
       } else {
         // Create new entry
+        const fuelReceipts = window.temp_fuel_receipts || [];
         const fuelEntry = (typeof Fuel !== 'undefined' && Fuel.addEntry) ?
           Fuel.addEntry(carId, {
-            date,
-            odometer,
-            liters,
-            totalCost,
-            fullTank,
-            fuelType,
-            fuelTypeLabel,
-            station,
-            notes
+            date, odometer, liters, totalCost, fullTank, fuelType, fuelTypeLabel, station, notes,
+            receipts: fuelReceipts.length > 0 ? fuelReceipts : undefined
           }) : {
             id: Date.now().toString(),
-            carId,
-            date,
-            odometer,
-            liters,
-            totalCost,
+            carId, date, odometer, liters, totalCost,
             pricePerLiter: liters > 0 ? (totalCost / liters).toFixed(2) : 0,
-            fullTank,
-            fuelType,
-            fuelTypeLabel,
-            station,
-            notes,
-            createdAt: new Date().toISOString(),
-            deletedAt: null
+            fullTank, fuelType, fuelTypeLabel, station, notes,
+            receipts: fuelReceipts.length > 0 ? fuelReceipts : undefined,
+            createdAt: new Date().toISOString(), deletedAt: null
           };
         
         state.fuel.push(fuelEntry);
@@ -5213,7 +5199,8 @@
         window.selectedFuelType = null;
         updateFuelTypeDisplay();
         editingFuelId = null;
-        
+        clearReceiptTemp('fuel');
+
         // Return to car details or diary
         if(currentCarId) {
           loadCarDetails(currentCarId);
@@ -5639,6 +5626,7 @@
         if(car) { car.akbBrand = batDetails.brand; car.akbCapacity = batDetails.capacity || ''; car.akbDate = date; car.akbOdometer = odometer; }
       }
 
+      const plannedReceipts = window.temp_planned_receipts || [];
       if(!state.service) state.service = [];
       state.service.push({
         id: Date.now().toString(), carId, date, odometer,
@@ -5646,11 +5634,13 @@
         items: Array.from(window._plannedSelected),
         detailsMap: window._plannedDetails,
         costMap, cost: totalCost, shop, notes,
+        receipts: plannedReceipts.length > 0 ? plannedReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
 
       if(saveAppState()) {
         showToast('Сохранено');
+        clearReceiptTemp('planned');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -5761,6 +5751,7 @@
         k === 'other' ? (otherText || 'Прочее') : (ADMIN_CATS[k] || k)
       );
 
+      const adminReceipts = window.temp_admin_receipts || [];
       if(!state.service) state.service = [];
       state.service.push({
         id: Date.now().toString(),
@@ -5770,12 +5761,14 @@
         categories: Array.from(window._adminSelected),
         costMap, cost: totalCost,
         otherText, notes,
+        receipts: adminReceipts.length > 0 ? adminReceipts : undefined,
         createdAt: new Date().toISOString(),
         deletedAt: null
       });
 
       if(saveAppState()) {
         showToast('Сохранено');
+        clearReceiptTemp('admin');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -5978,23 +5971,19 @@
       if(window._wheelsWorks.has('other') && otherText) parts.push(otherText);
       else if(window._wheelsWorks.has('other')) parts.push('Прочее');
 
+      const wheelsReceipts = window.temp_wheels_receipts || [];
       if(!state.service) state.service = [];
       state.service.push({
         id: Date.now().toString(),
-        carId,
-        date,
-        odometer,
+        carId, date, odometer,
         type: 'wheels',
         typeLabel: parts.join(', '),
         installType: window._wheelsInstall,
         newTire: hasNewTire ? { brand: tireBrand, size: tireSize, cost: tireCost } : null,
         works: Array.from(window._wheelsWorks),
-        costMap, cost,
-        otherText,
-        shop,
-        notes: '',
-        createdAt: new Date().toISOString(),
-        deletedAt: null
+        costMap, cost, otherText, shop, notes: '',
+        receipts: wheelsReceipts.length > 0 ? wheelsReceipts : undefined,
+        createdAt: new Date().toISOString(), deletedAt: null
       });
 
       // If new tire — save to car passport
@@ -6013,6 +6002,7 @@
 
       if(saveAppState()) {
         showToast('Сохранено');
+        clearReceiptTemp('wheels');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -6035,19 +6025,15 @@
         return;
       }
 
+      const chargeReceipts = window.temp_charge_receipts || [];
       if(!state.charges) state.charges = [];
       state.charges.push({
         id: Date.now().toString(),
-        carId,
-        date,
-        odometer,
-        kwh,
-        totalCost,
+        carId, date, odometer, kwh, totalCost,
         pricePerKwh: kwh > 0 ? (totalCost / kwh).toFixed(2) : 0,
-        station,
-        notes,
-        createdAt: new Date().toISOString(),
-        deletedAt: null
+        station, notes,
+        receipts: chargeReceipts.length > 0 ? chargeReceipts : undefined,
+        createdAt: new Date().toISOString(), deletedAt: null
       });
 
       if(saveAppState()) {
@@ -6060,6 +6046,7 @@
         document.getElementById('charge-notes').value = '';
         const row = document.getElementById('charge-price-per-kwh-row');
         if(row) row.style.display = 'none';
+        clearReceiptTemp('charge');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -6298,117 +6285,48 @@
     }
     
     // Receipts handling functions
-    let tempExpenseReceipts = [];
-    let tempServiceReceipts = [];
-    window.tempExpenseReceipts = tempExpenseReceipts;
-    window.tempServiceReceipts = tempServiceReceipts;
-    
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge'];
+    RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
+    // Legacy aliases
+    Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });
+    Object.defineProperty(window, 'tempServiceReceipts', { get(){ return window.temp_service_receipts; }, set(v){ window.temp_service_receipts = v; }, configurable:true });
+
+    function clearReceiptTemp(key) {
+      window['temp_' + key + '_receipts'] = [];
+      renderReceiptsPreview(key + '-receipts-preview', []);
+    }
+
+    function wirePhotoBlock(key) {
+      const btn = document.getElementById(key + '-add-receipt-btn');
+      const input = document.getElementById(key + '-receipt-input');
+      if(!btn || !input) return;
+      btn.addEventListener('click', () => input.click());
+      input.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if(!files.length) return;
+        if(typeof Receipts === 'undefined') { showToast('Модуль работы с изображениями не загружен'); return; }
+        try {
+          const arr = window['temp_' + key + '_receipts'];
+          for(const file of files) {
+            if(arr.length >= Receipts.MAX_IMAGES) { showToast(`Максимум ${Receipts.MAX_IMAGES} изображений`); break; }
+            arr.push(await Receipts.compressImage(file));
+          }
+          renderReceiptsPreview(key + '-receipts-preview', window['temp_' + key + '_receipts']);
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+        } catch(err) { showToast('Ошибка: ' + err.message); }
+        input.value = '';
+      });
+    }
+
     function initializeReceiptsHandlers() {
-      // Prevent duplicate handlers
       if (window.receiptsHandlersInitialized) return;
       window.receiptsHandlersInitialized = true;
-      
-      // Expense receipts
-      const expenseAddBtn = document.getElementById('expense-add-receipt-btn');
-      const expenseInput = document.getElementById('expense-receipt-input');
-      const expensePreview = document.getElementById('expense-receipts-preview');
-      
-      if(expenseAddBtn && expenseInput) {
-        expenseAddBtn.addEventListener('click', () => {
-          expenseInput.click();
-        });
-        
-        expenseInput.addEventListener('change', async (e) => {
-          const files = Array.from(e.target.files || []);
-          if(files.length === 0) return;
-          
-          if(typeof Receipts === 'undefined') {
-            showToast('Модуль работы с изображениями не загружен');
-            return;
-          }
-          
-          try {
-            for(const file of files) {
-              if(window.tempExpenseReceipts.length >= Receipts.MAX_IMAGES) {
-                showToast(`Максимум ${Receipts.MAX_IMAGES} изображений`);
-                break;
-              }
-              
-              const compressed = await Receipts.compressImage(file);
-              window.tempExpenseReceipts.push(compressed);
-            }
-            
-            renderReceiptsPreview('expense-receipts-preview', window.tempExpenseReceipts);
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-          } catch(err) {
-            showToast('Ошибка обработки изображения: ' + err.message);
-            console.error(err);
-          }
-          
-          // Reset input
-          expenseInput.value = '';
-        });
-      }
-      
-      // Service receipts
-      const serviceAddBtn = document.getElementById('service-add-receipt-btn');
-      const serviceInput = document.getElementById('service-receipt-input');
-      
-      if(serviceAddBtn && serviceInput) {
-        serviceAddBtn.addEventListener('click', () => {
-          serviceInput.click();
-        });
-        
-        serviceInput.addEventListener('change', async (e) => {
-          const files = Array.from(e.target.files || []);
-          if(files.length === 0) return;
-          
-          if(typeof Receipts === 'undefined') {
-            showToast('Модуль работы с изображениями не загружен');
-            return;
-          }
-          
-          try {
-            for(const file of files) {
-              if(window.tempServiceReceipts.length >= Receipts.MAX_IMAGES) {
-                showToast(`Максимум ${Receipts.MAX_IMAGES} изображений`);
-                break;
-              }
-              
-              const compressed = await Receipts.compressImage(file);
-              window.tempServiceReceipts.push(compressed);
-            }
-            
-            renderReceiptsPreview('service-receipts-preview', window.tempServiceReceipts);
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-          } catch(err) {
-            showToast('Ошибка обработки изображения: ' + err.message);
-            console.error(err);
-          }
-          
-          // Reset input
-          serviceInput.value = '';
-        });
-      }
-      
+      RECEIPT_TEMP_KEYS.forEach(wirePhotoBlock);
       // Receipt viewer
       const viewerOverlay = document.getElementById('receipt-viewer-overlay');
-      const viewerImage = document.getElementById('receipt-viewer-image');
       const viewerClose = document.getElementById('receipt-viewer-close');
-      
-      if(viewerClose) {
-        viewerClose.addEventListener('click', () => {
-          if(viewerOverlay) viewerOverlay.style.display = 'none';
-        });
-      }
-      
-      if(viewerOverlay) {
-        viewerOverlay.addEventListener('click', (e) => {
-          if(e.target === viewerOverlay) {
-            viewerOverlay.style.display = 'none';
-          }
-        });
-      }
+      if(viewerClose) viewerClose.addEventListener('click', () => { if(viewerOverlay) viewerOverlay.style.display = 'none'; });
+      if(viewerOverlay) viewerOverlay.addEventListener('click', (e) => { if(e.target === viewerOverlay) viewerOverlay.style.display = 'none'; });
     }
     
     function renderReceiptsPreview(containerId, receipts) {
@@ -6446,12 +6364,12 @@
         removeBtn.innerHTML = '<i data-lucide="x" style="width: 14px; height: 14px;"></i>';
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          if(containerId === 'expense-receipts-preview') {
-            window.tempExpenseReceipts.splice(index, 1);
-            renderReceiptsPreview(containerId, window.tempExpenseReceipts);
-          } else if(containerId === 'service-receipts-preview') {
-            window.tempServiceReceipts.splice(index, 1);
-            renderReceiptsPreview(containerId, window.tempServiceReceipts);
+          // containerId format: "{key}-receipts-preview"
+          const key = containerId.replace('-receipts-preview', '');
+          const arr = window['temp_' + key + '_receipts'];
+          if(arr) {
+            arr.splice(index, 1);
+            renderReceiptsPreview(containerId, arr);
           }
           if(typeof lucide !== 'undefined') lucide.createIcons();
         });

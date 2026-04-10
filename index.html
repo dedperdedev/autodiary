@@ -716,30 +716,17 @@
         </div>
       </div>
       <div class="field">
-        <label>Чеки/Фото</label>
-        <div id="expense-receipts-preview" style="display: none; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
-          <!-- Receipt thumbnails will be rendered here -->
-        </div>
-        <div class="chip" id="expense-add-receipt-btn" style="cursor:pointer">
-          <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
-          <span>Добавить фото</span>
-        </div>
-        <input type="file" id="expense-receipt-input" accept="image/*" multiple style="display: none;">
-      </div>
-      <div class="field">
         <label>Заметки</label>
         <textarea id="notes" placeholder=""></textarea>
       </div>
-      <div class="field">
-        <label>Чеки/Фото</label>
-        <div id="expense-receipts-preview" style="display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
-          <!-- Receipt thumbnails will be rendered here -->
-    </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+        <label>Фото / чеки</label>
+        <div id="expense-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
         <div class="chip" id="expense-add-receipt-btn" style="cursor:pointer">
-          <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
           <span>Добавить фото</span>
         </div>
-        <input type="file" id="expense-receipt-input" accept="image/*" multiple style="display: none;">
+        <input type="file" id="expense-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
     <div class="save-btn">
@@ -1580,6 +1567,15 @@
         <label>Заметки</label>
         <textarea id="fuel-notes" placeholder="Дополнительная информация"></textarea>
       </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+        <label>Фото / чеки</label>
+        <div id="fuel-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="fuel-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="fuel-receipt-input" accept="image/*" multiple style="display:none;">
+      </div>
     </div>
     <div class="save-btn">
       <button id="save-fuel-btn">Сохранить</button>
@@ -1789,9 +1785,18 @@
         <label>Пробег (км)</label>
         <input type="number" id="planned-odometer" placeholder="0" min="0">
       </div>
-      <div class="field" style="border-bottom:none;">
+      <div class="field">
         <label>Заметки</label>
         <textarea id="planned-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
+        <label>Фото / чеки</label>
+        <div id="planned-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="planned-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="planned-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
 
@@ -1884,6 +1889,15 @@
       <div class="field">
         <label>Заметки</label>
         <textarea id="admin-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+        <label>Фото / чеки</label>
+        <div id="admin-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="admin-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="admin-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
     <div class="save-btn">
@@ -2003,6 +2017,15 @@
           <span id="wheels-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
         </div>
       </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+        <label>Фото / чеки</label>
+        <div id="wheels-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="wheels-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="wheels-receipt-input" accept="image/*" multiple style="display:none;">
+      </div>
     </div>
 
     <div class="save-btn">
@@ -2045,6 +2068,15 @@
       <div class="field">
         <label>Заметки</label>
         <textarea id="charge-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+        <label>Фото / чеки</label>
+        <div id="charge-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="charge-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="charge-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
     <div class="save-btn">
