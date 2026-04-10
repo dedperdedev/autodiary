@@ -5187,7 +5187,7 @@
     function initServiceCatScreen() {
       window._svcSelected = new Set();
 
-      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-notes','svc-cat-other-text']
+      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-master','svc-cat-notes','svc-cat-other-text']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('svc-cat-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5298,6 +5298,7 @@
 
       const odometer = parseFloat(document.getElementById('svc-cat-odometer')?.value || 0);
       const shop = document.getElementById('svc-cat-shop')?.value?.trim() || '';
+      const master = document.getElementById('svc-cat-master')?.value?.trim() || '';
       const notes = document.getElementById('svc-cat-notes')?.value?.trim() || '';
       const otherText = document.getElementById('svc-cat-other-text')?.value?.trim() || '';
 
@@ -5324,7 +5325,7 @@
         typeLabel: parts.join(', '),
         categories: Array.from(window._svcSelected),
         costMap, cost: totalCost,
-        noteMap, otherText, shop, notes,
+        noteMap, otherText, shop, master, notes,
         createdAt: new Date().toISOString(),
         deletedAt: null
       });
@@ -5397,7 +5398,7 @@
     function initPlannedScreen() {
       window._plannedSelected = new Set();
 
-      ['planned-shop','planned-date','planned-odometer','planned-notes',
+      ['planned-shop','planned-master','planned-date','planned-odometer','planned-notes',
        'planned-oil-brand','planned-oil-viscosity','planned-oil-volume']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('planned-date');
@@ -5498,6 +5499,7 @@
 
       const odometer = parseFloat(document.getElementById('planned-odometer')?.value || 0);
       const shop = document.getElementById('planned-shop')?.value?.trim() || '';
+      const master = document.getElementById('planned-master')?.value?.trim() || '';
       const notes = document.getElementById('planned-notes')?.value?.trim() || '';
 
       const costMap = {};
@@ -5525,7 +5527,7 @@
         type: 'planned', typeLabel,
         items: Array.from(window._plannedSelected),
         oilDetails: Object.keys(oilDetails).length > 0 ? oilDetails : undefined,
-        costMap, cost: totalCost, shop, notes,
+        costMap, cost: totalCost, shop, master, notes,
         receipts: plannedReceipts.length > 0 ? plannedReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
@@ -5555,7 +5557,7 @@
     function initSvcPlannedScreen() {
       window._svcpSelected = new Set();
 
-      ['svcp-shop','svcp-date','svcp-odometer','svcp-notes']
+      ['svcp-shop','svcp-master','svcp-date','svcp-odometer','svcp-notes']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('svcp-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5633,6 +5635,7 @@
 
       const odometer = parseFloat(document.getElementById('svcp-odometer')?.value || 0);
       const shop = document.getElementById('svcp-shop')?.value?.trim() || '';
+      const master = document.getElementById('svcp-master')?.value?.trim() || '';
       const notes = document.getElementById('svcp-notes')?.value?.trim() || '';
 
       const costMap = {};
@@ -5648,7 +5651,7 @@
         id: Date.now().toString(), carId, date, odometer,
         type: 'svc-planned', typeLabel,
         items: Array.from(window._svcpSelected),
-        costMap, cost: totalCost, shop, notes,
+        costMap, cost: totalCost, shop, master, notes,
         receipts: receipts.length > 0 ? receipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
@@ -6127,6 +6130,7 @@
       const odometer = parseFloat(document.getElementById('service-odometer')?.value || 0);
       const cost = parseFloat(document.getElementById('service-cost')?.value || 0);
       const shop = document.getElementById('service-shop')?.value?.trim() || '';
+      const master = document.getElementById('service-master')?.value?.trim() || '';
       const notes = document.getElementById('service-notes')?.value?.trim() || '';
 
       if(!date || (!type && !multiTypes)) {
@@ -6138,7 +6142,7 @@
       if (multiTypes && multiTypes.length > 1) {
         const proceed = () => {
           multiTypes.forEach(t => {
-            proceedSaveService(carId, t.type, t.label, date, odometer, cost, shop, notes);
+            proceedSaveService(carId, t.type, t.label, date, odometer, cost, shop, master, notes);
           });
           window.selectedServiceTypes = [];
           updateServiceTypeDisplay();
@@ -6159,7 +6163,7 @@
         const validation = validateOdometer(carId, odometer);
         if(!validation.valid) {
           showModal('Предупреждение', validation.message, () => {
-            proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes);
+            proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, master, notes);
           });
           return;
         }
@@ -6168,7 +6172,7 @@
       proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes);
     }
     
-    function proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, notes) {
+    function proceedSaveService(carId, type, typeLabel, date, odometer, cost, shop, master, notes) {
       if(!state.service) state.service = [];
       
       // Get receipts from preview
@@ -6187,6 +6191,7 @@
             odometer,
             cost,
             shop,
+            master,
             notes,
             receipts: receipts.length > 0 ? receipts : existing.receipts
           };
@@ -6219,6 +6224,7 @@
             odometer,
             cost,
             shop,
+            master,
             notes
           }) : {
             id: Date.now().toString(),
@@ -6284,6 +6290,7 @@
         document.getElementById('service-odometer').value = '';
         document.getElementById('service-cost').value = '';
         document.getElementById('service-shop').value = '';
+        document.getElementById('service-master').value = '';
         document.getElementById('service-notes').value = '';
         
         // Clear receipts
@@ -7475,6 +7482,7 @@
             if(data.type) document.getElementById('service-type').value = data.type;
             if(data.cost) document.getElementById('service-cost').value = data.cost;
             if(data.shop) document.getElementById('service-shop').value = data.shop;
+            if(data.master) document.getElementById('service-master').value = data.master;
             if(data.notes) document.getElementById('service-notes').value = data.notes;
             if(data.date) document.getElementById('service-date').value = data.date;
             
