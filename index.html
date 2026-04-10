@@ -1791,13 +1791,15 @@
           <label>Марка масла</label>
           <input id="planned-oil-brand" type="text" placeholder="Castrol, Mobil, Shell…">
         </div>
-        <div class="field">
-          <label>Вязкость</label>
-          <input id="planned-oil-viscosity" type="text" placeholder="5W-30">
-        </div>
-        <div class="field">
-          <label>Объём (л)</label>
-          <input id="planned-oil-volume" type="number" placeholder="4" min="0" step="0.1">
+        <div class="field" style="gap:var(--space-sm);">
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+            <label>Вязкость</label>
+            <input id="planned-oil-viscosity" type="text" placeholder="5W-30" style="width:100%;box-sizing:border-box;">
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+            <label>Объём (л)</label>
+            <input id="planned-oil-volume" type="number" placeholder="4" min="0" step="0.1" style="width:100%;box-sizing:border-box;">
+          </div>
         </div>
       </div>
 
