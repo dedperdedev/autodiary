@@ -1,8 +1,8 @@
 // Service Worker for AutoDiary
 // Provides offline caching and app shell caching
 
-const CACHE_NAME = 'autodiary-v50';
-const RUNTIME_CACHE = 'autodiary-runtime-v50';
+const CACHE_NAME = 'autodiary-v51';
+const RUNTIME_CACHE = 'autodiary-runtime-v51';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
