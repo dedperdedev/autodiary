@@ -5858,11 +5858,11 @@
     function initWheelsScreen() {
       // Reset state
       window._wheelsInstall = null;   // 'summer' | 'winter' | null
-      window._wheelsWorks  = new Set(); // 'balance' | 'bead' | 'inflate'
+      window._wheelsWorks  = new Set(); // 'balance' | 'bead' | 'inflate' | 'other'
       window._wheelsNewTire = false;
 
       // Reset form fields
-      ['wheels-date','wheels-odometer','wheels-shop','wheels-notes','tire-brand','tire-size']
+      ['wheels-date','wheels-odometer','wheels-shop','wheels-notes','tire-brand','tire-size','wheels-other-text']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('wheels-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5875,6 +5875,8 @@
       });
       const newTireForm = document.getElementById('new-tire-form');
       if(newTireForm) newTireForm.style.display = 'none';
+      const otherWrap = document.getElementById('wheels-other-wrap');
+      if(otherWrap) otherWrap.style.display = 'none';
       renderWheelsCosts();
 
       // Install buttons — radio (only one)
@@ -5934,6 +5936,7 @@
             if(!btn.querySelector('.wheels-chk'))
               btn.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
           }
+          if(otherWrap) otherWrap.style.display = window._wheelsWorks.has('other') ? '' : 'none';
           renderWheelsCosts();
         };
       });
@@ -5978,6 +5981,8 @@
       if(window._wheelsWorks.has('balance')) parts.push('Балансировка');
       if(window._wheelsWorks.has('bead')) parts.push('Бортировка');
       if(window._wheelsWorks.has('inflate')) parts.push('Подкачка');
+      const otherText = document.getElementById('wheels-other-text')?.value?.trim() || '';
+      if(window._wheelsWorks.has('other')) parts.push(otherText || 'Прочее');
 
       const wheelsReceipts = window.temp_wheels_receipts || [];
       if(!state.service) state.service = [];

@@ -2082,7 +2082,7 @@
 
       <!-- Works: multi-select -->
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Работы</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
         <button class="expense-category-item wheels-work-btn" data-work="balance" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
             <i data-lucide="circle-dot"></i>
@@ -2101,6 +2101,18 @@
           </div>
           <span>Подкачка</span>
         </button>
+        <button class="expense-category-item wheels-work-btn" data-work="other" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+            <i data-lucide="more-horizontal"></i>
+          </div>
+          <span>Прочее</span>
+        </button>
+      </div>
+
+      <!-- Прочее text input -->
+      <div id="wheels-other-wrap" style="display:none;margin-bottom:var(--space-md);">
+        <input id="wheels-other-text" type="text" placeholder="Опишите работу…"
+          style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
       </div>
 
       <!-- Шиномонтаж -->
@@ -2127,11 +2139,7 @@
           <span id="wheels-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
         </div>
       </div>
-      <div class="field">
-        <label>Заметки</label>
-        <textarea id="wheels-notes" placeholder="Дополнительная информация"></textarea>
-      </div>
-      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
         <label>Фото / чеки</label>
         <div id="wheels-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
         <div class="chip" id="wheels-add-receipt-btn" style="cursor:pointer">
@@ -2139,6 +2147,10 @@
           <span>Добавить фото</span>
         </div>
         <input type="file" id="wheels-receipt-input" accept="image/*" multiple style="display:none;">
+      </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Заметки</label>
+        <textarea id="wheels-notes" placeholder="Дополнительная информация"></textarea>
       </div>
     </div>
 
