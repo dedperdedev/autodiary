@@ -2305,6 +2305,8 @@
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
+
+    <!-- Блок 1: Дата, Пробег, Станция -->
     <div class="section">
       <div class="field">
         <label>Дата *</label>
@@ -2314,33 +2316,41 @@
         <label>Пробег (км) *</label>
         <input type="number" id="charge-odometer" placeholder="0" min="0" required>
       </div>
-      <div class="field">
-        <label>кВт·ч *</label>
-        <input type="number" id="charge-kwh" placeholder="0.00" step="0.01" min="0" required>
-      </div>
-      <div class="field">
-        <label>Общая стоимость (₴) *</label>
-        <input type="number" id="charge-cost" placeholder="0.00" step="0.01" min="0" required>
-      </div>
-      <div class="field" id="charge-price-per-kwh-row" style="display:none;">
-        <label>Цена за кВт·ч (₴)</label>
-        <span id="charge-price-per-kwh" style="font-weight:600;color:var(--text);"></span>
-      </div>
-      <div class="field">
-        <label>
-          <input type="checkbox" id="charge-full-charge">
-          Полный заряд
-        </label>
-      </div>
-      <div class="field">
+      <div class="field" style="border-bottom:none;">
         <label>Станция зарядки</label>
         <input type="text" id="charge-station" placeholder="Название станции">
       </div>
+    </div>
+
+    <!-- Блок 2: кВт·ч, Стоимость -->
+    <div class="section">
+      <div class="field">
+        <label style="flex:none;">кВт·ч *</label>
+        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--space-md);">
+          <input type="number" id="charge-kwh" placeholder="0.00" step="0.01" min="0" required style="flex:1;text-align:right;min-width:80px;">
+          <div style="display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;" onclick="document.getElementById('charge-full-charge').click()">
+            <input type="checkbox" id="charge-full-charge" onclick="event.stopPropagation()" style="min-width:auto;width:18px;height:18px;flex:none;">
+            <span style="font-size:var(--font-size-subheadline);color:var(--text);">Полный заряд</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-weight:600;">Общая стоимость (₴) *</label>
+        <input type="number" id="charge-cost" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+      <div class="field" id="charge-price-per-kwh-row" style="display:none;border-bottom:none;">
+        <label>Цена за кВт·ч (₴)</label>
+        <span id="charge-price-per-kwh" style="font-weight:600;color:var(--text);"></span>
+      </div>
+    </div>
+
+    <!-- Блок 3: Заметки, Фото -->
+    <div class="section">
       <div class="field">
         <label>Заметки</label>
         <textarea id="charge-notes" placeholder="Дополнительная информация"></textarea>
       </div>
-      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
         <label>Фото / чеки</label>
         <div id="charge-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
         <div class="chip" id="charge-add-receipt-btn" style="cursor:pointer">
@@ -2350,6 +2360,7 @@
         <input type="file" id="charge-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
+
     <div class="save-btn">
       <button id="save-charge-btn">Сохранить</button>
     </div>
