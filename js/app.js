@@ -5821,6 +5821,8 @@
         existing[inp.dataset.wcostKey] = inp.value;
       });
 
+      const WORKS_NO_COST = new Set(['balance','bead','inflate','other']);
+
       list.innerHTML = items.map(key => {
         let label = WHEELS_LABELS[key] || key;
         if(key === 'newtire') {
@@ -5831,6 +5833,11 @@
         if(key === 'other') {
           const t = document.getElementById('wheels-other-text')?.value?.trim();
           if(t) label = t;
+        }
+        if(WORKS_NO_COST.has(key)) {
+          return `<div style="display:flex;align-items:center;gap:var(--space-md);">
+            <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
+          </div>`;
         }
         const val = existing[key] || '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
