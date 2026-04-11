@@ -1096,7 +1096,7 @@
               isSwiping = false;
             });
             
-            // Click to close actions (only if actions are visible)
+            // Click: close swipe actions or open detail sheet
             record.addEventListener('click', (e) => {
               const isActionBtn = e.target.closest('.ios-cell-action-btn');
               if (isActionBtn) {
@@ -1108,6 +1108,8 @@
                 actionsDiv.style.display = 'none';
                 e.preventDefault();
                 e.stopPropagation();
+              } else {
+                showExpenseDetail(exp.id);
               }
             }, true);
             
@@ -1427,6 +1429,171 @@
           showToast('Расход удален');
           renderDiary();
         }
+      });
+    }
+
+    // Show expense detail bottom sheet
+    function showExpenseDetail(expenseId) {
+      const exp = state.expenses.find(e => e.id === expenseId);
+      if (!exp) return;
+
+      const existing = document.getElementById('expense-detail-sheet');
+      if (existing) existing.remove();
+
+      const car = state.cars.find(c => c.id === exp.carId);
+      const carName = car ? [car.brand, car.model].filter(Boolean).join(' ') + (car.plate ? ' · ' + car.plate : '') : '';
+
+      const categoryDisplay = (exp.categoryId && typeof Categories !== 'undefined' && Categories.getDisplayText) ?
+        Categories.getDisplayText(state.categories || [], state.subcategories || [], exp.categoryId, exp.subcategoryId) :
+        (exp.category || 'Расход');
+
+      const icon = getCategoryIcon(exp.categoryId || exp.category);
+
+      const dateStr = exp.date ? new Date(exp.date + 'T00:00:00').toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'}) : '—';
+      const timeStr = exp.time ? ', ' + exp.time.substring(0,5) : '';
+
+      // Place / shop / station
+      const place = exp.shop || exp.station || exp.master || '';
+
+      // Cost rows from costMap (ТО, Уход, Админ etc.)
+      let costRowsHtml = '';
+      if (exp.costMap && typeof exp.costMap === 'object') {
+        const entries = Object.entries(exp.costMap).filter(([,v]) => parseFloat(v) > 0);
+        if (entries.length > 0) {
+          costRowsHtml = entries.map(([key, val]) => {
+            const label = exp.categoryDetail ? '' : key;
+            return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--separator);">
+              <span style="color:var(--text-secondary);font-size:var(--font-size-subheadline);">${escapeHtml(key)}</span>
+              <span style="font-size:var(--font-size-subheadline);color:var(--text);">${parseFloat(val).toFixed(2)} ₴</span>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      // Category detail (e.g. "Мойка, Полировка" or fuel type)
+      const detailLine = exp.categoryDetail || exp.typeLabel || exp.fuelTypeLabel || '';
+
+      // Amount
+      const amountStr = (exp.amount || 0).toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+      // Photos
+      let photosHtml = '';
+      const receipts = exp.receipts || [];
+      if (receipts.length > 0) {
+        photosHtml = `
+          <div style="margin-top:var(--space-md);">
+            <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Фото / чеки</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              ${receipts.map(r => `<img src="${r}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:0.5px solid var(--separator);">`).join('')}
+            </div>
+          </div>`;
+      }
+
+      // Timestamps
+      const createdStr = exp.createdAt ? new Date(exp.createdAt).toLocaleString('ru-RU', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      const updatedStr = exp.updatedAt ? new Date(exp.updatedAt).toLocaleString('ru-RU', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+
+      const sheet = document.createElement('div');
+      sheet.id = 'expense-detail-sheet';
+      sheet.className = 'ios-sheet-overlay';
+      sheet.innerHTML = `
+        <div class="ios-sheet" style="max-height:85vh;overflow-y:auto;">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header" style="padding-bottom:var(--space-sm);">
+            <div style="display:flex;align-items:center;gap:var(--space-sm);">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--fill-tertiary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="${icon}" style="width:18px;height:18px;color:var(--accent);"></i>
+              </div>
+              <div>
+                <div style="font-size:var(--font-size-headline);font-weight:600;color:var(--text);">${escapeHtml(categoryDisplay)}</div>
+                ${detailLine ? `<div style="font-size:var(--font-size-subheadline);color:var(--text-secondary);">${escapeHtml(detailLine)}</div>` : ''}
+              </div>
+            </div>
+            <button id="expense-detail-close" style="background:var(--fill-tertiary);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+              <i data-lucide="x" style="width:16px;height:16px;color:var(--text-secondary);"></i>
+            </button>
+          </div>
+
+          <div class="ios-sheet-content" style="padding-top:0;">
+
+            <!-- Блок 1: Авто, Дата, Пробег, Место -->
+            <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-md);">
+              ${carName ? `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--separator);">
+                <span style="color:var(--text-secondary);font-size:var(--font-size-subheadline);">Автомобиль</span>
+                <span style="font-size:var(--font-size-subheadline);font-weight:500;color:var(--text);text-align:right;max-width:60%;">${escapeHtml(carName)}</span>
+              </div>` : ''}
+              <div style="display:flex;justify-content:space-between;padding:4px 0;${place || exp.odometer ? 'border-bottom:0.5px solid var(--separator);' : ''}">
+                <span style="color:var(--text-secondary);font-size:var(--font-size-subheadline);">Дата</span>
+                <span style="font-size:var(--font-size-subheadline);color:var(--text);">${dateStr}${timeStr}</span>
+              </div>
+              ${exp.odometer ? `<div style="display:flex;justify-content:space-between;padding:4px 0;${place ? 'border-bottom:0.5px solid var(--separator);' : ''}">
+                <span style="color:var(--text-secondary);font-size:var(--font-size-subheadline);">Пробег</span>
+                <span style="font-size:var(--font-size-subheadline);color:var(--text);">${exp.odometer} км</span>
+              </div>` : ''}
+              ${place ? `<div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span style="color:var(--text-secondary);font-size:var(--font-size-subheadline);">Место</span>
+                <span style="font-size:var(--font-size-subheadline);color:var(--text);text-align:right;max-width:60%;">${escapeHtml(place)}</span>
+              </div>` : ''}
+            </div>
+
+            <!-- Блок 2: Состав + Итого -->
+            <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-md);">
+              ${costRowsHtml}
+              <div style="display:flex;justify-content:space-between;padding:${costRowsHtml ? '8px 0 4px' : '4px 0'};">
+                <span style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">Итого</span>
+                <span style="font-size:var(--font-size-body);font-weight:700;color:var(--accent);">${amountStr} ₴</span>
+              </div>
+            </div>
+
+            ${exp.notes ? `
+            <!-- Блок 3: Заметки -->
+            <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:var(--space-md);margin-bottom:var(--space-md);">
+              <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-xs) 0;">Заметки</p>
+              <p style="font-size:var(--font-size-body);color:var(--text);margin:0;white-space:pre-wrap;">${escapeHtml(exp.notes)}</p>
+            </div>` : ''}
+
+            ${photosHtml}
+
+            <!-- Кнопки -->
+            <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md);">
+              <button id="expense-detail-edit" style="flex:1;padding:12px;border-radius:var(--radius-md);border:none;background:var(--accent);color:#fff;font-size:var(--font-size-body);font-weight:600;cursor:pointer;">Редактировать</button>
+              <button id="expense-detail-delete" style="padding:12px 20px;border-radius:var(--radius-md);border:none;background:rgba(255,59,48,0.12);color:#FF3B30;font-size:var(--font-size-body);font-weight:600;cursor:pointer;">Удалить</button>
+            </div>
+
+            ${createdStr ? `<div style="margin-top:var(--space-md);text-align:right;">
+              <span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary,var(--text-secondary));">Создано: ${createdStr}</span>
+              ${updatedStr ? `<br><span style="font-size:var(--font-size-caption-1);color:var(--text-tertiary,var(--text-secondary));">Изменено: ${updatedStr}</span>` : ''}
+            </div>` : ''}
+
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(sheet);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      requestAnimationFrame(() => sheet.classList.add('active'));
+
+      sheet.getElementById = (id) => sheet.querySelector('#' + id);
+
+      sheet.querySelector('#expense-detail-close').addEventListener('click', () => {
+        sheet.classList.remove('active');
+        setTimeout(() => sheet.remove(), 300);
+      });
+      sheet.addEventListener('click', e => {
+        if (e.target === sheet) {
+          sheet.classList.remove('active');
+          setTimeout(() => sheet.remove(), 300);
+        }
+      });
+
+      sheet.querySelector('#expense-detail-edit').addEventListener('click', () => {
+        sheet.classList.remove('active');
+        setTimeout(() => { sheet.remove(); editExpense(expenseId); }, 200);
+      });
+
+      sheet.querySelector('#expense-detail-delete').addEventListener('click', () => {
+        sheet.classList.remove('active');
+        setTimeout(() => { sheet.remove(); deleteExpense(expenseId); }, 200);
       });
     }
 
