@@ -1738,8 +1738,11 @@
 
     <!-- Что заменили -->
     <div class="section">
-      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Что заменили</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-md) 0;">Что заменили</p>
+
+      <!-- Масло -->
+      <p style="font-size:11px;font-weight:500;color:var(--text-secondary);margin:0 0 6px 2px;text-transform:uppercase;letter-spacing:0.3px;">Масло</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md);">
         <button class="expense-category-item planned-btn" data-planned="oil" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;"><i data-lucide="droplets"></i></div>
           <span>Моторное масло</span>
@@ -1748,6 +1751,11 @@
           <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;"><i data-lucide="filter"></i></div>
           <span>Фильтр масляный</span>
         </button>
+      </div>
+
+      <!-- Фильтры -->
+      <p style="font-size:11px;font-weight:500;color:var(--text-secondary);margin:0 0 6px 2px;text-transform:uppercase;letter-spacing:0.3px;">Фильтры</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md);">
         <button class="expense-category-item planned-btn" data-planned="cabinFilter" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;"><i data-lucide="wind"></i></div>
           <span>Фильтр салона</span>
@@ -1760,25 +1768,31 @@
           <div class="expense-category-icon" style="background:rgba(255,107,53,0.15);color:#FF6B35;"><i data-lucide="fuel"></i></div>
           <span>Фильтр топливный</span>
         </button>
-        <button class="expense-category-item planned-btn" data-planned="brakeDiscsFront" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;"><i data-lucide="circle"></i></div>
-          <span>Диски передние</span>
-        </button>
-        <button class="expense-category-item planned-btn" data-planned="brakeDiscsRear" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(196,30,58,0.15);color:#C41E3A;"><i data-lucide="circle"></i></div>
-          <span>Диски задние</span>
-        </button>
+      </div>
+
+      <!-- Тормоза передние -->
+      <p style="font-size:11px;font-weight:500;color:var(--text-secondary);margin:0 0 6px 2px;text-transform:uppercase;letter-spacing:0.3px;">Тормоза передние</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md);">
         <button class="expense-category-item planned-btn" data-planned="brakePadsFront" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;"><i data-lucide="square"></i></div>
           <span>Колодки передние</span>
         </button>
+        <button class="expense-category-item planned-btn" data-planned="brakeDiscsFront" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;"><i data-lucide="circle"></i></div>
+          <span>Диски передние</span>
+        </button>
+      </div>
+
+      <!-- Тормоза задние -->
+      <p style="font-size:11px;font-weight:500;color:var(--text-secondary);margin:0 0 6px 2px;text-transform:uppercase;letter-spacing:0.3px;">Тормоза задние</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);">
         <button class="expense-category-item planned-btn" data-planned="brakePadsRear" style="position:relative;">
           <div class="expense-category-icon" style="background:rgba(196,30,58,0.15);color:#C41E3A;"><i data-lucide="square"></i></div>
           <span>Колодки задние</span>
         </button>
-        <button class="expense-category-item planned-btn" data-planned="sparkPlugs" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;"><i data-lucide="zap"></i></div>
-          <span>Свечи зажигания</span>
+        <button class="expense-category-item planned-btn" data-planned="brakeDiscsRear" style="position:relative;">
+          <div class="expense-category-icon" style="background:rgba(196,30,58,0.15);color:#C41E3A;"><i data-lucide="circle"></i></div>
+          <span>Диски задние</span>
         </button>
       </div>
     </div>

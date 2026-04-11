@@ -5340,7 +5340,6 @@
       'brakeDiscsRear': 'Диски задние',
       'brakePadsFront': 'Колодки передние',
       'brakePadsRear':  'Колодки задние',
-      'sparkPlugs':     'Свечи зажигания',
     };
 
     const SVC_CATS = {
