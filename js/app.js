@@ -5401,7 +5401,7 @@
       });
 
       const gotoPlanned = document.getElementById('svc-goto-planned');
-      if(gotoPlanned) gotoPlanned.onclick = () => showView('screen-add-svc-planned');
+      if(gotoPlanned) gotoPlanned.onclick = () => { initSvcPlannedScreen(); showView('screen-add-svc-planned'); };
 
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
