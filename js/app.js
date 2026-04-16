@@ -6188,61 +6188,6 @@
       other:   'Прочее',
     };
 
-    function renderWheelsCosts() {
-      const wrap = document.getElementById('wheels-costs-wrap');
-      const list = document.getElementById('wheels-costs-list');
-      const totalEl = document.getElementById('wheels-cost-total');
-      if(!wrap || !list || !totalEl) return;
-
-      // Collect active items
-      const items = [];
-      if(window._wheelsInstall) items.push(window._wheelsInstall);
-      if(window._wheelsNewTire) items.push('newtire');
-      window._wheelsWorks.forEach(w => items.push(w));
-
-      if(items.length === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
-
-      // Preserve existing values
-      const existing = {};
-      list.querySelectorAll('[data-wcost-key]').forEach(inp => {
-        existing[inp.dataset.wcostKey] = inp.value;
-      });
-
-      const WORKS_NO_COST = new Set(['balance','bead','inflate','other']);
-
-      list.innerHTML = items.map(key => {
-        let label = WHEELS_LABELS[key] || key;
-        if(key === 'newtire') {
-          const brand = document.getElementById('tire-brand')?.value?.trim();
-          const size  = document.getElementById('tire-size')?.value?.trim();
-          if(brand || size) label += ' ' + [brand, size].filter(Boolean).join(' ');
-        }
-        if(WORKS_NO_COST.has(key)) return '';
-        const val = existing[key] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
-          <input type="number" data-wcost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
-        </div>`;
-      }).join('');
-
-      list.querySelectorAll('[data-wcost-key]').forEach(inp => {
-        inp.addEventListener('input', updateWheelsTotal);
-      });
-      updateWheelsTotal();
-    }
-
-    function updateWheelsTotal() {
-      const totalEl = document.getElementById('wheels-cost-total');
-      if(!totalEl) return;
-      let sum = 0;
-      document.querySelectorAll('#wheels-costs-list [data-wcost-key]').forEach(inp => {
-        sum += parseFloat(inp.value || 0);
-      });
-      totalEl.textContent = sum.toFixed(2);
-    }
-
     function initWheelsScreen() {
       // Reset state
       window._wheelsInstall = null;   // 'summer' | 'winter' | null
@@ -6250,7 +6195,7 @@
       window._wheelsNewTire = false;
 
       // Reset form fields
-      ['wheels-date','wheels-odometer','wheels-shop','wheels-notes','tire-brand','tire-size','wheels-other-text']
+      ['wheels-date','wheels-odometer','wheels-shop','wheels-notes','tire-brand','tire-size','wheels-other-text','wheels-total-cost']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('wheels-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -6265,7 +6210,6 @@
       if(newTireForm) newTireForm.style.display = 'none';
       const otherWrap = document.getElementById('wheels-other-wrap');
       if(otherWrap) otherWrap.style.display = 'none';
-      renderWheelsCosts();
 
       // Install buttons — radio (only one)
       document.querySelectorAll('.wheels-install-btn').forEach(btn => {
@@ -6285,7 +6229,6 @@
             btn.style.borderRadius = '14px';
             btn.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
           }
-          renderWheelsCosts();
         };
       });
 
@@ -6305,7 +6248,6 @@
             btnNewTire.querySelector('.wheels-chk')?.remove();
             document.getElementById('new-tire-form').style.display = 'none';
           }
-          renderWheelsCosts();
         };
       }
 
@@ -6325,7 +6267,6 @@
               btn.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
           }
           if(otherWrap) otherWrap.style.display = window._wheelsWorks.has('other') ? '' : 'none';
-          renderWheelsCosts();
         };
       });
 
@@ -6353,13 +6294,8 @@
       const tireSize = document.getElementById('tire-size')?.value?.trim() || '';
       const notes = document.getElementById('wheels-notes')?.value?.trim() || '';
 
-      // Collect per-item costs
-      const costMap = {};
-      document.querySelectorAll('#wheels-costs-list [data-wcost-key]').forEach(inp => {
-        costMap[inp.dataset.wcostKey] = parseFloat(inp.value || 0);
-      });
-      const cost = Object.values(costMap).reduce((s, v) => s + v, 0);
-      const tireCost = costMap['newtire'] || 0;
+      const cost = parseFloat(document.getElementById('wheels-total-cost')?.value || 0);
+      const tireCost = hasNewTire ? cost : 0;
 
       // Build label
       const parts = [];
@@ -6382,7 +6318,7 @@
         installType: window._wheelsInstall,
         newTire: hasNewTire ? { brand: tireBrand, size: tireSize, cost: tireCost } : null,
         works: Array.from(window._wheelsWorks),
-        costMap, cost, shop, notes,
+        cost, shop, notes,
         receipts: wheelsReceipts.length > 0 ? wheelsReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
