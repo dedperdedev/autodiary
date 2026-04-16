@@ -5719,74 +5719,140 @@
 
     function initSvcPlannedScreen() {
       window._svcpSelected = new Set();
+      window._svcpComments = {};
 
-      ['svcp-shop','svcp-master','svcp-date','svcp-odometer','svcp-notes']
+      ['svcp-shop','svcp-master','svcp-date','svcp-odometer','svcp-total-cost']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('svcp-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
-      document.querySelectorAll('.svcp-btn').forEach(btn => {
-        btn.style.boxShadow = '';
-        btn.querySelector('.svcp-chk')?.remove();
-      });
-      document.getElementById('svcp-costs-wrap').style.display = 'none';
-      document.getElementById('svcp-costs-list').innerHTML = '';
-      document.getElementById('svcp-cost-total').textContent = '0.00';
+      const doneWrap = document.getElementById('svcp-done-wrap');
+      const doneList = document.getElementById('svcp-done-list');
+      if(doneWrap) doneWrap.style.display = 'none';
+      if(doneList) doneList.innerHTML = '';
 
-      document.querySelectorAll('.svcp-btn').forEach(btn => {
-        btn.onclick = () => {
-          const key = btn.dataset.svcp;
-          if(window._svcpSelected.has(key)) {
-            window._svcpSelected.delete(key);
-            btn.style.boxShadow = '';
-            btn.querySelector('.svcp-chk')?.remove();
-          } else {
-            window._svcpSelected.add(key);
-            btn.style.boxShadow = '0 0 0 2px #34C759';
-            btn.style.borderRadius = '14px';
-            if(!btn.querySelector('.svcp-chk'))
-              btn.insertAdjacentHTML('beforeend','<div class="svcp-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
-          }
-          renderSvcpCosts();
-        };
-      });
+      const countEl = document.getElementById('svcp-picker-count');
+      if(countEl) countEl.style.display = 'none';
 
+      document.getElementById('svcp-picker-btn').onclick = showSvcpPicker;
       document.getElementById('save-svcp-btn').onclick = saveSvcPlannedEntry;
       wirePhotoBlock('svcp');
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function renderSvcpCosts() {
-      const wrap = document.getElementById('svcp-costs-wrap');
-      const list = document.getElementById('svcp-costs-list');
-      const totalEl = document.getElementById('svcp-cost-total');
-      if(!wrap || !list || !totalEl) return;
-      if(window._svcpSelected.size === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
+    function showSvcpPicker() {
+      const existing = document.getElementById('svcp-picker-sheet');
+      if(existing) existing.remove();
 
-      const existing = {};
-      list.querySelectorAll('[data-svcp-cost]').forEach(i => existing[i.dataset.svcpCost] = i.value);
+      // temp selection copy
+      const tempSelected = new Set(window._svcpSelected);
+
+      const SVCP_ICONS = {
+        'spark':          { icon:'zap',            bg:'rgba(255,204,0,0.15)',    color:'#FFCC00' },
+        'timing':         { icon:'link',            bg:'rgba(255,149,0,0.15)',    color:'#FF9500' },
+        'coolant':        { icon:'thermometer',     bg:'rgba(0,199,190,0.15)',    color:'#00C7BE' },
+        'brake-fluid':    { icon:'disc',            bg:'rgba(255,59,48,0.15)',    color:'#FF3B30' },
+        'power-steering': { icon:'circle-dot',      bg:'rgba(0,122,255,0.15)',    color:'#007AFF' },
+        'gearbox-oil':    { icon:'settings-2',      bg:'rgba(88,86,214,0.15)',    color:'#5856D6' },
+        'front-diff':     { icon:'chevrons-right',  bg:'rgba(52,199,89,0.15)',    color:'#34C759' },
+        'rear-diff':      { icon:'chevrons-left',   bg:'rgba(52,199,89,0.15)',    color:'#30B050' },
+        'transfer':       { icon:'git-fork',        bg:'rgba(175,82,222,0.15)',   color:'#AF52DE' },
+        'battery':        { icon:'battery-full',    bg:'rgba(255,149,0,0.15)',    color:'#FF9500' },
+      };
+
+      const sheet = document.createElement('div');
+      sheet.id = 'svcp-picker-sheet';
+      sheet.className = 'ios-sheet-overlay';
+      sheet.innerHTML = `
+        <div class="ios-sheet" style="max-height:85vh;display:flex;flex-direction:column;">
+          <div class="ios-sheet-handle"></div>
+          <div class="ios-sheet-header">
+            <button id="svcp-picker-back" style="background:none;border:none;color:var(--accent);font-size:var(--font-size-body);cursor:pointer;padding:0;">Назад</button>
+            <h2 style="font-size:var(--font-size-headline);font-weight:600;margin:0;">Плановая замена</h2>
+            <button id="svcp-picker-ok" style="background:none;border:none;color:var(--accent);font-size:var(--font-size-body);font-weight:600;cursor:pointer;padding:0;">ОК</button>
+          </div>
+          <div class="ios-sheet-content" style="overflow-y:auto;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);">
+              ${Object.entries(SVCP_ICONS).map(([key, cfg]) => `
+                <button class="expense-category-item svcp-pick-btn" data-key="${key}" style="position:relative;${tempSelected.has(key) ? 'box-shadow:0 0 0 2px #34C759;border-radius:14px;' : ''}">
+                  <div class="expense-category-icon" style="background:${cfg.bg};color:${cfg.color};"><i data-lucide="${cfg.icon}"></i></div>
+                  <span>${escapeHtml(SVC_PLANNED_SUBS[key] || key)}</span>
+                  ${tempSelected.has(key) ? '<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+                </button>`).join('')}
+            </div>
+          </div>
+        </div>`;
+
+      document.body.appendChild(sheet);
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+      requestAnimationFrame(() => sheet.classList.add('active'));
+
+      const closeSheet = () => {
+        sheet.classList.remove('active');
+        setTimeout(() => sheet.remove(), 300);
+      };
+
+      // Toggle selection
+      sheet.querySelectorAll('.svcp-pick-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const key = btn.dataset.key;
+          if(tempSelected.has(key)) {
+            tempSelected.delete(key);
+            btn.style.boxShadow = '';
+            btn.style.borderRadius = '';
+            btn.querySelector('div:last-child[style*="background:#34C759"]')?.remove();
+          } else {
+            tempSelected.add(key);
+            btn.style.boxShadow = '0 0 0 2px #34C759';
+            btn.style.borderRadius = '14px';
+            if(!btn.querySelector('div[style*="background:#34C759"]'))
+              btn.insertAdjacentHTML('beforeend','<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+          }
+        });
+      });
+
+      sheet.querySelector('#svcp-picker-back').addEventListener('click', closeSheet);
+      sheet.addEventListener('click', e => { if(e.target === sheet) closeSheet(); });
+
+      sheet.querySelector('#svcp-picker-ok').addEventListener('click', () => {
+        window._svcpSelected = tempSelected;
+        closeSheet();
+        renderSvcpDoneList();
+      });
+    }
+
+    function renderSvcpDoneList() {
+      const wrap = document.getElementById('svcp-done-wrap');
+      const list = document.getElementById('svcp-done-list');
+      const countEl = document.getElementById('svcp-picker-count');
+      if(!wrap || !list) return;
+
+      const size = window._svcpSelected.size;
+      if(size === 0) {
+        wrap.style.display = 'none';
+        if(countEl) countEl.style.display = 'none';
+        return;
+      }
+
+      wrap.style.display = '';
+      if(countEl) { countEl.textContent = size; countEl.style.display = ''; }
+
+      // Preserve existing comments
+      list.querySelectorAll('[data-svcp-comment]').forEach(ta => {
+        window._svcpComments[ta.dataset.svcpComment] = ta.value;
+      });
 
       list.innerHTML = Array.from(window._svcpSelected).map(key => {
         const lbl = SVC_PLANNED_SUBS[key] || key;
-        const val = existing[key] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(lbl)}</span>
-          <input type="number" data-svcp-cost="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
+        const comment = window._svcpComments[key] || '';
+        return `<div style="border-bottom:0.5px solid var(--separator);padding-bottom:var(--space-md);">
+          <div style="font-size:var(--font-size-body);font-weight:600;color:var(--text);margin-bottom:6px;">${escapeHtml(lbl)}</div>
+          <textarea data-svcp-comment="${key}" placeholder="Комментарий (необязательно)"
+            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:none;min-height:44px;box-sizing:border-box;font-family:inherit;"
+          >${escapeHtml(comment)}</textarea>
         </div>`;
       }).join('');
-
-      list.querySelectorAll('[data-svcp-cost]').forEach(inp => {
-        inp.addEventListener('input', () => {
-          let sum = 0;
-          list.querySelectorAll('[data-svcp-cost]').forEach(i => sum += parseFloat(i.value || 0));
-          totalEl.textContent = sum.toFixed(2);
-        });
-      });
-      let sum = 0;
-      list.querySelectorAll('[data-svcp-cost]').forEach(i => sum += parseFloat(i.value || 0));
-      totalEl.textContent = sum.toFixed(2);
     }
 
     function saveSvcPlannedEntry() {
@@ -5799,13 +5865,14 @@
       const odometer = parseFloat(document.getElementById('svcp-odometer')?.value || 0);
       const shop = document.getElementById('svcp-shop')?.value?.trim() || '';
       const master = document.getElementById('svcp-master')?.value?.trim() || '';
-      const notes = document.getElementById('svcp-notes')?.value?.trim() || '';
+      const totalCost = parseFloat(document.getElementById('svcp-total-cost')?.value || 0);
 
-      const costMap = {};
-      document.querySelectorAll('#svcp-costs-list [data-svcp-cost]').forEach(inp => {
-        costMap[inp.dataset.svcpCost] = parseFloat(inp.value || 0);
+      // Gather comments
+      document.querySelectorAll('[data-svcp-comment]').forEach(ta => {
+        window._svcpComments[ta.dataset.svcpComment] = ta.value.trim();
       });
-      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const comments = {...(window._svcpComments || {})};
+      const notes = Object.values(comments).filter(Boolean).join('; ');
       const typeLabel = Array.from(window._svcpSelected).map(k => SVC_PLANNED_SUBS[k] || k).join(', ');
 
       const receipts = window.temp_svcp_receipts || [];
@@ -5814,7 +5881,7 @@
         id: Date.now().toString(), carId, date, odometer,
         type: 'svc-planned', typeLabel,
         items: Array.from(window._svcpSelected),
-        costMap, cost: totalCost, shop, master, notes,
+        comments, cost: totalCost, shop, master, notes,
         receipts: receipts.length > 0 ? receipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
