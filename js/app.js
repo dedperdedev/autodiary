@@ -4197,6 +4197,8 @@
           initCareScreen();
         } else if(id === 'screen-add-other') {
           initOtherScreen();
+        } else if(id === 'screen-add-odometer') {
+          initOdometerScreen();
         } else if(id === 'screen-add-admin') {
           initAdminScreen();
         } else if(id === 'screen-add-wheels') {
@@ -5121,7 +5123,7 @@
         if(categoryItem.dataset.type === 'service'     || categoryItem.dataset.goto === 'screen-add-service')     { showView('screen-add-service');     return; }
 
         if(categoryItem.id === 'btn-update-odometer' || categoryItem.id === 'btn-update-odometer-2') {
-          showUpdateOdometerSheet(); return;
+          showView('screen-add-odometer'); return;
         }
 
         if(categoryItem.dataset.type === 'other') {
@@ -6015,6 +6017,65 @@
       }
     }
 
+    function initOdometerScreen() {
+      const carId = currentCarId || state.cars[0]?.id;
+      const car = state.cars.find(c => c.id === carId);
+      const allEntries = [
+        ...(state.expenses || []).filter(e => e.carId === carId && e.odometer && !e.deletedAt),
+        ...(state.fuel || []).filter(f => f.carId === carId && f.odometer && !f.deletedAt),
+        ...(state.service || []).filter(s => s.carId === carId && s.odometer && !s.deletedAt),
+      ];
+      const knownOdometer = allEntries.length
+        ? Math.max(...allEntries.map(e => parseFloat(e.odometer) || 0))
+        : (car?.currentOdometer || 0);
+
+      ['odo-scr-notes'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      const dateEl = document.getElementById('odo-scr-date');
+      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+      const valEl = document.getElementById('odo-scr-value');
+      if(valEl) valEl.value = knownOdometer || '';
+
+      document.getElementById('save-odometer-btn').onclick = saveOdometerEntry;
+      wirePhotoBlock('odometer');
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function saveOdometerEntry() {
+      const carId = currentCarId || state.cars[0]?.id;
+      if(!carId) { showToast('Сначала выберите автомобиль'); return; }
+      const date = document.getElementById('odo-scr-date')?.value;
+      if(!date) { showToast('Укажите дату'); return; }
+      const val = parseFloat(document.getElementById('odo-scr-value')?.value || 0);
+      if(!val || val <= 0) { showToast('Введите корректный пробег'); return; }
+      const notes = document.getElementById('odo-scr-notes')?.value?.trim() || '';
+      const receipts = window.temp_odometer_receipts || [];
+
+      if(!state.fuel) state.fuel = [];
+      state.fuel.push({
+        id: 'odo_' + Date.now(),
+        carId,
+        odometer: val,
+        date,
+        type: 'odometer-update',
+        liters: 0,
+        cost: 0,
+        notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
+        deletedAt: null
+      });
+
+      const idx = state.cars.findIndex(c => c.id === carId);
+      if(idx !== -1) state.cars[idx].currentOdometer = val;
+
+      if(saveAppState()) {
+        showToast('Пробег обновлён: ' + val.toLocaleString('ru') + ' км');
+        clearReceiptTemp('odometer');
+        renderGarage();
+        if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
+        else showView('screen-diary');
+      }
+    }
+
     // Inline-onclick handler for admin category buttons
     window.toggleAdmin = function(btn, val) {
       if(!window._adminSelected) window._adminSelected = new Set();
@@ -6570,7 +6631,7 @@
     }
     
     // Receipts handling functions
-    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care','other'];
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care','other','odometer'];
     RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
     // Legacy aliases
     Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });
