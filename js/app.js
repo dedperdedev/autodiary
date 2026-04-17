@@ -6015,10 +6015,40 @@
       }
     }
 
+    // Inline-onclick handler for admin category buttons
+    window.toggleAdmin = function(btn, val) {
+      if(!window._adminSelected) window._adminSelected = new Set();
+      if(window._adminSelected.has(val)) {
+        window._adminSelected.delete(val);
+        btn.style.boxShadow = '';
+        btn.querySelector('.admin-chk')?.remove();
+      } else {
+        window._adminSelected.add(val);
+        btn.style.boxShadow = '0 0 0 2px #34C759';
+        btn.style.borderRadius = '14px';
+        if(!btn.querySelector('.admin-chk'))
+          btn.insertAdjacentHTML('beforeend','<div class="admin-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+      }
+      updateAdminConditionalFields();
+    };
+
+    function updateAdminConditionalFields() {
+      const sel = window._adminSelected || new Set();
+      document.querySelectorAll('.admin-cond-field').forEach(el => {
+        el.style.display = sel.has(el.dataset.cond) ? '' : 'none';
+      });
+      const otherWrap = document.getElementById('admin-other-wrap');
+      if(otherWrap) otherWrap.style.display = sel.has('other') ? '' : 'none';
+      const insBlock = document.getElementById('admin-insurance-block');
+      if(insBlock) insBlock.style.display = sel.has('insurance') ? '' : 'none';
+    }
+
     function initAdminScreen() {
       window._adminSelected = new Set();
 
-      ['admin-date','admin-odometer','admin-notes','admin-other-text']
+      ['admin-date','admin-odometer','admin-notes','admin-other-text','admin-total-cost',
+       'admin-parking-place','admin-parking-rent-name','admin-toll-road','admin-tow-place',
+       'admin-insurance-name','admin-insurance-end']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('admin-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -6027,74 +6057,9 @@
         btn.style.boxShadow = '';
         btn.querySelector('.admin-chk')?.remove();
       });
-      const otherWrap = document.getElementById('admin-other-wrap');
-      if(otherWrap) otherWrap.style.display = 'none';
-      renderAdminCosts();
-
-      document.querySelectorAll('.admin-cat-btn').forEach(btn => {
-        btn.onclick = () => {
-          const val = btn.dataset.admin;
-          if(window._adminSelected.has(val)) {
-            window._adminSelected.delete(val);
-            btn.style.boxShadow = '';
-            btn.querySelector('.admin-chk')?.remove();
-          } else {
-            window._adminSelected.add(val);
-            btn.style.boxShadow = '0 0 0 2px #34C759';
-            btn.style.borderRadius = '14px';
-            if(!btn.querySelector('.admin-chk'))
-              btn.insertAdjacentHTML('beforeend', '<div class="admin-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
-          }
-          if(otherWrap) otherWrap.style.display = window._adminSelected.has('other') ? '' : 'none';
-          renderAdminCosts();
-        };
-      });
+      updateAdminConditionalFields();
 
       if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-
-    function renderAdminCosts() {
-      const wrap = document.getElementById('admin-costs-wrap');
-      const list = document.getElementById('admin-costs-list');
-      const totalEl = document.getElementById('admin-cost-total');
-      if(!wrap || !list || !totalEl) return;
-
-      if(window._adminSelected.size === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
-
-      // Keep existing values
-      const existing = {};
-      list.querySelectorAll('[data-cost-key]').forEach(inp => {
-        existing[inp.dataset.costKey] = inp.value;
-      });
-
-      list.innerHTML = Array.from(window._adminSelected).map(key => {
-        const label = key === 'other'
-          ? (document.getElementById('admin-other-text')?.value?.trim() || 'Прочее')
-          : (ADMIN_CATS[key] || key);
-        const val = existing[key] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-          <span style="flex:1;font-size:var(--font-size-body);color:var(--text);">${escapeHtml(label)}</span>
-          <input type="number" data-cost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
-        </div>`;
-      }).join('');
-
-      // Recalculate total on input
-      list.querySelectorAll('[data-cost-key]').forEach(inp => {
-        inp.addEventListener('input', updateAdminTotal);
-      });
-      updateAdminTotal();
-    }
-
-    function updateAdminTotal() {
-      const totalEl = document.getElementById('admin-cost-total');
-      if(!totalEl) return;
-      let sum = 0;
-      document.querySelectorAll('#admin-costs-list [data-cost-key]').forEach(inp => {
-        sum += parseFloat(inp.value || 0);
-      });
-      totalEl.textContent = sum.toFixed(2);
     }
 
     function saveAdminEntry() {
@@ -6103,22 +6068,31 @@
 
       const date = document.getElementById('admin-date')?.value;
       if(!date) { showToast('Укажите дату'); return; }
-      if(window._adminSelected.size === 0) { showToast('Выберите категорию'); return; }
+      if(!window._adminSelected || window._adminSelected.size === 0) { showToast('Выберите категорию'); return; }
 
       const odometer = parseFloat(document.getElementById('admin-odometer')?.value || 0);
       const notes = document.getElementById('admin-notes')?.value?.trim() || '';
       const otherText = document.getElementById('admin-other-text')?.value?.trim() || '';
+      const totalCost = parseFloat(document.getElementById('admin-total-cost')?.value || 0);
 
-      // Collect per-category costs
-      const costMap = {};
-      document.querySelectorAll('#admin-costs-list [data-cost-key]').forEach(inp => {
-        costMap[inp.dataset.costKey] = parseFloat(inp.value || 0);
+      const details = {
+        parkingPlace:     document.getElementById('admin-parking-place')?.value?.trim() || '',
+        parkingRentName:  document.getElementById('admin-parking-rent-name')?.value?.trim() || '',
+        tollRoad:         document.getElementById('admin-toll-road')?.value?.trim() || '',
+        towPlace:         document.getElementById('admin-tow-place')?.value?.trim() || '',
+        insuranceName:    document.getElementById('admin-insurance-name')?.value?.trim() || '',
+        insuranceEnd:     document.getElementById('admin-insurance-end')?.value || '',
+      };
+
+      const parts = Array.from(window._adminSelected).map(k => {
+        const base = k === 'other' ? (otherText || 'Прочее') : (ADMIN_CATS[k] || k);
+        if(k === 'parking' && details.parkingPlace) return `${base}: ${details.parkingPlace}`;
+        if(k === 'parking-rent' && details.parkingRentName) return `${base}: ${details.parkingRentName}`;
+        if(k === 'toll' && details.tollRoad) return `${base}: ${details.tollRoad}`;
+        if(k === 'tow' && details.towPlace) return `${base}: ${details.towPlace}`;
+        if(k === 'insurance' && details.insuranceName) return `${base}: ${details.insuranceName}`;
+        return base;
       });
-      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
-
-      const parts = Array.from(window._adminSelected).map(k =>
-        k === 'other' ? (otherText || 'Прочее') : (ADMIN_CATS[k] || k)
-      );
 
       const adminReceipts = window.temp_admin_receipts || [];
       if(!state.service) state.service = [];
@@ -6128,8 +6102,9 @@
         type: 'admin',
         typeLabel: parts.join(', '),
         categories: Array.from(window._adminSelected),
-        costMap, cost: totalCost,
+        cost: totalCost,
         otherText, notes,
+        details,
         receipts: adminReceipts.length > 0 ? adminReceipts : undefined,
         createdAt: new Date().toISOString(),
         deletedAt: null

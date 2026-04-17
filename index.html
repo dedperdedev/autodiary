@@ -2066,85 +2066,124 @@
     </div>
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Категория</p>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
-        <button class="expense-category-item admin-cat-btn" data-admin="parking" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);">
+        <button class="expense-category-item admin-cat-btn" data-admin="parking" style="position:relative;" onclick="toggleAdmin(this,'parking');return false;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;pointer-events:none;">
             <i data-lucide="square-parking"></i>
           </div>
-          <span>Парковка</span>
+          <span style="pointer-events:none;">Парковка</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="parking-rent" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+        <button class="expense-category-item admin-cat-btn" data-admin="parking-rent" style="position:relative;" onclick="toggleAdmin(this,'parking-rent');return false;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;pointer-events:none;">
             <i data-lucide="building-2"></i>
           </div>
-          <span>Аренда паркинга</span>
+          <span style="pointer-events:none;">Аренда паркинга</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="toll" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+        <button class="expense-category-item admin-cat-btn" data-admin="toll" style="position:relative;" onclick="toggleAdmin(this,'toll');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;pointer-events:none;">
             <i data-lucide="milestone"></i>
           </div>
-          <span>Платные дороги</span>
+          <span style="pointer-events:none;">Платные дороги</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="tow" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;">
+        <button class="expense-category-item admin-cat-btn" data-admin="tow" style="position:relative;" onclick="toggleAdmin(this,'tow');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;pointer-events:none;">
             <i data-lucide="truck"></i>
           </div>
-          <span>Эвакуатор</span>
+          <span style="pointer-events:none;">Эвакуатор</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="insurance" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;">
+        <button class="expense-category-item admin-cat-btn" data-admin="insurance" style="position:relative;" onclick="toggleAdmin(this,'insurance');return false;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;pointer-events:none;">
             <i data-lucide="shield-check"></i>
           </div>
-          <span>Страховка</span>
+          <span style="pointer-events:none;">Страховка</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="fine" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;">
+        <button class="expense-category-item admin-cat-btn" data-admin="fine" style="position:relative;" onclick="toggleAdmin(this,'fine');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;pointer-events:none;">
             <i data-lucide="alert-triangle"></i>
           </div>
-          <span>Штраф</span>
+          <span style="pointer-events:none;">Штраф</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="tax" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;">
+        <button class="expense-category-item admin-cat-btn" data-admin="tax" style="position:relative;" onclick="toggleAdmin(this,'tax');return false;">
+          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;pointer-events:none;">
             <i data-lucide="receipt"></i>
           </div>
-          <span>Налоги и пошлины</span>
+          <span style="pointer-events:none;">Налоги и пошлины</span>
         </button>
-        <button class="expense-category-item admin-cat-btn" data-admin="other" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+        <button class="expense-category-item admin-cat-btn" data-admin="other" style="position:relative;" onclick="toggleAdmin(this,'other');return false;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;pointer-events:none;">
             <i data-lucide="more-horizontal"></i>
           </div>
-          <span>Прочее</span>
+          <span style="pointer-events:none;">Прочее</span>
         </button>
       </div>
 
       <!-- Прочее text input -->
-      <div id="admin-other-wrap" style="display:none;margin-bottom:var(--space-md);">
+      <div id="admin-other-wrap" style="display:none;margin-top:var(--space-md);">
         <input id="admin-other-text" type="text" placeholder="Опишите расход…"
           style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
       </div>
+    </div>
 
+    <!-- Дата, Пробег + conditional location fields -->
+    <div class="section">
       <div class="field">
         <label>Дата *</label>
         <input type="date" id="admin-date" required>
       </div>
-      <div class="field">
+      <div class="field" id="admin-odometer-field">
         <label>Пробег (км)</label>
         <input type="number" id="admin-odometer" placeholder="0" min="0">
       </div>
-      <!-- Per-category cost inputs (rendered by JS) -->
-      <div id="admin-costs-wrap" style="display:none;margin-bottom:var(--space-sm);">
-        <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость услуг</p>
-        <div id="admin-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
-        <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);">
-          <label style="font-weight:600;">Итого (₴)</label>
-          <span id="admin-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
-        </div>
+      <div class="field admin-cond-field" data-cond="parking" style="display:none;">
+        <label>Место парковки</label>
+        <input type="text" id="admin-parking-place" placeholder="Например, ТЦ Магелан">
       </div>
+      <div class="field admin-cond-field" data-cond="parking-rent" style="display:none;">
+        <label>Название паркинга</label>
+        <input type="text" id="admin-parking-rent-name" placeholder="Например, Подземный паркинг №3">
+      </div>
+      <div class="field admin-cond-field" data-cond="toll" style="display:none;">
+        <label>Название трассы</label>
+        <input type="text" id="admin-toll-road" placeholder="Например, М-03 Киев–Харьков">
+      </div>
+      <div class="field admin-cond-field" data-cond="tow" style="border-bottom:none;display:none;">
+        <label>Место подачи</label>
+        <input type="text" id="admin-tow-place" placeholder="Откуда забрать">
+      </div>
+    </div>
+
+    <!-- Страховка block -->
+    <div id="admin-insurance-block" class="section" style="display:none;">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:#34C759;margin:0 0 var(--space-sm) 0;text-transform:uppercase;letter-spacing:0.5px;">Страховка</p>
       <div class="field">
+        <label>Название страховки</label>
+        <input type="text" id="admin-insurance-name" placeholder="Например, ОСАГО PZU">
+      </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Дата окончания полиса</label>
+        <input type="date" id="admin-insurance-end">
+      </div>
+    </div>
+
+    <!-- Общая стоимость -->
+    <div class="section">
+      <div class="field" style="border-bottom:none;">
+        <label>Общая стоимость (₴)</label>
+        <input type="number" id="admin-total-cost" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
+
+    <!-- Заметки -->
+    <div class="section">
+      <div class="field" style="border-bottom:none;">
         <label>Заметки</label>
         <textarea id="admin-notes" placeholder="Дополнительная информация"></textarea>
       </div>
-      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);">
+    </div>
+
+    <!-- Фото / чеки -->
+    <div class="section">
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
         <label>Фото / чеки</label>
         <div id="admin-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
         <div class="chip" id="admin-add-receipt-btn" style="cursor:pointer">
