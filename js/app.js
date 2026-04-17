@@ -5717,16 +5717,12 @@
         btn.querySelector('.svcp-chk')?.remove();
       });
 
-      ['svcp-total-cost']
-        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-
       const doneWrap = document.getElementById('svcp-done-wrap');
       const doneList = document.getElementById('svcp-done-list');
       if(doneWrap) doneWrap.style.display = 'none';
       if(doneList) doneList.innerHTML = '';
 
       document.getElementById('save-svcp-btn').onclick = saveSvcPlannedEntry;
-      wirePhotoBlock('svcp');
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -5852,7 +5848,7 @@
       const odometer = parseFloat(document.getElementById('svc-cat-odometer')?.value || 0);
       const shop = document.getElementById('svc-cat-shop')?.value?.trim() || '';
       const master = document.getElementById('svc-cat-master')?.value?.trim() || '';
-      const totalCost = parseFloat(document.getElementById('svcp-total-cost')?.value || 0);
+      const totalCost = parseFloat(document.getElementById('svc-cat-total-cost')?.value || 0);
 
       // Gather comments
       document.querySelectorAll('[data-svcp-comment]').forEach(ta => {
@@ -5862,7 +5858,7 @@
       const notes = Object.values(comments).filter(Boolean).join('; ');
       const typeLabel = Array.from(window._svcpSelected).map(k => SVC_PLANNED_SUBS[k] || k).join(', ');
 
-      const receipts = window.temp_svcp_receipts || [];
+      const receipts = window['temp_svc-cat_receipts'] || [];
       if(!state.service) state.service = [];
       state.service.push({
         id: Date.now().toString(), carId, date, odometer,
@@ -5875,7 +5871,7 @@
 
       if(saveAppState()) {
         showToast('Сохранено');
-        clearReceiptTemp('svcp');
+        clearReceiptTemp('svc-cat');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
