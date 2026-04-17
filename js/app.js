@@ -5916,12 +5916,14 @@
         if(!btn.querySelector('.care-chk'))
           btn.insertAdjacentHTML('beforeend','<div class="care-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
       }
+      const otherWrap = document.getElementById('care-other-wrap');
+      if(otherWrap) otherWrap.style.display = window._careSelected.has('other') ? '' : 'none';
     };
 
     function initCareScreen() {
       window._careSelected = new Set();
 
-      ['care-date','care-odometer','care-notes','care-shop','care-total-cost']
+      ['care-date','care-odometer','care-notes','care-shop','care-total-cost','care-other-text']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('care-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5930,6 +5932,8 @@
         btn.style.boxShadow = '';
         btn.querySelector('.care-chk')?.remove();
       });
+      const otherWrap = document.getElementById('care-other-wrap');
+      if(otherWrap) otherWrap.style.display = 'none';
 
       document.getElementById('save-care-btn').onclick = saveCareEntry;
       wirePhotoBlock('care');
@@ -5947,7 +5951,11 @@
       const notes = document.getElementById('care-notes')?.value?.trim() || '';
       const shop = document.getElementById('care-shop')?.value?.trim() || '';
       const totalCost = parseFloat(document.getElementById('care-total-cost')?.value || 0);
-      const typeLabel = Array.from(window._careSelected).map(k => CARE_LABELS[k] || k).join(', ');
+      const otherText = document.getElementById('care-other-text')?.value?.trim() || '';
+      const typeLabel = Array.from(window._careSelected).map(k => {
+        if(k === 'other') return otherText || 'Прочее';
+        return CARE_LABELS[k] || k;
+      }).join(', ');
 
       const receipts = window.temp_care_receipts || [];
       if(!state.expenses) state.expenses = [];
