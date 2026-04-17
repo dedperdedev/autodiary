@@ -585,6 +585,10 @@
   <section id="screen-add-car" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-garage" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Авто</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -748,6 +752,10 @@
   <section id="screen-add-expense" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-diary" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Категория</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -958,6 +966,10 @@
   <section id="screen-add-reminder" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-diary" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Напоминание</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1528,6 +1540,10 @@
   <section id="screen-add-fuel" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Заправка</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -1602,7 +1618,13 @@
   <!-- Add Service (subcategory) Entry View -->
   <section id="screen-add-service-cat" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Сервис</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
 
     <!-- Блок 1: главные категории -->
@@ -1733,7 +1755,13 @@
   <!-- Planned Replacement Screen -->
   <section id="screen-add-planned" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-service-cat" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Плановая замена</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
 
     <!-- Что заменили -->
@@ -1869,7 +1897,13 @@
   <!-- Svc Planned Replacement Screen (Сервис → Плановая замена) -->
   <section id="screen-add-svc-planned" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-service-cat" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Плановая замена (СТО)</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
 
     <!-- Блок 1: Дата, Пробег, СТО, Мастер -->
@@ -1938,7 +1972,13 @@
   <!-- Add Care Entry View -->
   <section id="screen-add-care" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Уход</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Вид ухода</p>
@@ -2021,7 +2061,13 @@
   <!-- Add Other Expense View -->
   <section id="screen-add-other" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Прочее</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
     <div class="section">
       <div class="field">
@@ -2062,7 +2108,13 @@
   <!-- Update Odometer View -->
   <section id="screen-add-odometer" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-diary" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Обновить пробег</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
     <div class="section">
       <div class="field">
@@ -2099,7 +2151,13 @@
   <!-- Add Admin Entry View -->
   <section id="screen-add-admin" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Админ</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Категория</p>
@@ -2238,7 +2296,13 @@
   <!-- Add Wheels Entry View -->
   <section id="screen-add-wheels" class="view">
     <div class="ios-navbar">
-      <div><div class="ios-navbar-actions"></div></div>
+      <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Колёса</h2>
+        <div class="ios-navbar-actions"></div>
+      </div>
     </div>
 
     <!-- Блок 1: Установка резины + Новая резина -->
@@ -2382,6 +2446,10 @@
   <section id="screen-add-charge" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-add-expense" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Зарядка</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
@@ -2450,6 +2518,10 @@
   <section id="screen-add-service" class="view">
     <div class="ios-navbar">
       <div>
+        <button class="ios-navbar-button" data-goto="screen-add-service-cat" title="Назад">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <h2 class="ios-navbar-compact-title">Сервис</h2>
         <div class="ios-navbar-actions"></div>
       </div>
     </div>
