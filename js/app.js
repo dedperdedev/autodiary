@@ -5717,10 +5717,8 @@
         btn.querySelector('.svcp-chk')?.remove();
       });
 
-      ['svcp-shop','svcp-master','svcp-date','svcp-odometer','svcp-total-cost']
+      ['svcp-total-cost']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-      const dateEl = document.getElementById('svcp-date');
-      if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 
       const doneWrap = document.getElementById('svcp-done-wrap');
       const doneList = document.getElementById('svcp-done-list');
@@ -5847,13 +5845,13 @@
     function saveSvcPlannedEntry() {
       const carId = currentCarId || state.cars[0]?.id;
       if(!carId) { showToast('Выберите автомобиль'); return; }
-      const date = document.getElementById('svcp-date')?.value;
-      if(!date) { showToast('Укажите дату'); return; }
+      const date = document.getElementById('svc-cat-date')?.value;
+      if(!date) { showToast('Укажите дату на экране Сервис'); return; }
       if(!window._svcpSelected || window._svcpSelected.size === 0) { showToast('Выберите что заменили'); return; }
 
-      const odometer = parseFloat(document.getElementById('svcp-odometer')?.value || 0);
-      const shop = document.getElementById('svcp-shop')?.value?.trim() || '';
-      const master = document.getElementById('svcp-master')?.value?.trim() || '';
+      const odometer = parseFloat(document.getElementById('svc-cat-odometer')?.value || 0);
+      const shop = document.getElementById('svc-cat-shop')?.value?.trim() || '';
+      const master = document.getElementById('svc-cat-master')?.value?.trim() || '';
       const totalCost = parseFloat(document.getElementById('svcp-total-cost')?.value || 0);
 
       // Gather comments
