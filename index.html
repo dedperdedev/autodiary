@@ -2369,23 +2369,7 @@
       </div>
     </div>
 
-    <!-- Блок 2: Дата, Пробег, Шиномонтаж -->
-    <div class="section">
-      <div class="field">
-        <label>Дата *</label>
-        <input type="date" id="wheels-date" required>
-      </div>
-      <div class="field">
-        <label>Пробег (км)</label>
-        <input type="number" id="wheels-odometer" placeholder="0" min="0">
-      </div>
-      <div class="field" style="border-bottom:none;">
-        <label>Шиномонтаж</label>
-        <input id="wheels-shop" type="text" placeholder="Название СТО">
-      </div>
-    </div>
-
-    <!-- Блок 3: Работы -->
+    <!-- Блок 2: Работы -->
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Работы</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);">
@@ -2419,6 +2403,22 @@
       <div id="wheels-other-wrap" style="display:none;margin-top:var(--space-md);">
         <input id="wheels-other-text" type="text" placeholder="Опишите работу…"
           style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
+      </div>
+    </div>
+
+    <!-- Блок 3: Дата, Пробег, Шиномонтаж -->
+    <div class="section">
+      <div class="field">
+        <label>Дата *</label>
+        <input type="date" id="wheels-date" required>
+      </div>
+      <div class="field">
+        <label>Пробег (км)</label>
+        <input type="number" id="wheels-odometer" placeholder="0" min="0">
+      </div>
+      <div class="field" style="border-bottom:none;">
+        <label>Шиномонтаж</label>
+        <input id="wheels-shop" type="text" placeholder="Название СТО">
       </div>
     </div>
 
