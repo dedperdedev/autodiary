@@ -6135,7 +6135,7 @@
 
       ['admin-date','admin-odometer','admin-notes','admin-other-text','admin-total-cost',
        'admin-parking-place','admin-parking-rent-name','admin-toll-road','admin-tow-place',
-       'admin-fine-article','admin-insurance-name','admin-insurance-end']
+       'admin-fine-article','admin-tax-name','admin-insurance-name','admin-insurance-end']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('admin-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -6168,6 +6168,7 @@
         tollRoad:         document.getElementById('admin-toll-road')?.value?.trim() || '',
         towPlace:         document.getElementById('admin-tow-place')?.value?.trim() || '',
         fineArticle:      document.getElementById('admin-fine-article')?.value?.trim() || '',
+        taxName:          document.getElementById('admin-tax-name')?.value?.trim() || '',
         insuranceName:    document.getElementById('admin-insurance-name')?.value?.trim() || '',
         insuranceEnd:     document.getElementById('admin-insurance-end')?.value || '',
       };
@@ -6179,6 +6180,7 @@
         if(k === 'toll' && details.tollRoad) return `${base}: ${details.tollRoad}`;
         if(k === 'tow' && details.towPlace) return `${base}: ${details.towPlace}`;
         if(k === 'fine' && details.fineArticle) return `${base}: ${details.fineArticle}`;
+        if(k === 'tax' && details.taxName) return `${base}: ${details.taxName}`;
         if(k === 'insurance' && details.insuranceName) return `${base}: ${details.insuranceName}`;
         return base;
       });
