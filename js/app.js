@@ -5902,6 +5902,30 @@
       other:  'Прочее',
     };
 
+    // Global one-time delegation for care buttons (survives re-renders)
+    if(!window._careGlobalBound) {
+      window._careGlobalBound = true;
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.care-cat-btn');
+        if(!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const val = btn.dataset.care;
+        if(!window._careSelected) window._careSelected = new Set();
+        if(window._careSelected.has(val)) {
+          window._careSelected.delete(val);
+          btn.style.boxShadow = '';
+          btn.querySelector('.care-chk')?.remove();
+        } else {
+          window._careSelected.add(val);
+          btn.style.boxShadow = '0 0 0 2px #34C759';
+          btn.style.borderRadius = '14px';
+          if(!btn.querySelector('.care-chk'))
+            btn.insertAdjacentHTML('beforeend','<div class="care-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+        }
+      }, true); // capture phase so no other handler can swallow it
+    }
+
     function initCareScreen() {
       window._careSelected = new Set();
 
@@ -5914,30 +5938,6 @@
         btn.style.boxShadow = '';
         btn.querySelector('.care-chk')?.remove();
       });
-
-      const careScreen = document.getElementById('screen-add-care');
-      if(careScreen && !careScreen._careDelegated) {
-        careScreen._careDelegated = true;
-        careScreen.addEventListener('click', (e) => {
-          const btn = e.target.closest('.care-cat-btn');
-          if(!btn || !careScreen.contains(btn)) return;
-          e.preventDefault();
-          e.stopPropagation();
-          const val = btn.dataset.care;
-          if(!window._careSelected) window._careSelected = new Set();
-          if(window._careSelected.has(val)) {
-            window._careSelected.delete(val);
-            btn.style.boxShadow = '';
-            btn.querySelector('.care-chk')?.remove();
-          } else {
-            window._careSelected.add(val);
-            btn.style.boxShadow = '0 0 0 2px #34C759';
-            btn.style.borderRadius = '14px';
-            if(!btn.querySelector('.care-chk'))
-              btn.insertAdjacentHTML('beforeend','<div class="care-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
-          }
-        });
-      }
 
       document.getElementById('save-care-btn').onclick = saveCareEntry;
       wirePhotoBlock('care');
