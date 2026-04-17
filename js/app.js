@@ -5590,7 +5590,6 @@
         btn.querySelector('.pl-chk')?.remove();
       });
       document.getElementById('planned-oil-detail').style.display = 'none';
-      document.getElementById('planned-costs-list').innerHTML = '';
 
       document.querySelectorAll('.planned-btn').forEach(btn => {
         btn.onclick = () => togglePlannedBtn(btn.dataset.planned, btn);
@@ -5614,8 +5613,6 @@
       // Show/hide oil detail block
       document.getElementById('planned-oil-detail').style.display =
         window._plannedSelected.has('oil') ? '' : 'none';
-
-      renderPlannedCosts();
     }
 
     function updatePlannedBtnState(btn, selected) {
@@ -5627,37 +5624,6 @@
       } else {
         btn.style.boxShadow = '';
       }
-    }
-
-    function renderPlannedCosts() {
-      const list = document.getElementById('planned-costs-list');
-      if(!list) return;
-
-      const existing = {};
-      list.querySelectorAll('[data-pcost-key]').forEach(i => existing[i.dataset.pcostKey] = i.value);
-
-      list.innerHTML = Array.from(window._plannedSelected).map(key => {
-        const lbl = PLANNED_SUBS[key] || key;
-        const val = existing[key] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);padding-bottom:var(--space-sm);">
-          <span style="flex:1;font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(lbl)}</span>
-          <input type="number" data-pcost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-            style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
-        </div>`;
-      }).join('');
-
-      list.querySelectorAll('[data-pcost-key]').forEach(inp => {
-        inp.addEventListener('input', () => {
-          let sum = 0;
-          list.querySelectorAll('[data-pcost-key]').forEach(i => sum += parseFloat(i.value || 0));
-          const totalEl = document.getElementById('planned-cost-total');
-          if(totalEl) totalEl.value = sum > 0 ? sum.toFixed(2) : '';
-        });
-      });
-      let sum = 0;
-      list.querySelectorAll('[data-pcost-key]').forEach(i => sum += parseFloat(i.value || 0));
-      const totalEl = document.getElementById('planned-cost-total');
-      if(totalEl && sum > 0) totalEl.value = sum.toFixed(2);
     }
 
     function savePlannedEntry() {
@@ -5672,12 +5638,7 @@
       const master = document.getElementById('planned-master')?.value?.trim() || '';
       const notes = document.getElementById('planned-notes')?.value?.trim() || '';
 
-      const costMap = {};
-      document.querySelectorAll('#planned-costs-list [data-pcost-key]').forEach(inp => {
-        costMap[inp.dataset.pcostKey] = parseFloat(inp.value || 0);
-      });
-      const totalCost = parseFloat(document.getElementById('planned-cost-total')?.value || 0) ||
-        Object.values(costMap).reduce((s, v) => s + v, 0);
+      const totalCost = parseFloat(document.getElementById('planned-cost-total')?.value || 0);
       const typeLabel = Array.from(window._plannedSelected).map(k => PLANNED_SUBS[k] || k).join(', ');
 
       // Собрать детали масла из нижних полей
@@ -5698,7 +5659,7 @@
         type: 'planned', typeLabel,
         items: Array.from(window._plannedSelected),
         oilDetails: Object.keys(oilDetails).length > 0 ? oilDetails : undefined,
-        costMap, cost: totalCost, shop, master, notes,
+        cost: totalCost, shop, master, notes,
         receipts: plannedReceipts.length > 0 ? plannedReceipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
