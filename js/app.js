@@ -5405,6 +5405,7 @@
       const gotoPlanned = document.getElementById('svc-goto-planned');
       if(gotoPlanned) gotoPlanned.onclick = () => { initSvcPlannedScreen(); showView('screen-add-svc-planned'); };
 
+      wirePhotoBlock('svc-cat');
       if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -5494,6 +5495,7 @@
         k === 'other' ? (otherText || 'Прочее') : (SVC_CATS[k] || k)
       );
 
+      const receipts = window['temp_svc-cat_receipts'] || [];
       if(!state.service) state.service = [];
       state.service.push({
         id: Date.now().toString(),
@@ -5503,12 +5505,14 @@
         categories: Array.from(window._svcSelected),
         costMap, cost: totalCost,
         noteMap, otherText, shop, master, notes,
+        receipts: receipts.length > 0 ? receipts : undefined,
         createdAt: new Date().toISOString(),
         deletedAt: null
       });
 
       if(saveAppState()) {
         showToast('Сохранено');
+        clearReceiptTemp('svc-cat');
         if(currentCarId) { loadCarDetails(currentCarId); showView('screen-car-details'); }
         else showView('screen-diary');
       }
@@ -5721,9 +5725,36 @@
       'battery':        'Новый АКБ',
     };
 
+    window.toggleSvcp = function(btn, key) {
+      if(!window._svcpSelected) window._svcpSelected = new Set();
+      const selected = window._svcpSelected;
+      const existingMark = btn.querySelector('.svcp-chk');
+      if(selected.has(key)) {
+        selected.delete(key);
+        btn.style.boxShadow = '';
+        btn.style.borderRadius = '';
+        if(existingMark) existingMark.remove();
+      } else {
+        selected.add(key);
+        btn.style.boxShadow = '0 0 0 2px #34C759';
+        btn.style.borderRadius = '14px';
+        if(!existingMark) {
+          btn.insertAdjacentHTML('beforeend',
+            '<div class="svcp-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
+        }
+      }
+      renderSvcpDoneList();
+    };
+
     function initSvcPlannedScreen() {
       window._svcpSelected = new Set();
       window._svcpComments = {};
+
+      document.querySelectorAll('.svcp-work-btn').forEach(btn => {
+        btn.style.boxShadow = '';
+        btn.style.borderRadius = '';
+        btn.querySelector('.svcp-chk')?.remove();
+      });
 
       ['svcp-shop','svcp-master','svcp-date','svcp-odometer','svcp-total-cost']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
@@ -5735,10 +5766,6 @@
       if(doneWrap) doneWrap.style.display = 'none';
       if(doneList) doneList.innerHTML = '';
 
-      const countEl = document.getElementById('svcp-picker-count');
-      if(countEl) countEl.style.display = 'none';
-
-      document.getElementById('svcp-picker-btn').onclick = showSvcpPicker;
       document.getElementById('save-svcp-btn').onclick = saveSvcPlannedEntry;
       wirePhotoBlock('svcp');
       if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -5829,18 +5856,15 @@
     function renderSvcpDoneList() {
       const wrap = document.getElementById('svcp-done-wrap');
       const list = document.getElementById('svcp-done-list');
-      const countEl = document.getElementById('svcp-picker-count');
       if(!wrap || !list) return;
 
       const size = window._svcpSelected.size;
       if(size === 0) {
         wrap.style.display = 'none';
-        if(countEl) countEl.style.display = 'none';
         return;
       }
 
       wrap.style.display = '';
-      if(countEl) { countEl.textContent = size; countEl.style.display = ''; }
 
       // Preserve existing comments
       list.querySelectorAll('[data-svcp-comment]').forEach(ta => {
@@ -6633,7 +6657,7 @@
     }
     
     // Receipts handling functions
-    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care','other','odometer'];
+    const RECEIPT_TEMP_KEYS = ['expense','service','fuel','planned','admin','wheels','charge','svcp','care','other','odometer','svc-cat'];
     RECEIPT_TEMP_KEYS.forEach(k => { window['temp_' + k + '_receipts'] = []; });
     // Legacy aliases
     Object.defineProperty(window, 'tempExpenseReceipts', { get(){ return window.temp_expense_receipts; }, set(v){ window.temp_expense_receipts = v; }, configurable:true });

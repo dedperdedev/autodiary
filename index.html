@@ -1754,10 +1754,23 @@
     </div>
 
     <!-- Заметки -->
-    <div class="section" style="padding-bottom:90px;">
+    <div class="section">
       <div class="field" style="border-bottom:none;">
         <label>Заметки</label>
         <textarea id="svc-cat-notes" placeholder="Дополнительная информация"></textarea>
+      </div>
+    </div>
+
+    <!-- Фото / чеки -->
+    <div class="section" style="padding-bottom:90px;">
+      <div class="field" style="flex-direction:column;align-items:flex-start;gap:var(--space-sm);border-bottom:none;">
+        <label>Фото / чеки</label>
+        <div id="svc-cat-receipts-preview" style="display:none;flex-wrap:wrap;gap:var(--space-sm);"></div>
+        <div class="chip" id="svc-cat-add-receipt-btn" style="cursor:pointer">
+          <i data-lucide="camera" style="width:16px;height:16px;"></i>
+          <span>Добавить фото</span>
+        </div>
+        <input type="file" id="svc-cat-receipt-input" accept="image/*" multiple style="display:none;">
       </div>
     </div>
 
@@ -1940,15 +1953,51 @@
       </div>
     </div>
 
-    <!-- Кнопка выбора позиций -->
+    <!-- Плановая замена: сетка иконок -->
     <div class="section">
-      <button id="svcp-picker-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;cursor:pointer;padding:var(--space-sm) 0;">
-        <span style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Плановая замена</span>
-        <span style="display:flex;align-items:center;gap:6px;color:var(--accent);font-size:var(--font-size-body);">
-          <span id="svcp-picker-count" style="display:none;background:var(--accent);color:#fff;border-radius:10px;padding:1px 8px;font-size:12px;font-weight:600;"></span>
-          Выбрать <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
-        </span>
-      </button>
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Плановая замена</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);">
+        <button class="expense-category-item svcp-work-btn" data-svcp="spark" style="position:relative;" onclick="toggleSvcp(this,'spark');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,204,0,0.15);color:#FFCC00;pointer-events:none;"><i data-lucide="zap"></i></div>
+          <span style="pointer-events:none;">Свечи</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="timing" style="position:relative;" onclick="toggleSvcp(this,'timing');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;pointer-events:none;"><i data-lucide="link"></i></div>
+          <span style="pointer-events:none;">Ремень ГРМ</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="coolant" style="position:relative;" onclick="toggleSvcp(this,'coolant');return false;">
+          <div class="expense-category-icon" style="background:rgba(0,199,190,0.15);color:#00C7BE;pointer-events:none;"><i data-lucide="thermometer"></i></div>
+          <span style="pointer-events:none;">Антифриз</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="brake-fluid" style="position:relative;" onclick="toggleSvcp(this,'brake-fluid');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,59,48,0.15);color:#FF3B30;pointer-events:none;"><i data-lucide="disc"></i></div>
+          <span style="pointer-events:none;">Тормозная жидк.</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="power-steering" style="position:relative;" onclick="toggleSvcp(this,'power-steering');return false;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;pointer-events:none;"><i data-lucide="circle-dot"></i></div>
+          <span style="pointer-events:none;">ГУР</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="gearbox-oil" style="position:relative;" onclick="toggleSvcp(this,'gearbox-oil');return false;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;pointer-events:none;"><i data-lucide="settings-2"></i></div>
+          <span style="pointer-events:none;">Масло КПП</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="front-diff" style="position:relative;" onclick="toggleSvcp(this,'front-diff');return false;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#34C759;pointer-events:none;"><i data-lucide="chevrons-right"></i></div>
+          <span style="pointer-events:none;">Передн. редуктор</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="rear-diff" style="position:relative;" onclick="toggleSvcp(this,'rear-diff');return false;">
+          <div class="expense-category-icon" style="background:rgba(52,199,89,0.15);color:#30B050;pointer-events:none;"><i data-lucide="chevrons-left"></i></div>
+          <span style="pointer-events:none;">Задн. редуктор</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="transfer" style="position:relative;" onclick="toggleSvcp(this,'transfer');return false;">
+          <div class="expense-category-icon" style="background:rgba(175,82,222,0.15);color:#AF52DE;pointer-events:none;"><i data-lucide="git-fork"></i></div>
+          <span style="pointer-events:none;">Раздатка</span>
+        </button>
+        <button class="expense-category-item svcp-work-btn" data-svcp="battery" style="position:relative;" onclick="toggleSvcp(this,'battery');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;pointer-events:none;"><i data-lucide="battery-full"></i></div>
+          <span style="pointer-events:none;">АКБ</span>
+        </button>
+      </div>
     </div>
 
     <!-- Блок: Что сделали -->
