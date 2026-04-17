@@ -1943,29 +1943,29 @@
     <div class="section">
       <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Вид ухода</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-sm);margin-bottom:var(--space-md);">
-        <button class="expense-category-item care-cat-btn" data-care="wash" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;">
+        <button class="expense-category-item care-cat-btn" data-care="wash" style="position:relative;" onclick="toggleCare(this,'wash');return false;">
+          <div class="expense-category-icon" style="background:rgba(0,122,255,0.15);color:#007AFF;pointer-events:none;">
             <i data-lucide="droplets"></i>
           </div>
-          <span>Мойка</span>
+          <span style="pointer-events:none;">Мойка</span>
         </button>
-        <button class="expense-category-item care-cat-btn" data-care="dry" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;">
+        <button class="expense-category-item care-cat-btn" data-care="dry" style="position:relative;" onclick="toggleCare(this,'dry');return false;">
+          <div class="expense-category-icon" style="background:rgba(88,86,214,0.15);color:#5856D6;pointer-events:none;">
             <i data-lucide="sparkles"></i>
           </div>
-          <span>Химчистка</span>
+          <span style="pointer-events:none;">Химчистка</span>
         </button>
-        <button class="expense-category-item care-cat-btn" data-care="polish" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;">
+        <button class="expense-category-item care-cat-btn" data-care="polish" style="position:relative;" onclick="toggleCare(this,'polish');return false;">
+          <div class="expense-category-icon" style="background:rgba(255,149,0,0.15);color:#FF9500;pointer-events:none;">
             <i data-lucide="sun"></i>
           </div>
-          <span>Полировка</span>
+          <span style="pointer-events:none;">Полировка</span>
         </button>
-        <button class="expense-category-item care-cat-btn" data-care="other" style="position:relative;">
-          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;">
+        <button class="expense-category-item care-cat-btn" data-care="other" style="position:relative;" onclick="toggleCare(this,'other');return false;">
+          <div class="expense-category-icon" style="background:rgba(142,142,147,0.15);color:#8E8E93;pointer-events:none;">
             <i data-lucide="more-horizontal"></i>
           </div>
-          <span>Прочее</span>
+          <span style="pointer-events:none;">Прочее</span>
         </button>
       </div>
 
