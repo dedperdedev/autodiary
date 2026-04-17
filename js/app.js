@@ -5362,7 +5362,7 @@
     function initServiceCatScreen() {
       window._svcSelected = new Set();
 
-      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-master','svc-cat-notes','svc-cat-other-text']
+      ['svc-cat-date','svc-cat-odometer','svc-cat-shop','svc-cat-master','svc-cat-notes','svc-cat-other-text','svc-cat-total-cost']
         .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
       const dateEl = document.getElementById('svc-cat-date');
       if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5481,7 +5481,9 @@
       document.querySelectorAll('#svc-costs-list [data-scost-key]').forEach(inp => {
         costMap[inp.dataset.scostKey] = parseFloat(inp.value || 0);
       });
-      const totalCost = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const computedTotal = Object.values(costMap).reduce((s, v) => s + v, 0);
+      const userTotal = parseFloat(document.getElementById('svc-cat-total-cost')?.value || 0);
+      const totalCost = userTotal > 0 ? userTotal : computedTotal;
 
       const noteMap = {};
       document.querySelectorAll('#svc-costs-list [data-snote-key]').forEach(inp => {
