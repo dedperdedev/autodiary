@@ -2570,19 +2570,23 @@
         <label>Название СТО</label>
         <input type="text" id="service-shop" placeholder="Название мастерской">
       </div>
-      <div class="field">
+      <div class="field" style="border-bottom:none;">
         <label>Имя мастера</label>
         <input type="text" id="service-master" placeholder="Имя мастера">
       </div>
-      <div class="field">
-        <label>Стоимость (₴)</label>
+    </div>
+    <div class="section">
+      <div class="field" style="border-bottom:none;">
+        <label>Общая стоимость (₴)</label>
         <input type="number" id="service-cost" placeholder="0.00" step="0.01" min="0">
       </div>
+    </div>
+    <div class="section">
       <div class="field">
         <label>Заметки</label>
         <textarea id="service-notes" placeholder="Дополнительная информация"></textarea>
       </div>
-      <div class="field">
+      <div class="field" style="border-bottom:none;">
         <label>Чеки/Фото</label>
         <div id="service-receipts-preview" style="display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-sm);">
           <!-- Receipt thumbnails will be rendered here -->
