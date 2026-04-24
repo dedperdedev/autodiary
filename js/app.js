@@ -5813,29 +5813,26 @@
       const list = document.getElementById('svcp-done-list');
       if(!wrap || !list) return;
 
-      const size = window._svcpSelected.size;
-      if(size === 0) {
-        wrap.style.display = 'none';
-        return;
-      }
-
-      wrap.style.display = '';
-
       // Preserve existing comments
       list.querySelectorAll('[data-svcp-comment]').forEach(ta => {
         window._svcpComments[ta.dataset.svcpComment] = ta.value;
       });
 
-      list.innerHTML = Array.from(window._svcpSelected).map(key => {
-        const lbl = SVC_PLANNED_SUBS[key] || key;
-        const comment = window._svcpComments[key] || '';
-        return `<div style="border-bottom:0.5px solid var(--separator);padding-bottom:var(--space-md);">
-          <div style="font-size:var(--font-size-body);font-weight:600;color:var(--text);margin-bottom:6px;">${escapeHtml(lbl)}</div>
-          <textarea data-svcp-comment="${key}" placeholder="Комментарий (необязательно)"
-            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:none;min-height:44px;box-sizing:border-box;font-family:inherit;"
-          >${escapeHtml(comment)}</textarea>
-        </div>`;
-      }).join('');
+      if(!window._svcpSelected.has('battery')) {
+        wrap.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+
+      wrap.style.display = '';
+      const lbl = SVC_PLANNED_SUBS['battery'] || 'battery';
+      const comment = window._svcpComments['battery'] || '';
+      list.innerHTML = `<div style="border-bottom:0.5px solid var(--separator);padding-bottom:var(--space-md);">
+        <div style="font-size:var(--font-size-body);font-weight:600;color:var(--text);margin-bottom:6px;">${escapeHtml(lbl)}</div>
+        <textarea data-svcp-comment="battery" placeholder="Комментарий (необязательно)"
+          style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:none;min-height:44px;box-sizing:border-box;font-family:inherit;"
+        >${escapeHtml(comment)}</textarea>
+      </div>`;
     }
 
     function saveSvcPlannedEntry() {
