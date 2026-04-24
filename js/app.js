@@ -6126,13 +6126,26 @@
 
     function updateAdminConditionalFields() {
       const sel = window._adminSelected || new Set();
+      const items = [];
       document.querySelectorAll('.admin-cond-field').forEach(el => {
-        el.style.display = sel.has(el.dataset.cond) ? '' : 'none';
+        items.push({ el, visible: sel.has(el.dataset.cond) });
       });
       const otherWrap = document.getElementById('admin-other-wrap');
-      if(otherWrap) otherWrap.style.display = sel.has('other') ? '' : 'none';
+      if(otherWrap) items.push({ el: otherWrap, visible: sel.has('other') });
       const insBlock = document.getElementById('admin-insurance-block');
-      if(insBlock) insBlock.style.display = sel.has('insurance') ? '' : 'none';
+      if(insBlock) items.push({ el: insBlock, visible: sel.has('insurance') });
+
+      items.forEach(({ el, visible }) => {
+        const wasVisible = el.dataset.visibleState === 'visible';
+        el.style.display = visible ? '' : 'none';
+        if(visible && !wasVisible) {
+          el.classList.remove('admin-highlight-appear');
+          void el.offsetWidth; // restart animation
+          el.classList.add('admin-highlight-appear');
+          setTimeout(() => el.classList.remove('admin-highlight-appear'), 1600);
+        }
+        el.dataset.visibleState = visible ? 'visible' : 'hidden';
+      });
     }
 
     function initAdminScreen() {
