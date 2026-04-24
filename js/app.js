@@ -5710,6 +5710,7 @@
     function initSvcPlannedScreen() {
       window._svcpSelected = new Set();
       window._svcpComments = {};
+      window._svcpBattery = { brand:'', capacity:'', cca:'', type:'WET' };
 
       document.querySelectorAll('.svcp-work-btn').forEach(btn => {
         btn.style.boxShadow = '';
@@ -5817,6 +5818,14 @@
       list.querySelectorAll('[data-svcp-comment]').forEach(ta => {
         window._svcpComments[ta.dataset.svcpComment] = ta.value;
       });
+      // Preserve battery fields
+      if(!window._svcpBattery) window._svcpBattery = { brand:'', capacity:'', cca:'', type:'WET' };
+      const brandEl = document.getElementById('svcp-battery-brand');
+      const capEl = document.getElementById('svcp-battery-capacity');
+      const ccaEl = document.getElementById('svcp-battery-cca');
+      if(brandEl) window._svcpBattery.brand = brandEl.value;
+      if(capEl) window._svcpBattery.capacity = capEl.value;
+      if(ccaEl) window._svcpBattery.cca = ccaEl.value;
 
       if(!window._svcpSelected.has('battery')) {
         wrap.style.display = 'none';
@@ -5827,12 +5836,45 @@
       wrap.style.display = '';
       const lbl = SVC_PLANNED_SUBS['battery'] || 'battery';
       const comment = window._svcpComments['battery'] || '';
+      const bat = window._svcpBattery;
+      const types = [['WET','Свинцово-кислотные (WET)'], ['AGM','AGM'], ['GEL','GEL (гелевые)']];
+      const segments = types.map(([k,label]) =>
+        `<button type="button" class="ios-segment${bat.type === k ? ' active' : ''}" data-svcp-battery-type="${k}" style="font-size:var(--font-size-footnote);padding:6px 8px;">${escapeHtml(label)}</button>`
+      ).join('');
+
       list.innerHTML = `<div style="border-bottom:0.5px solid var(--separator);padding-bottom:var(--space-md);">
         <div style="font-size:var(--font-size-body);font-weight:600;color:var(--text);margin-bottom:6px;">${escapeHtml(lbl)}</div>
-        <textarea data-svcp-comment="battery" placeholder="Комментарий (необязательно)"
-          style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:none;min-height:44px;box-sizing:border-box;font-family:inherit;"
-        >${escapeHtml(comment)}</textarea>
+        <div class="field">
+          <label>Фирма</label>
+          <input type="text" id="svcp-battery-brand" placeholder="Например, Bosch" value="${escapeHtml(bat.brand || '')}">
+        </div>
+        <div class="field">
+          <label>Ёмкость (Ач)</label>
+          <input type="number" id="svcp-battery-capacity" placeholder="0" min="0" step="1" value="${escapeHtml(bat.capacity || '')}">
+        </div>
+        <div class="field">
+          <label>Пусковой ток (А)</label>
+          <input type="number" id="svcp-battery-cca" placeholder="0" min="0" step="1" value="${escapeHtml(bat.cca || '')}">
+        </div>
+        <div style="padding:var(--space-md) 0;border-bottom:0.5px solid var(--separator);">
+          <label style="display:block;font-size:var(--font-size-body);color:var(--text);margin-bottom:var(--space-sm);">Тип электролита/конструкции</label>
+          <div class="ios-segmented-control" style="margin:0;">${segments}</div>
+        </div>
+        <div style="padding-top:var(--space-md);">
+          <textarea data-svcp-comment="battery" placeholder="Комментарий (необязательно)"
+            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:none;min-height:44px;box-sizing:border-box;font-family:inherit;"
+          >${escapeHtml(comment)}</textarea>
+        </div>
       </div>`;
+
+      list.querySelectorAll('[data-svcp-battery-type]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          window._svcpBattery.type = btn.dataset.svcpBatteryType;
+          list.querySelectorAll('[data-svcp-battery-type]').forEach(b =>
+            b.classList.toggle('active', b.dataset.svcpBatteryType === window._svcpBattery.type)
+          );
+        });
+      });
     }
 
     function saveSvcPlannedEntry() {
@@ -5855,6 +5897,16 @@
       const notes = Object.values(comments).filter(Boolean).join('; ');
       const typeLabel = Array.from(window._svcpSelected).map(k => SVC_PLANNED_SUBS[k] || k).join(', ');
 
+      // Gather battery fields if battery selected
+      let battery;
+      if(window._svcpSelected.has('battery')) {
+        const bat = window._svcpBattery || { brand:'', capacity:'', cca:'', type:'WET' };
+        const brand = document.getElementById('svcp-battery-brand')?.value?.trim() || bat.brand || '';
+        const capacity = parseFloat(document.getElementById('svcp-battery-capacity')?.value || bat.capacity || 0) || null;
+        const cca = parseFloat(document.getElementById('svcp-battery-cca')?.value || bat.cca || 0) || null;
+        battery = { brand, capacity, cca, type: bat.type || 'WET' };
+      }
+
       const receipts = window['temp_svc-cat_receipts'] || [];
       if(!state.service) state.service = [];
       state.service.push({
@@ -5862,6 +5914,7 @@
         type: 'svc-planned', typeLabel,
         items: Array.from(window._svcpSelected),
         comments, cost: totalCost, shop, master, notes,
+        battery,
         receipts: receipts.length > 0 ? receipts : undefined,
         createdAt: new Date().toISOString(), deletedAt: null
       });
