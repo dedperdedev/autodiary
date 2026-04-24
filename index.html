@@ -1715,16 +1715,6 @@
       </div>
     </div>
 
-    <!-- Per-category cost inputs -->
-    <div class="section" id="svc-costs-wrap" style="display:none;">
-      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Стоимость услуг</p>
-      <div id="svc-costs-list" style="display:flex;flex-direction:column;gap:var(--space-sm);"></div>
-      <div class="field" style="margin-top:var(--space-sm);border-top:0.5px solid var(--separator);padding-top:var(--space-sm);border-bottom:none;">
-        <label style="font-weight:600;">Итого (₴)</label>
-        <span id="svc-cost-total" style="font-size:var(--font-size-body);font-weight:700;color:var(--text);">0.00</span>
-      </div>
-    </div>
-
     <!-- Блок: Дата, Пробег, СТО, Мастер -->
     <div class="section">
       <div class="field">
@@ -1743,6 +1733,12 @@
         <label>Имя мастера</label>
         <input id="svc-cat-master" type="text" placeholder="Имя мастера">
       </div>
+    </div>
+
+    <!-- Описание услуг -->
+    <div class="section" id="svc-costs-wrap" style="display:none;">
+      <p style="font-size:var(--font-size-footnote);font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 var(--space-sm) 0;">Описание услуг</p>
+      <div id="svc-costs-list" style="display:flex;flex-direction:column;gap:var(--space-md);"></div>
     </div>
 
     <!-- Общая стоимость -->

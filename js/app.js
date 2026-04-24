@@ -5406,57 +5406,32 @@
     function renderSvcCosts() {
       const wrap = document.getElementById('svc-costs-wrap');
       const list = document.getElementById('svc-costs-list');
-      const totalEl = document.getElementById('svc-cost-total');
-      if(!wrap || !list || !totalEl) return;
+      if(!wrap || !list) return;
 
-      if(window._svcSelected.size === 0) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
+      if(window._svcSelected.size === 0) { setCondVisible(wrap, false); return; }
+      setCondVisible(wrap, true);
 
-      const existing = {};
-      list.querySelectorAll('[data-scost-key]').forEach(inp => {
-        existing[inp.dataset.scostKey] = inp.value;
-      });
       const existingNotes = {};
       list.querySelectorAll('[data-snote-key]').forEach(inp => {
         existingNotes[inp.dataset.snoteKey] = inp.value;
       });
 
-      const rows = [];
-      Array.from(window._svcSelected).forEach(key => {
-        const label = key === 'other'
+      const rows = Array.from(window._svcSelected).map(key => ({
+        key,
+        label: key === 'other'
           ? (document.getElementById('svc-cat-other-text')?.value?.trim() || 'Прочее')
-          : (SVC_CATS[key] || key);
-        rows.push({ key, label });
-      });
+          : (SVC_CATS[key] || key),
+      }));
 
       list.innerHTML = rows.map(({ key, label }) => {
-        const val = existing[key] || '';
         const noteVal = existingNotes[key] || '';
-        return `<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:var(--space-sm);border-bottom:0.5px solid var(--separator);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);">
-            <span style="flex:1;font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(label)}</span>
-            <input type="number" data-scost-key="${key}" placeholder="0.00" step="0.01" min="0" value="${val}"
-              style="width:110px;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);text-align:right;">
-          </div>
-          <input type="text" data-snote-key="${key}" placeholder="Комментарий (марка, артикул…)" value="${escapeHtml(noteVal)}"
-            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-footnote);box-sizing:border-box;">
+        return `<div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:var(--font-size-body);font-weight:500;color:var(--text);">${escapeHtml(label)}</span>
+          <textarea data-snote-key="${key}" placeholder="Описание работы, запчасти, артикул…"
+            style="width:100%;padding:8px 10px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);resize:vertical;min-height:44px;box-sizing:border-box;font-family:inherit;"
+          >${escapeHtml(noteVal)}</textarea>
         </div>`;
       }).join('');
-
-      list.querySelectorAll('[data-scost-key]').forEach(inp => {
-        inp.addEventListener('input', updateSvcTotal);
-      });
-      updateSvcTotal();
-    }
-
-    function updateSvcTotal() {
-      const totalEl = document.getElementById('svc-cost-total');
-      if(!totalEl) return;
-      let sum = 0;
-      document.querySelectorAll('#svc-costs-list [data-scost-key]').forEach(inp => {
-        sum += parseFloat(inp.value || 0);
-      });
-      totalEl.textContent = sum.toFixed(2);
     }
 
     function saveSvcCatEntry() {
@@ -5472,13 +5447,7 @@
       const notes = document.getElementById('svc-cat-notes')?.value?.trim() || '';
       const otherText = document.getElementById('svc-cat-other-text')?.value?.trim() || '';
 
-      const costMap = {};
-      document.querySelectorAll('#svc-costs-list [data-scost-key]').forEach(inp => {
-        costMap[inp.dataset.scostKey] = parseFloat(inp.value || 0);
-      });
-      const computedTotal = Object.values(costMap).reduce((s, v) => s + v, 0);
-      const userTotal = parseFloat(document.getElementById('svc-cat-total-cost')?.value || 0);
-      const totalCost = userTotal > 0 ? userTotal : computedTotal;
+      const totalCost = parseFloat(document.getElementById('svc-cat-total-cost')?.value || 0);
 
       const noteMap = {};
       document.querySelectorAll('#svc-costs-list [data-snote-key]').forEach(inp => {
@@ -5497,7 +5466,7 @@
         type: 'service-cat',
         typeLabel: parts.join(', '),
         categories: Array.from(window._svcSelected),
-        costMap, cost: totalCost,
+        cost: totalCost,
         noteMap, otherText, shop, master, notes,
         receipts: receipts.length > 0 ? receipts : undefined,
         createdAt: new Date().toISOString(),
