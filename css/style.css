@@ -2900,19 +2900,19 @@ i[data-lucide] {
 }
 
 /* ============================================
-   Admin conditional fields: appear + glow
+   Conditional fields: appear + glow highlight
    ============================================ */
-.admin-highlight-appear {
-  animation: admin-highlight-slidein 260ms ease-out, admin-highlight-glow 1500ms ease-out;
+.field-appear {
+  animation: field-appear-slidein 260ms ease-out, field-appear-glow 1500ms ease-out;
   border-radius: 10px;
 }
 
-@keyframes admin-highlight-slidein {
+@keyframes field-appear-slidein {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes admin-highlight-glow {
+@keyframes field-appear-glow {
   0% { box-shadow: 0 0 0 2px #34C759, 0 0 14px rgba(52, 199, 89, 0.35); }
   60% { box-shadow: 0 0 0 2px #34C759, 0 0 14px rgba(52, 199, 89, 0.35); }
   100% { box-shadow: 0 0 0 0 transparent; }

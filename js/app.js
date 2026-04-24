@@ -5204,12 +5204,7 @@
       const serviceTypeSelect = document.getElementById('service-type');
       if(serviceTypeSelect) {
         serviceTypeSelect.addEventListener('change', (e) => {
-          const otherField = document.getElementById('service-other-field');
-          if(e.target.value === 'other' && otherField) {
-            otherField.style.display = 'block';
-          } else if(otherField) {
-            otherField.style.display = 'none';
-          }
+          setCondVisible(document.getElementById('service-other-field'), e.target.value === 'other');
         });
       }
       
@@ -5371,7 +5366,7 @@
         btn.style.boxShadow = '';
         btn.querySelector('.svc-chk')?.remove();
       });
-      document.getElementById('svc-cat-other-wrap').style.display = 'none';
+      setCondVisible(document.getElementById('svc-cat-other-wrap'), false);
       renderSvcCosts();
 
       function toggleBtn(btn, active) {
@@ -5396,8 +5391,7 @@
             window._svcSelected.add(val);
             toggleBtn(btn, true);
           }
-          document.getElementById('svc-cat-other-wrap').style.display =
-            window._svcSelected.has('other') ? '' : 'none';
+          setCondVisible(document.getElementById('svc-cat-other-wrap'), window._svcSelected.has('other'));
           renderSvcCosts();
         };
       });
@@ -5718,9 +5712,8 @@
         btn.querySelector('.svcp-chk')?.remove();
       });
 
-      const doneWrap = document.getElementById('svcp-done-wrap');
+      setCondVisible(document.getElementById('svcp-done-wrap'), false);
       const doneList = document.getElementById('svcp-done-list');
-      if(doneWrap) doneWrap.style.display = 'none';
       if(doneList) doneList.innerHTML = '';
 
       document.getElementById('save-svcp-btn').onclick = saveSvcPlannedEntry;
@@ -5828,12 +5821,12 @@
       if(ccaEl) window._svcpBattery.cca = ccaEl.value;
 
       if(!window._svcpSelected.has('battery')) {
-        wrap.style.display = 'none';
+        setCondVisible(wrap, false);
         list.innerHTML = '';
         return;
       }
 
-      wrap.style.display = '';
+      setCondVisible(wrap, true);
       const lbl = SVC_PLANNED_SUBS['battery'] || 'battery';
       const comment = window._svcpComments['battery'] || '';
       const bat = window._svcpBattery;
@@ -5949,8 +5942,7 @@
         if(!btn.querySelector('.care-chk'))
           btn.insertAdjacentHTML('beforeend','<div class="care-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
       }
-      const otherWrap = document.getElementById('care-other-wrap');
-      if(otherWrap) otherWrap.style.display = window._careSelected.has('other') ? '' : 'none';
+      setCondVisible(document.getElementById('care-other-wrap'), window._careSelected.has('other'));
     };
 
     function initCareScreen() {
@@ -5965,8 +5957,7 @@
         btn.style.boxShadow = '';
         btn.querySelector('.care-chk')?.remove();
       });
-      const otherWrap = document.getElementById('care-other-wrap');
-      if(otherWrap) otherWrap.style.display = 'none';
+      setCondVisible(document.getElementById('care-other-wrap'), false);
 
       document.getElementById('save-care-btn').onclick = saveCareEntry;
       wirePhotoBlock('care');
@@ -6124,28 +6115,32 @@
       updateAdminConditionalFields();
     };
 
+    // Flash "appeared" highlight on a newly-shown conditional input/block
+    function flashAppear(el) {
+      if(!el) return;
+      el.classList.remove('field-appear');
+      void el.offsetWidth; // restart animation
+      el.classList.add('field-appear');
+      setTimeout(() => el.classList.remove('field-appear'), 1600);
+    }
+
+    // Toggle display and flash-highlight on hidden → visible transition.
+    // Safe to call repeatedly: only animates on the transition, not on every call.
+    function setCondVisible(el, visible) {
+      if(!el) return;
+      const wasVisible = el.dataset.visibleState === 'visible';
+      el.style.display = visible ? '' : 'none';
+      if(visible && !wasVisible) flashAppear(el);
+      el.dataset.visibleState = visible ? 'visible' : 'hidden';
+    }
+
     function updateAdminConditionalFields() {
       const sel = window._adminSelected || new Set();
-      const items = [];
       document.querySelectorAll('.admin-cond-field').forEach(el => {
-        items.push({ el, visible: sel.has(el.dataset.cond) });
+        setCondVisible(el, sel.has(el.dataset.cond));
       });
-      const otherWrap = document.getElementById('admin-other-wrap');
-      if(otherWrap) items.push({ el: otherWrap, visible: sel.has('other') });
-      const insBlock = document.getElementById('admin-insurance-block');
-      if(insBlock) items.push({ el: insBlock, visible: sel.has('insurance') });
-
-      items.forEach(({ el, visible }) => {
-        const wasVisible = el.dataset.visibleState === 'visible';
-        el.style.display = visible ? '' : 'none';
-        if(visible && !wasVisible) {
-          el.classList.remove('admin-highlight-appear');
-          void el.offsetWidth; // restart animation
-          el.classList.add('admin-highlight-appear');
-          setTimeout(() => el.classList.remove('admin-highlight-appear'), 1600);
-        }
-        el.dataset.visibleState = visible ? 'visible' : 'hidden';
-      });
+      setCondVisible(document.getElementById('admin-other-wrap'), sel.has('other'));
+      setCondVisible(document.getElementById('admin-insurance-block'), sel.has('insurance'));
     }
 
     function initAdminScreen() {
@@ -6256,10 +6251,9 @@
         const chk = b.querySelector('.wheels-chk');
         if(chk) chk.remove();
       });
-      const newTireForm = document.getElementById('new-tire-form');
-      if(newTireForm) newTireForm.style.display = 'none';
+      setCondVisible(document.getElementById('new-tire-form'), false);
       const otherWrap = document.getElementById('wheels-other-wrap');
-      if(otherWrap) otherWrap.style.display = 'none';
+      setCondVisible(otherWrap, false);
 
       // Install buttons — radio (only one)
       document.querySelectorAll('.wheels-install-btn').forEach(btn => {
@@ -6292,11 +6286,11 @@
             btnNewTire.style.borderRadius = '14px';
             if(!btnNewTire.querySelector('.wheels-chk'))
               btnNewTire.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
-            document.getElementById('new-tire-form').style.display = '';
+            setCondVisible(document.getElementById('new-tire-form'), true);
           } else {
             btnNewTire.style.boxShadow = '';
             btnNewTire.querySelector('.wheels-chk')?.remove();
-            document.getElementById('new-tire-form').style.display = 'none';
+            setCondVisible(document.getElementById('new-tire-form'), false);
           }
         };
       }
@@ -6316,7 +6310,7 @@
             if(!btn.querySelector('.wheels-chk'))
               btn.insertAdjacentHTML('beforeend', '<div class="wheels-chk" style="position:absolute;top:5px;right:5px;width:18px;height:18px;background:#34C759;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>');
           }
-          if(otherWrap) otherWrap.style.display = window._wheelsWorks.has('other') ? '' : 'none';
+          setCondVisible(otherWrap, window._wheelsWorks.has('other'));
         };
       });
 
