@@ -1453,9 +1453,17 @@
       const dateStr = exp.date ? new Date(exp.date + 'T00:00:00').toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'2-digit'}) : '—';
       const timeStr = exp.time ? ' ' + exp.time.substring(0,5) : '';
 
-      // Place — СТО / АЗС / станция
-      const place = [exp.shop, exp.station].filter(Boolean).join(' · ');
-      const master = exp.master || '';
+      // Place — СТО / АЗС / parking / toll / tow / etc.
+      const placeBits = [];
+      if (exp.station) placeBits.push({ label: 'АЗС', value: exp.station });
+      if (exp.shop) placeBits.push({ label: 'СТО', value: exp.shop });
+      if (exp.master) placeBits.push({ label: 'Мастер', value: exp.master });
+      if (exp.details) {
+        if (exp.details.parkingPlace)    placeBits.push({ label: 'Место парковки', value: exp.details.parkingPlace });
+        if (exp.details.parkingRentName) placeBits.push({ label: 'Паркинг',        value: exp.details.parkingRentName });
+        if (exp.details.tollRoad)        placeBits.push({ label: 'Трасса',         value: exp.details.tollRoad });
+        if (exp.details.towPlace)        placeBits.push({ label: 'Место подачи',   value: exp.details.towPlace });
+      }
 
       // Cost rows from costMap
       let costRowsHtml = '';
@@ -1547,10 +1555,10 @@
                   <div style="font-size:15px;font-weight:600;color:var(--text);">${exp.odometer ? exp.odometer + ' км' : '—'}</div>
                 </div>
               </div>
-              ${place || master ? `<div style="padding:12px 14px;">
-                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">Место · СТО · АЗС</div>
-                <div style="font-size:15px;font-weight:500;color:var(--text);">${escapeHtml([place, master].filter(Boolean).join(' · ') || '—')}</div>
-              </div>` : ''}
+              ${placeBits.map((p, idx) => `<div style="padding:12px 14px;${idx < placeBits.length - 1 ? 'border-bottom:0.5px solid var(--separator);' : ''}">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">${escapeHtml(p.label)}</div>
+                <div style="font-size:15px;font-weight:500;color:var(--text);">${escapeHtml(p.value)}</div>
+              </div>`).join('')}
             </div>
 
             <!-- Записи + Итого -->
