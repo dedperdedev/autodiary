@@ -6108,7 +6108,6 @@
       document.querySelectorAll('.admin-cond-field').forEach(el => {
         setCondVisible(el, sel.has(el.dataset.cond));
       });
-      setCondVisible(document.getElementById('admin-other-wrap'), sel.has('other'));
       setCondVisible(document.getElementById('admin-insurance-block'), sel.has('insurance'));
     }
 

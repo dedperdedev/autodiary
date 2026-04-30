@@ -2213,11 +2213,6 @@
         </button>
       </div>
 
-      <!-- Прочее text input -->
-      <div id="admin-other-wrap" style="display:none;margin-top:var(--space-md);">
-        <input id="admin-other-text" type="text" placeholder="Опишите расход…"
-          style="width:100%;padding:10px 12px;border-radius:10px;border:0.5px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:var(--font-size-body);box-sizing:border-box;">
-      </div>
     </div>
 
     <!-- Дата, Пробег + conditional location fields -->
@@ -2250,9 +2245,13 @@
         <label>Статья нарушения</label>
         <input type="text" id="admin-fine-article" placeholder="Например, ст.122 ч.1 КУоАП">
       </div>
-      <div class="field admin-cond-field" data-cond="tax" style="border-bottom:none;display:none;">
+      <div class="field admin-cond-field" data-cond="tax" style="display:none;">
         <label>Название налога</label>
         <input type="text" id="admin-tax-name" placeholder="Например, транспортный налог">
+      </div>
+      <div class="field admin-cond-field" data-cond="other" style="display:none;">
+        <label>Описание</label>
+        <input type="text" id="admin-other-text" placeholder="Опишите расход…">
       </div>
     </div>
 
