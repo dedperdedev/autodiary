@@ -896,6 +896,7 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   min-height: 78px;
+  min-width: 0;
 }
 
 .expense-category-item:active {
@@ -939,6 +940,8 @@ body {
   color: var(--text);
   text-align: center;
   line-height: 1.2;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 /* Diary reminders styling */
